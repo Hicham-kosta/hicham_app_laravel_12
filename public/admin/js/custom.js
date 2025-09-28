@@ -328,7 +328,28 @@ $(document).on('click', '#deleteSizeChartImage', function(){
          });
     });
 
-}); 
+    
+        // initialize select2 with search
+        $('#other_categories').select2({
+            placeholder: 'Select Categories',
+            width:'100%'
+        });
+
+        // Select All
+        $('#selectAll').on('click', function(){
+            let allValues = $('#other_categories option').map(function(){
+                return $(this).val();
+        }).get();
+        $('#other_categories').val(allValues).trigger('change');
+    });
+
+        // Deselect All
+        $('#deselectAll').on('click', function(){
+            $('#other_categories').val(null).trigger('change');
+        });
+    });
+
+
 
 
 

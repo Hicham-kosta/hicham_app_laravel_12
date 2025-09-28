@@ -90,12 +90,14 @@
                         <label for="other_categories">Show in other categories</label>
                         <select name="other_categories[]" id="other_categories" class="form-control" multiple>
                           @foreach($getCategories as $cat)
+                            {{-- Main Category --}}
                             <option value="{{$cat['id']}}"
                             @if(!empty($product) && isset($product->otherCategories) && 
                             in_array($cat['id'], $product->otherCategories->pluck('category_id')->toArray())) 
                             selected @endif>
                             {{$cat['name']}}
                             </option>
+                            {{-- Subcategories --}}
                             @if(!empty($cat['subcategories']))
                               @foreach($cat['subcategories'] as $subcat)
                                 <option value="{{$subcat['id']}}"
@@ -104,12 +106,31 @@
                             selected @endif>
                             &nbsp;&nbsp;&raquo;{{$subcat['name']}}
                             </option>
+                            {{-- Sub-subcategories --}}
+                            @if(!empty($subcat['subcategories']))
+                              @foreach($subcat['subcategories'] as $subsubcat)
+                                <option value="{{$subsubcat['id']}}"
+                                @if(!empty($product) && isset($product->otherCategories) && 
+                            in_array($subsubcat['id'], $product->otherCategories->pluck('category_id')->toArray())) 
+                            selected @endif>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&raquo;&raquo;{{$subsubcat['name']}}
+                            </option>
                               @endforeach
                             @endif
                           @endforeach
-                        </select>
-                        <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple options.</small>
-                      </div>
+                          @endif
+                        @endforeach
+                    </select>
+                    <!-- Select All and Deselect All Buttons -->
+                     <div class="mt-2">
+                      <button type="button" id="selectAll" class="btn btn-sm btn-primary">
+                        Select All
+                      </button>
+                      <button type="button" id="deselectAll" class="btn btn-sm btn-secondary">
+                        Deselect All
+                      </button>
+                     </div>
+                   </div>                     
                       <div class="mb-3">
                         <label class="form-label" for="brand_id">Brand*</label>
                         <select name="brand_id" class="form-control">
