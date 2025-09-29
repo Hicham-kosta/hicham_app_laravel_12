@@ -150,11 +150,17 @@ Route::prefix('admin')->group(function () {
 
 Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::get('/', [IndexController::class, 'index']);
-    // Add other front routes here
+  
 
-    $catUrls = Category::where('status', 1)->pluck('url')->toArray();
-    foreach ($catUrls as $url) {
+    // Only register category routes if table exists
+    if(Schema::hasTable('categories')){
+      try{$catUrls = Category::where('status', 1)->pluck('url')->toArray();
+      foreach ($catUrls as $url) {
         Route::get("/$url", [ProductFrontController::class, 'index']);
+      }
+      }catch(\Exception $e){
+        //Ignore Errors during migration/seed
+      }
     }
 
     Route::get('/search-products', [ProductFrontController::class, 'ajaxSearch'])->name('search.products');
