@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('admin_role');
 
             $table->string('product_name');
+            $table->string('product_url')->nullable()->unique();
             $table->string('product_code');
             $table->string('product_color');
             $table->string('family_color');

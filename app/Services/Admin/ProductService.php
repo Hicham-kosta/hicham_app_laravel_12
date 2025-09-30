@@ -9,6 +9,7 @@ use App\Models\AdminsRole;
 use App\Models\Category;
 use App\Models\ProductsCategory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ProductService
 {
@@ -142,8 +143,22 @@ class ProductService
 
     $product->main_image = $request->main_image ?? $product->main_image;
     $product->product_video = $request->product_video ?? $product->product_video;
+    $product->product_url = $product->product_url ?? null;
 
     $product->save();
+
+    // Generate product_url only if create mode
+    if($product->wasRecentlyCreated){
+        $slug = Str::slug($data['product_name']);
+        $product->product_url = $slug.'-'.$product->id;
+        $product->save();
+    }else{
+        // in update mode, update product_url id provided
+        if(!empty($data['product_url'])){
+            $product->product_url = Str::slug($data['product_url']);
+            $product->save();
+        }
+    }
 
     // Sync other categories for this product
     if(!empty($data['other_categories']) && is_array($data['other_categories'])){

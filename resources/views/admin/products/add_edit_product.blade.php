@@ -148,6 +148,13 @@
                         <input type="text" class="form-control" id="product_name" name="product_name"
                         placeholder="Enter product Name" value="{{old('product_name', $product->product_name ?? '')}}" >
                       </div>
+                      @if(!empty($product->id))
+                      <div class="mb-3">
+                        <label class="form-label" for="product_url">Product URL*</label>
+                        <input type="text" class="form-control" id="product_url" name="product_url"
+                        placeholder="Enter product URL" value="{{old('product_url', $product->product_url ?? '')}}" >
+                      </div>
+                      @endif
                       <div class="mb-3">
                         <label class="form-label" for="product_code">Product Code*</label>
                         <input type="text" class="form-control" id="product_code" name="product_code"

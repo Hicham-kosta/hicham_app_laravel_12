@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Models\Product;
-
+use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'category_id' => 'required',
             'brand_id' => 'required',
             'product_name' => 'required|max:200',
@@ -33,7 +33,22 @@ class ProductRequest extends FormRequest
             'product_price' => 'required|numeric|gt:0',
             'product_color' => 'required|max:200',
             'family_color' => 'required|max:200',
-           ];
+        ];
+
+        $productId = $this->route('product');
+        if ($this->isMethod('post')) {
+            $rules['product_url'] = [
+                'nullable',
+                Rule::unique('products', 'product_url')
+            ];
+        } elseif ($this->isMethod('put') || $this->isMethod('patch')) {
+            $rules['product_url'] = [
+                'required',
+                Rule::unique('products', 'product_url')->ignore($productId)
+            ];
+        }
+
+        return $rules;
     }
 
     public function messages()
@@ -47,6 +62,8 @@ class ProductRequest extends FormRequest
             'product_price.numeric' => 'Product price must be a number',
             'product_color.required' => 'Product color is required',
             'family_color.required' => 'Family color is required',
+            'product_url.required' => 'Product URL is required when updating',
+            'product_url.unique' => 'Product URL must be unique',
         ];
     }
 }

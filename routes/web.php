@@ -17,6 +17,8 @@ use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Front\ProductController as ProductFrontController;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Support\Facades\Schema;
 
 
 Route::get('/', function () {
@@ -159,6 +161,18 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
         Route::get("/$url", [ProductFrontController::class, 'index']);
       }
       }catch(\Exception $e){
+        //Ignore Errors during migration/seed
+      }
+    }
+
+    // Product Detail Page
+    if(Schema::hasTable('products')){
+      try{
+        $productUrls = Product::where('status', 1)->pluck('product_url')->toArray();
+        foreach ($productUrls as $url) {
+          Route::get("/$url", [ProductFrontController::class, 'detail']);
+        }
+      }catch(\Throwable $e){
         //Ignore Errors during migration/seed
       }
     }

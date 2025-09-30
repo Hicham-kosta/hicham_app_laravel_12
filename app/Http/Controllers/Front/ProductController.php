@@ -173,4 +173,10 @@ class ProductController extends Controller
 
         return $output ? : '<div align="center">No results found</div>';
     }
+
+    public function detail(){
+        $currentUrl = request()->path();
+        $product = Product::where('product_url', $currentUrl)->firstOrFail();
+        return view('front.products.detail', compact('product'));
+    }
 }
