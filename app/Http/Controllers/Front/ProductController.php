@@ -176,7 +176,7 @@ class ProductController extends Controller
 
     public function detail(){
         $currentUrl = request()->path();
-        $product = Product::where('product_url', $currentUrl)->firstOrFail();
+        $product = $this->productService->getProductDetailsByUrl($currentUrl);
         return view('front.products.detail', compact('product'));
     }
 }

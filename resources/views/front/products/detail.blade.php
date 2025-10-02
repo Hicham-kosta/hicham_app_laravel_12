@@ -5,9 +5,30 @@
         <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
             <h1 class="font-weight-semi-bold text-uppercase mb-3">Product Name</h1>
             <div class="d-inline-flex">
-                <p class="m-0"><a href="">Home</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0">Product Name</p>
+                <p class="m-0"><a href="{{url('/')}}">Home</a></p>
+                  @if($product->category)
+                   {{-- if parent category exist --}}
+                    @if($product->category->parentcategory)
+                      <p class="m-0 px-2">-</p>
+                      <p class="m-0">
+                        <a href="{{url(url($product->category->parentcategory->url))}}">
+                            {{$product->category->parentcategory->name}}
+                        </a>
+                      </p>
+                    @endif
+                    {{-- Current Category --}}
+                     <p class="m-0 px-2">-</p>
+                       <p class="m-0">
+                        <a href="{{url(url($product->category->url))}}">
+                            {{$product->category->name}}
+                        </a>
+                       </p>
+                  @endif
+                  {{-- Product --}}
+                  <p class="m-0 px-2">-</p>
+                    <p class="m-0">
+                      {{$product->product_name}}
+                    </p>
             </div>
         </div>
     </div>
@@ -19,28 +40,32 @@
             <div class="col-lg-5 pb-5">
                 <div id="product-carousel" class="carousel slide" data-ride="carousel">
                     <div class="carousel-inner border">
-                        <div class="carousel-item active">
-                            <img class="w-100 h-100" src="{{asset('front/images/sitemakers.png')}}" alt="Image">
+                        @php
+                          $images = [];
+                          if($product->main_image){
+                            $images[] = $product->main_image;
+                          }
+                          foreach($product->product_images as $img){
+                            $images[] = $img->image;
+                          }
+                        @endphp
+                        @foreach($images as $key => $img)
+                        <div class="carousel-item {{$key === 0 ? 'active' : ''}}">
+                            <img class="w-100 h-100 zoom-image" 
+                            src="{{asset('front/images/products/'.$img)}}"
+                            data-zoom-image="{{asset('front/images/products/'.$img)}}" 
+                            alt="{{$product->product_name}}">
                         </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="{{asset('front/images/sitemakers1.png')}}" alt="Image">
-                        </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="{{asset('front/images/sitemakers.png')}}" alt="Image">
-                        </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="{{asset('front/images/sitemakers1.png')}}" alt="Image">
-                        </div>
+                        @endforeach
                     </div>
-                    <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
+                     <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
                         <i class="fa fa-2x fa-angle-left text-dark"></i>
                     </a>
                     <a class="carousel-control-next" href="#product-carousel" data-slide="next">
                         <i class="fa fa-2x fa-angle-right text-dark"></i>
                     </a>
-                </div>
+              </div>
             </div>
-
             <div class="col-lg-7 pb-5">
                 <h3 class="font-weight-semi-bold">{{$product->product_name}}</h3>
                 <div class="d-flex mb-3">

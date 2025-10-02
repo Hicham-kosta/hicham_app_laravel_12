@@ -19,3 +19,25 @@
 
     <!-- filters Scripts -->
     <script src="{{asset('front/js/filters.js')}}"></script>
+
+    <!--===========Image Zoom===========-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/elevatezoom/3.0.8//jquery.elevatezoom.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Destroy old zoom instance when caroussel chages
+            $('#product-caroussel').on('slid.bs.carousel', function() {
+                $('.zoomContainer').remove(); // remove old zoom container
+                $('.zoom-image').elevateZoom({
+                    zoomType: "lens",
+                    lensShape: "round",
+                    lensSize: 200
+                });
+            });
+            // initialize for the first image
+            $('.zoom-image').elevateZoom({
+                zoomType: "lens",
+                lensShape: "round",
+                lensSize: 200
+            });
+        });
+        </script>

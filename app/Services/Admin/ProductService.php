@@ -147,6 +147,34 @@ class ProductService
 
     $product->save();
 
+    // Upload Alternative Images
+    if(!empty($data['product_images'])){
+        // Ensure we have an array of images
+        $imageFiles = is_array($data['product_images']) 
+        ? $data['product_images'] 
+        : explode(',', $data['product_images']);
+
+        // Remove any empty values
+        $imageFiles = array_filter($imageFiles);
+
+        foreach($imageFiles as $index => $filename){
+            $sourcePath = public_path('temp/' . $filename);
+            $destinationPath = public_path('front/images/products/' . $filename);
+
+            if(file_exists($sourcePath)){
+                @copy($sourcePath, $destinationPath);
+                @unlink($sourcePath);
+            }
+
+            ProductImage::create([
+                'product_id' => $product->id,
+                'image' => $filename,
+                'sort' => $index, // Sort starts from 1
+                'status' => 1, // Default status is active
+            ]);
+        }
+    }
+
     // Generate product_url only if create mode
     if($product->wasRecentlyCreated){
         $slug = Str::slug($data['product_name']);
@@ -194,33 +222,6 @@ class ProductService
         $product->filterValues()->detach();
     }
 
-    // Upload Alternative Images
-    if(!empty($data['product_images'])){
-        // Ensure we have an array of images
-        $imageFiles = is_array($data['product_images']) 
-        ? $data['product_images'] 
-        : explode(',', $data['product_images']);
-
-        // Remove any empty values
-        $imageFiles = array_filter($imageFiles);
-
-        foreach($imageFiles as $index => $filename){
-            $sourcePath = public_path('temp/' . $filename);
-            $destinationPath = public_path('front/images/products/' . $filename);
-
-            if(file_exists($sourcePath)){
-                @copy($sourcePath, $destinationPath);
-                @unlink($sourcePath);
-            }
-
-            ProductImage::create([
-                'product_id' => $product->id,
-                'image' => $filename,
-                'sort' => $index + 1, // Sort starts from 1
-                'status' => 1, // Default status is active
-            ]);
-        }
-    }
 
     $totalStock = 0;
     foreach($data['sku'] as $key => $value){

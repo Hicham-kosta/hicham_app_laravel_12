@@ -152,7 +152,8 @@ class ProductController extends Controller
         $file->move(public_path('temp'), $filename);
         return response()->json([
             'fileName' => $filename,
-            'success' => true]);
+            'success' => true
+        ]);
     }
 
     public function uploadVideo(Request $request)

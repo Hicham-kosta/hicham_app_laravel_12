@@ -211,4 +211,14 @@ class ProductService{
         ->limit($limit)
         ->get();
     }
+
+    public function getProductDetailsByUrl($url){
+        return Product::with([
+            'category.parentcategory', // for breadcrumbs
+            'product_images' // for gallery
+        ])
+        ->where('status', 1)
+        ->where('product_url', $url)
+        ->firstOrFail();
+    }
 }
