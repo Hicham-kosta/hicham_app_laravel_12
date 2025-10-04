@@ -57,6 +57,14 @@
                             alt="{{$product->product_name}}">
                         </div>
                         @endforeach
+                        
+                        @if(!empty($product->product_video))
+                         <div class="carousel-item">
+                           <video class="w-100 h-100" controls>
+                            <source src="{{ asset('front/videos/products/' . $product->product_video) }}" type="video/mp4">
+                           </video>
+                        </div>
+                       @endif
                     </div>
                      <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
                         <i class="fa fa-2x fa-angle-left text-dark"></i>
@@ -87,7 +95,9 @@
                       <span class="final-price">${{$pricing['base_price']}}</span>
                     @endif
                   </h3>
-                <p class="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                @if(!empty($product->description))
+                  <p class="mb-4"><?php echo $product->description; ?></p>          
+                 @endif                
                 {{-- Sizes (keep AJAX working + preselect + preselect first attribute) --}}
                 <div class="d-flex mb-3 align-items-center">
                     <p class="text-dark font-weight-medium mb-0 mr-3">Sizes:</p>
@@ -161,13 +171,12 @@
                 </div>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-pane-1">
-                        <h4 class="mb-3">Product Description</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+                        
+                        <p><?php echo $product->description; ?></p>
                     </div>
                     <div class="tab-pane fade" id="tab-pane-2">
-                        <h4 class="mb-3">Wash Care</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                        
+                        <p><?php echo $product->wash_care; ?></p>
                     </div>
                     <div class="tab-pane fade" id="tab-pane-3">
                         <div class="row">

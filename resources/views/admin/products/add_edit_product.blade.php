@@ -354,10 +354,10 @@
                         {{old('wash_care', $product->wash_care ?? '')}}</textarea>
                       </div>
                       <div class="mb-3">
-                        <label class="form-label" for="product_description">Product Description</label>
-                        <textarea class="form-control" name="product_description" id="product_description" 
+                        <label class="form-label" for="description">Product Description</label>
+                        <textarea class="form-control" name="description" id="description" 
                         rows="3" placeholder="Enter Product Description">
-                          {{old('product_description', $product->product_description ?? '')}}</textarea>
+                          {{old('description', $product->description ?? '')}}</textarea>
                       </div>
                       <div class="mb-3">
                         <label class="form-label" for="search_keywords">Search Keywords</label>
