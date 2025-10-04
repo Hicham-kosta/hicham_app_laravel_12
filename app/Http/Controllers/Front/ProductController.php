@@ -177,6 +177,17 @@ class ProductController extends Controller
     public function detail(){
         $currentUrl = request()->path();
         $product = $this->productService->getProductDetailsByUrl($currentUrl);
-        return view('front.products.detail', compact('product'));
+        abort_unless($product, 404, 'Product not found or inactive');
+        $pricing = $this->productService->computeInitialPrice($product);
+        return view('front.products.detail', compact('product', 'pricing'));
     }
+
+    public function getProductPrice(Request $request){
+        if($request->ajax()){
+            $data = \App\Models\Product::getAttributePrice($request->product_id, $request->size);
+            return response()->json($data);
+        }
+        abort(404);    
+    }
+
 }

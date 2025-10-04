@@ -215,10 +215,58 @@ class ProductService{
     public function getProductDetailsByUrl($url){
         return Product::with([
             'category.parentcategory', // for breadcrumbs
-            'product_images' // for gallery
+            'attributes' => function ($q) {
+                $q->where('status', 1)->orderBy('sort', 'asc');
+            },
+            'brand',
         ])
-        ->where('status', 1)
         ->where('product_url', $url)
-        ->firstOrFail();
+        ->where('status', 1)
+        ->first();
     }
+
+    /**
+     * compute the initial price to show on product detail page
+     * Uses the first active size price if attributes exist: otherwise uses product price
+     * Applise discount priority product category > attribute > brand
+     */
+    public function computeInitialPrice(Product $product): array {
+        // Base price: first attribute OR product base price
+        $firstAttr = $product->attributes->first();
+        $basePrice = $firstAttr ? (float)$firstAttr->price : (float)$product->product_price;
+
+        // Discounts
+        $productDiscount = (float)($product->product_discount ?? 0);
+        $categoryDiscount = 0.0;
+        if($product->category){
+            $categoryDiscount = (float)($product->category->discount 
+            ?? $product->category->category_discount 
+            ?? 0);
+        }
+        $brandDiscount = 0.0;
+        if($product->brand){
+            $brandDiscount = (float)($product->brand->discount ?? 0);
+        }
+
+        // Priority
+        $applied = 0.0;
+        if($productDiscount > 0){
+            $applied = $productDiscount;
+         }elseif($categoryDiscount > 0){
+            $applied = $categoryDiscount;
+         }elseif($brandDiscount > 0){
+            $applied = $brandDiscount;
+         }
+
+         $final = round($basePrice * (1 - $applied/100));
+         $hasDiscount = $applied > 0 && $final < $basePrice;
+
+        return [
+            'base_price' => (int)$basePrice,
+            'final_price' => (int)$final,
+            'discount_percent' => (int)$applied,
+            'has_discount' => $hasDiscount,
+            'preselected_size' => $firstAttr ? $firstAttr->size : null,
+        ];
+   }
 }

@@ -78,33 +78,35 @@
                     </div>
                     <small class="pt-1">(10 Reviews)</small>
                 </div>
-                <h3 class="font-weight-semi-bold mb-4">₹1000.00</h3>
+                 {{-- Price block --}}
+                  <h3 class="font-weight-semi-bold mb-4 getAttributePrice">
+                    @if($pricing['has_discount'])
+                      <span class="text-danger final-price">${{$pricing['final_price']}} </span>
+                      <del class="text-muted original-price"> ${{$pricing['base_price']}}</del>
+                    @else
+                      <span class="final-price">${{$pricing['base_price']}}</span>
+                    @endif
+                  </h3>
                 <p class="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                <div class="d-flex mb-3">
+                {{-- Sizes (keep AJAX working + preselect + preselect first attribute) --}}
+                <div class="d-flex mb-3 align-items-center">
                     <p class="text-dark font-weight-medium mb-0 mr-3">Sizes:</p>
                     <form>
+                        @foreach($product->attributes as $loopAttr)
                         <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="size-1" name="size">
-                            <label class="custom-control-label" for="size-1">XS</label>
+                            <input type="radio"
+                            class="custom-control-input getPrice"
+                            id="size-{{$loopAttr->id}}"
+                            name="size"
+                            value="{{$loopAttr->size}}"
+                            data-product-id="{{$product->id}}" 
+                            {{$pricing['preselected_size'] === $loopAttr->size ? 'checked' : ($loopAttr->first ? 'checked' : '')}}>
+                            <label class="custom-control-label" for="size-{{$loopAttr->id}}">{{$loopAttr->size}}
+                            </label>
                         </div>
-                        <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="size-2" name="size">
-                            <label class="custom-control-label" for="size-2">S</label>
-                        </div>
-                        <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="size-3" name="size">
-                            <label class="custom-control-label" for="size-3">M</label>
-                        </div>
-                        <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="size-4" name="size">
-                            <label class="custom-control-label" for="size-4">L</label>
-                        </div>
-                        <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="size-5" name="size">
-                            <label class="custom-control-label" for="size-5">XL</label>
-                        </div>
+                        @endforeach
                     </form>
-                </div>
+                </div>       
                 <div class="d-flex align-items-center mb-4">
                     <p class="text-dark font-weight-medium mb-0 mr-3">Colors:</p>
                     <div class="d-flex flex-wrap">

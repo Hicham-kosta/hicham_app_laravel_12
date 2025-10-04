@@ -177,6 +177,8 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
       }
     }
 
+    Route::post('/get-product-price', [ProductFrontController::class, 'getProductPrice']);
+
     Route::get('/search-products', [ProductFrontController::class, 'ajaxSearch'])->name('search.products');
 });
 
