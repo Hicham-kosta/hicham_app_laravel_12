@@ -212,17 +212,29 @@ class ProductService{
         ->get();
     }
 
-    public function getProductDetailsByUrl($url){
-        return Product::with([
+    public function getProductDetailsByUrl(string $url): ?Product {
+        $product = Product::with([
             'category.parentcategory', // for breadcrumbs
             'attributes' => function ($q) {
                 $q->where('status', 1)->orderBy('sort', 'asc');
             },
             'brand',
+            'product_images'
         ])
         ->where('product_url', $url)
         ->where('status', 1)
         ->first();
+
+        if($product && $product->group_code){
+            $product->group_products = 
+            Product::select('id', 'product_url','product_name', 'family_color', 'group_code')
+            ->where('group_code', $product->group_code)
+            ->where('status', 1)
+            ->get();
+        }else{
+            $product->group_products = collect();
+        }
+        return $product;
     }
 
     /**

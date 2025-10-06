@@ -1,5 +1,22 @@
 @extends('front.layout.layout')
 @section('content')
+
+<style>
+    color-swatch {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-right: 6px;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    color-swatch.active {
+        border-color: 2px solid #000; /* Highlight active swatch */
+        cursor: default;
+        pointer-events: none; /* Disable click on active swatch */
+    }
+</style>
 <!-- Page Header Start -->
     <div class="container-fluid bg-secondary mb-5">
         <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
@@ -38,42 +55,53 @@
     <div class="container-fluid py-5">
         <div class="row px-xl-5">
             <div class="col-lg-5 pb-5">
-                <div id="product-carousel" class="carousel slide" data-ride="carousel">
-                    <div class="carousel-inner border">
-                        @php
-                          $images = [];
-                          if($product->main_image){
-                            $images[] = $product->main_image;
-                          }
-                          foreach($product->product_images as $img){
-                            $images[] = $img->image;
-                          }
-                        @endphp
-                        @foreach($images as $key => $img)
-                        <div class="carousel-item {{$key === 0 ? 'active' : ''}}">
-                            <img class="w-100 h-100 zoom-image" 
-                            src="{{asset('front/images/products/'.$img)}}"
-                            data-zoom-image="{{asset('front/images/products/'.$img)}}" 
-                            alt="{{$product->product_name}}">
-                        </div>
-                        @endforeach
-                        
-                        @if(!empty($product->product_video))
-                         <div class="carousel-item">
-                           <video class="w-100 h-100" controls>
-                            <source src="{{ asset('front/videos/products/' . $product->product_video) }}" type="video/mp4">
-                           </video>
-                        </div>
-                       @endif
+              <div id="product-carousel" class="carousel slide" data-ride="carousel">
+                 <div class="carousel-inner border">
+                    @php
+                      $images = [];
+                      $fallbackImage = 'no-image.jpg';
+
+                      if (!empty($product->main_image)) {
+                       $images[] = $product->main_image;
+                       }
+
+                     if (!empty($product->product_images) && $product->product_images->count() > 0) {
+                           foreach ($product->product_images as $img) {
+                          $images[] = $img->image;
+                         }
+                     }
+
+                    if (empty($images)) {
+                    $images[] = $fallbackImage;
+                    }
+                   @endphp
+
+                   @foreach($images as $key => $img)
+                    <div class="carousel-item {{ $key === 0 ? 'active' : '' }}">
+                     <img class="w-100 h-100 zoom-image"
+                     src="{{ asset('front/images/products/' . $img) }}"
+                     data-zoom-image="{{ asset('front/images/products/' . $img) }}"
+                    alt="{{ $product->product_name }}">
                     </div>
-                     <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
-                        <i class="fa fa-2x fa-angle-left text-dark"></i>
-                    </a>
-                    <a class="carousel-control-next" href="#product-carousel" data-slide="next">
-                        <i class="fa fa-2x fa-angle-right text-dark"></i>
-                    </a>
-              </div>
+                   @endforeach
+
+                 @if(!empty($product->product_video))
+                   <div class="carousel-item">
+                     <video class="w-100 h-100" controls>
+                     <source src="{{ asset('front/videos/products/' . $product->product_video) }}" type="video/mp4">
+                     </video>
+                  </div>
+                @endif
             </div>
+
+                  <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
+                    <i class="fa fa-2x fa-angle-left text-dark"></i>
+                  </a>
+                  <a class="carousel-control-next" href="#product-carousel" data-slide="next">
+                   <i class="fa fa-2x fa-angle-right text-dark"></i>
+                  </a>
+            </div>
+         </div>
             <div class="col-lg-7 pb-5">
                 <h3 class="font-weight-semi-bold">{{$product->product_name}}</h3>
                 <div class="d-flex mb-3">
@@ -117,16 +145,31 @@
                         @endforeach
                     </form>
                 </div>       
-                <div class="d-flex align-items-center mb-4">
-                    <p class="text-dark font-weight-medium mb-0 mr-3">Colors:</p>
+                @if($product->group_products->count() > 0)
+                  <div class="d-flex align-items-center mb-4">
+                    <p class="text-dark font-weght-medium mb-0 mr-3">Colors</p>
                     <div class="d-flex flex-wrap">
-                        <a href="product-black.html" class="color-swatch" style="background-color: black;" title="Black"></a>
-                        <a href="product-white.html" class="color-swatch" style="background-color: white; border: 1px solid #ccc;" title="White"></a>
-                        <a href="product-red.html" class="color-swatch" style="background-color: red;" title="Red"></a>
-                        <a href="product-blue.html" class="color-swatch" style="background-color: blue;" title="Blue"></a>
-                        <a href="product-green.html" class="color-swatch" style="background-color: green;" title="Green"></a>
+                        @foreach($product->group_products as $gp)
+                          @if($gp->id == $product->id)
+                            {{-- Current product swatch (no link) --}}
+                              <span class="color-swatch active"
+                              style="background-color: {{strtolower($gp->family_color)}};
+                              @if(strtolower($gp->family_color) == 'white') border: 1px solid #ccc; @endif"
+                              title="{{ucfirst($gp->family_color)}}">
+                              </span>
+                              @else
+                              {{-- Other product swatch (with link) --}}
+                               <a href="{{ url($gp->product_url) }}"
+                                 class="color-swatch"
+                                 style="background-color: {{ strtolower($gp->family_color) }};
+                                 @if(strtolower($gp->family_color) == 'white') border: 1px solid #ccc; @endif"
+                                 title="{{ ucfirst($gp->family_color) }}">
+                               </a>
+                          @endif
+                        @endforeach
                     </div>
-                </div>
+                  </div>
+                @endif
                 <div class="d-flex align-items-center mb-4 pt-2">
                     <div class="input-group quantity mr-3" style="width: 130px;">
                         <div class="input-group-btn">
