@@ -96,4 +96,11 @@ class Product extends Model
             'discount' => (int)$discountAmt
         ];
    }
+
+    
+    public static function productStatus($product_id)
+    {
+        return self::where('id', $product_id)->value('status') ?? 0;
+    }
 }
+

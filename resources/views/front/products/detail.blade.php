@@ -103,8 +103,11 @@
             </div>
          </div>
             <div class="col-lg-7 pb-5">
-                <h3 class="font-weight-semi-bold">{{$product->product_name}}</h3>
-                <div class="d-flex mb-3">
+               <form id="addToCart" method="POST">
+                @csrf
+                <input type="hidden" name="product_id" value="{{$product->id}}">
+                 <h3 class="font-weight-semi-bold">{{$product->product_name}}</h3>
+                  <div class="d-flex mb-3">
                     <div class="text-primary mr-2">
                         <small class="fas fa-star"></small>
                         <small class="fas fa-star"></small>
@@ -123,13 +126,13 @@
                       <span class="final-price">${{$pricing['base_price']}}</span>
                     @endif
                   </h3>
-                @if(!empty($product->description))
-                  <p class="mb-4"><?php echo $product->description; ?></p>          
-                 @endif                
-                {{-- Sizes (keep AJAX working + preselect + preselect first attribute) --}}
+                 @if(!empty($product->description))
+                  <p class="mb-4">{!! $product->description !!}</p>         
+                 @endif
+                 @if($product->attributes->count() > 0)              
+                {{-- Sizes --}}
                 <div class="d-flex mb-3 align-items-center">
                     <p class="text-dark font-weight-medium mb-0 mr-3">Sizes:</p>
-                    <form>
                         @foreach($product->attributes as $loopAttr)
                         <div class="custom-control custom-radio custom-control-inline">
                             <input type="radio"
@@ -143,12 +146,13 @@
                             </label>
                         </div>
                         @endforeach
-                    </form>
-                </div>       
-                @if($product->group_products->count() > 0)
-                  <div class="d-flex align-items-center mb-4">
-                    <p class="text-dark font-weght-medium mb-0 mr-3">Colors</p>
-                    <div class="d-flex flex-wrap">
+                   </div>
+                    @endif
+                   {{-- Colors --}}     
+                    @if($product->group_products->count() > 0)
+                     <div class="d-flex align-items-center mb-4">
+                       <p class="text-dark font-weght-medium mb-0 mr-3">Colors</p>
+                        <div class="d-flex flex-wrap">
                         @foreach($product->group_products as $gp)
                           @if($gp->id == $product->id)
                             {{-- Current product swatch (no link) --}}
@@ -170,22 +174,32 @@
                     </div>
                   </div>
                 @endif
-                <div class="d-flex align-items-center mb-4 pt-2">
+                @if($product->attributes->count() > 0)
+                {{-- Quantity & Add to cart --}}
+                  <div class="d-flex align-items-center mb-4 pt-2">
                     <div class="input-group quantity mr-3" style="width: 130px;">
                         <div class="input-group-btn">
                             <button class="btn btn-primary btn-minus" >
                             <i class="fa fa-minus"></i>
                             </button>
                         </div>
-                        <input type="text" class="form-control bg-secondary text-center" value="1">
+                        <input type="text" name="qty" class="form-control bg-secondary text-center" value="1">
                         <div class="input-group-btn">
-                            <button class="btn btn-primary btn-plus">
+                            <button type="button" class="btn btn-primary btn-plus">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                     </div>
-                    <button class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> Add To Cart</button>
-                </div>
+                    <button type="submit" class="btn btn-primary px-3">
+                        <i class="fa fa-shopping-cart mr-1"></i> Add To Cart</button>
+                  </div>
+                @else
+                  <p class="text-danger">This product is not availlable for sale</p>
+                @endif
+                {{-- success & error message --}}
+                <div class="print-success-msg" style="display:none; font-size: 14px;"></div>
+                <div class="print-error-msg" style="display:none; font-size: 14px;"></div>
+                </form>
                 <div class="d-flex pt-2">
                     <p class="text-dark font-weight-medium mb-0 mr-2">Share on:</p>
                     <div class="d-inline-flex">
@@ -286,82 +300,52 @@
         </div>
         <div class="row px-xl-5">
             <div class="col">
-                <div class="owl-carousel related-carousel">
-                    <div class="card product-item border-0">
-                        <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                            <img class="img-fluid w-100" src="{{asset('front/images/sitemakers.png')}}" alt="">
-                        </div>
-                        <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                            <h6 class="text-truncate mb-3">Product Name</h6>
-                            <div class="d-flex justify-content-center">
-                                <h6>₹1000</h6><h6 class="text-muted ml-2"><del>₹1500</del></h6>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between bg-light border">
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
-                        </div>
-                    </div>
-                    <div class="card product-item border-0">
-                        <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                            <img class="img-fluid w-100" src="{{asset('front/images/sitemakers.png')}}" alt="">
-                        </div>
-                        <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                            <h6 class="text-truncate mb-3">Product Name</h6>
-                            <div class="d-flex justify-content-center">
-                                <h6>₹1000</h6><h6 class="text-muted ml-2"><del>₹1500</del></h6>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between bg-light border">
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
-                        </div>
-                    </div>
-                    <div class="card product-item border-0">
-                        <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                            <img class="img-fluid w-100" src="{{asset('front/images/sitemakers.png')}}" alt="">
-                        </div>
-                        <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                            <h6 class="text-truncate mb-3">Product Name</h6>
-                            <div class="d-flex justify-content-center">
-                                <h6>₹1000</h6><h6 class="text-muted ml-2"><del>₹1500</del></h6>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between bg-light border">
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
-                        </div>
-                    </div>
-                    <div class="card product-item border-0">
-                        <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                            <img class="img-fluid w-100" src="{{asset('front/images/sitemakers.png')}}" alt="">
-                        </div>
-                        <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                            <h6 class="text-truncate mb-3">Product Name</h6>
-                            <div class="d-flex justify-content-center">
-                                <h6>₹1000</h6><h6 class="text-muted ml-2"><del>₹1500</del></h6>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between bg-light border">
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
-                        </div>
-                    </div>
-                    <div class="card product-item border-0">
-                        <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                            <img class="img-fluid w-100" src="{{asset('front/images/sitemakers.png')}}" alt="">
-                        </div>
-                        <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                            <h6 class="text-truncate mb-3">Product Name</h6>
-                            <div class="d-flex justify-content-center">
-                                <h6>₹1000</h6><h6 class="text-muted ml-2"><del>₹1500</del></h6>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between bg-light border">
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                            <a href="" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
-                        </div>
-                    </div>
+                <div class="row px-xl-5">
+                    @foreach($product->similar_products as $similar)
+                       @php
+                         $fallbackImage = asset('front/images/products/no-image.jpg');
+                         $image = '';
+                         if(!empty($similar->main_image)){
+                            $image = asset('product-image/medium/' . $similar->main_image);
+                         }elseif(!empty($similat->product_images[0]['image'])){
+                            $image = asset('product-image/medium/' . $similar->product_images[0]['image']);
+                         }else{
+                            $image = $fallbackImage;
+                         }
+                       @endphp
+                       <div class="col-lg-4 col-md-6 col-sm-6 pb-1">
+                         <div class="card product-item border-0 mb-4">
+                            <!-- Product image -->
+                             <div class="card-header product-img positio-relative overflow-hidden bg-transparent border p-0">
+                                <a href="{{url($similar->product_url)}}">
+                                  <img class="img-fluid w-100" src="{{$image}}" alt="{{$similar->product_name}}">
+                                </a>
+                             </div>
+                             <!-- Product details -->
+                              <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
+                                <h6 class="text-truncate mb-3">{{$similar->product_name}}</h6>
+                                <div class="d-flex justify-content-center">
+                                    <h6>${{$similar->final_price ?? $simolar->product_price}}</h6>
+                                    @if(!empty($similar->product_discount) && $similar->product_discount > 0)
+                                     <h6 class="text-muted ml-2">
+                                        <del>${{$similar->product_price}}</del>
+                                     </h6>
+                                    @endif
+                                </div>
+                             </div>
+                             <!-- Product Actions -->
+                              <div class="card-footer d-flex justify-content-between bg-light border">
+                                <a href="{{url($similar->product_url)}}" class="btn btn-sm text-dark p-0">
+                                  <i class="fas fa-eye text-primary mr-1"></i>View Details
+                                </a>
+                                <a href="{{url($similar->product_url)}}" class="btn btn-sm text-dark p-0 addToCartBtn"
+                                data-id="$similar->id">
+                                  <i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart
+                                </a>
+                              </div>
+                          </div>
+                       </div>
+                    @endforeach
                 </div>
             </div>
         </div>

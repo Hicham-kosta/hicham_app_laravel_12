@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('sort')->default(0);
             $table->tinyInteger('status')->default(1)->comment('1=Active, 0=Inactive');
             $table->timestamps();
+
         });
     }
 

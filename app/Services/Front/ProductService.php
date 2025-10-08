@@ -234,8 +234,32 @@ class ProductService{
         }else{
             $product->group_products = collect();
         }
-        return $product;
-    }
+
+        // Fetch similar products from same category (excluding itself)
+        if($product){
+            $categoryId = $product->category_id;
+            $similarProducts = Product::with(['product_images'])
+            ->where('status', 1)
+            ->where('id', '!=', $product->id)
+            ->where(function($q) use($product, $categoryId){
+                $q->where('category_id', $categoryId);
+                if($product->category && $product->category->parent_id){
+                   $q->orWhere('category_id', $product->category->parent_id); 
+                }
+                if($product->category && $product->category->parentcategory){
+                   $q->orWhere('category_id', $product->category->parentcategory->id); 
+                }
+                
+              })
+              ->take(10) // take max 10 random products
+              ->get();
+              $product->similar_products = $similarProducts;
+      }else{
+        // If $product is null, return null to avoid assigning property to null
+          return null;
+      }
+       return $product;
+}
 
     /**
      * compute the initial price to show on product detail page

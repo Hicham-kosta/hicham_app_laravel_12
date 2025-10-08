@@ -45,3 +45,33 @@ $(document).on("change", ".getPrice", function() {
         }  
     });
 });
+
+// Add to cart - product detail page
+
+
+    $("#addToCart").submit(function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: '/add-to-cart',
+            type: 'POST',
+            data: formData,
+            success: function(resp) {
+                if(resp.status){
+                    $(".print-success-msg").html("<div class='alert alert-success'>"+resp.message+"</div>").show().delay(3000).fadeOut();
+                    $(".print-error-msg").hide();
+                } else {
+                    $(".print-error-msg").html("<div class='alert alert-danger'>"+resp.message+"</div>").show().delay(3000).fadeOut();
+                    $(".print-success-msg").hide();
+                }
+            },
+            error: function(xhr) {
+                alert("Error: " + xhr.responseText);
+            }
+        });
+    });
+
+

@@ -411,7 +411,8 @@
                           <option value="No" {{old('is_featured', $product->is_featured ?? '') == 'No' ? 'selected' : ''}}>No</option>
                           <option value="Yes" {{old('is_featured', $product->is_featured ?? '') == 'Yes' ? 'selected' : ''}}>Yes</option>
                         </select>
-                      </div>   
+                      </div> 
+                        
                     </div>
                     <!--end::Body-->
                     <!--begin::Footer-->

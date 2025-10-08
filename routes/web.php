@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\FilterController;
+use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Admin\FilterValueController;
 
 // Front Controllers
@@ -180,6 +181,11 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('/get-product-price', [ProductFrontController::class, 'getProductPrice']);
 
     Route::get('/search-products', [ProductFrontController::class, 'ajaxSearch'])->name('search.products');
+
+    // Cart Routes
+    Route::post('/add-to-cart', [CartController::class, 'store'])->name('cart.store');
+
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 });
 
 
