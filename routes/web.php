@@ -183,9 +183,19 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::get('/search-products', [ProductFrontController::class, 'ajaxSearch'])->name('search.products');
 
     // Cart Routes
-    Route::post('/add-to-cart', [CartController::class, 'store'])->name('cart.store');
-
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/cart/refresh', [CartController::class, 'refresh'])->name('cart.refresh');
+
+
+    // Add to Cart
+    Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+
+    // Update Cart (PATCH cart{cart})
+    Route::patch('/cart/{cart}', [CartController::class, 'update'])->name('cart.update');
+
+    // Delete Item
+    Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
+
 });
 
 
