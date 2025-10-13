@@ -51,7 +51,7 @@ class CartController extends Controller
     {
         $data = $request->validated();
         $result = $this->service->addToCart($data);
-        return response()->json($result);
+        return response()->json($result, $result['status'] ? 200 : 422);
     }
 
     // Get /cart/refresh (AJAX fragments)
@@ -68,6 +68,7 @@ class CartController extends Controller
         return response()->json([
             'items_html' => $itemHtml,
             'summary_html' => $summaryHtml,
+            'totalCartItems' => totalCartItems(),
         ]);
     }
 
@@ -79,10 +80,7 @@ class CartController extends Controller
     {
         $data = $request->validated();
         $result = $this->service->updateQty((int)$cartId, (int)$data['qty']);
-        if(!$result['status']){
-            return response()->json($result, 422);
-        }
-        return $this->refresh();
+        return response()->json($result, $result['status'] ? 200 : 422);
     }
 
     /**
@@ -107,9 +105,6 @@ class CartController extends Controller
     public function destroy($cartId)
     {
         $result = $this->service->removeItem((int)$cartId);
-        if(!$result['status']){
-            return response()->json($result, 422);
-        }
-        return $this->refresh();
+        return response()->json($result, $result['status'] ? 200 : 422);
     }
 }

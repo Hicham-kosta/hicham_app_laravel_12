@@ -50,21 +50,32 @@ $(document).on("change", ".getPrice", function() {
 
 
 (function($){
-    const csrf = $('meta[name="csrf-token"]').attr('content');
-   function refreshCart(){
-      $.get('/cart/refresh', function(resp){
-        $('#cart-items-body').html(resp.items_html);
-        $('#cart-summary-container').html(resp.summary_html);
+  const csrf = $('meta[name="csrf-token"]').attr('content');
+
+  function replaceFragments(resp){
+    if(resp.items_html !== undefined){
+      $('#cart-items-body').html(resp.items_html);
+    }
+    if(resp.summary_html !== undefined){
+      $('#cart-summary-container').html(resp.summary_html);
+    }
+    if(resp.totalCartItems !== undefined){
+      $('.totalCartItems').text(resp.totalCartItems);
+    }
+  }
+
+  function refreshCart(){
+    $.get('/cart/refresh', function(resp){
+      replaceFragments(resp);
     });
   }
-  $(document).ready(function(){
-    refreshCart();
-  });
 
-  // Add to cart (POST/cart)
+  $(document).ready(refreshCart);
+
+  // Add to cart
   $(document).on('submit', '#addToCart', function(e){
     e.preventDefault();
-    var formData = $(this).serialize();
+    const formData = $(this).serialize();
     $.ajax({
       headers: {'X-CSRF-TOKEN': csrf},
       url: '/cart',
@@ -72,85 +83,97 @@ $(document).on("change", ".getPrice", function() {
       data: formData,
       success: function(resp){
         if(resp.status === true){
-            $(".print-success-msg").html('<div class="alert alert-success">'+resp.message+'</div>').show().delay(3000).fadeOut();
-            refreshCart();
-      }else{
-            $(".print-error-msg").html('<div class="alert alert-danger">'+resp.message+'</div>').show().delay(3000).fadeOut();
+          $(".print-success-msg").html('<div class="alert alert-success">'+resp.message+'</div>').show().delay(3000).fadeOut();
+          replaceFragments(resp);
+        } else {
+          $(".print-error-msg").html('<div class="alert alert-danger">'+(resp.message || 'Error')+'</div>').show().delay(3000).fadeOut();
+        }
+      },
+      error: function(xhr){
+        if(xhr.responseJSON && xhr.responseJSON.errors){
+          const firstKey = Object.keys(xhr.responseJSON.errors)[0];
+          const msg = xhr.responseJSON.errors[firstKey][0];
+          $(".print-error-msg").html('<div class="alert alert-danger">'+msg+'</div>').show().delay(3000).fadeOut();
+        } else {
+          alert("Error");
+        }
       }
-     },
-        error: function(xhr){
-            if(xhr.responseJSON && xhr.responseJSON.errors){
-                const firstKey = Object.keys(xhr.responseJSON.errors)[0];
-                const msg = xhr.responseJSON.errors[firstKey][0];
-                $(".print-error-msg").html('<div class="alert alert-danger">'+msg+'</div>').show().delay(3000).fadeOut();
-            }else{
-                alert("Error")
-            }
-          }
     });
   });
-  // plus/minius update (PATCH/cart/{id})
-  $(document).on('click','.updateCartQty',function(e){
+
+  // Quantity +/- (PATCH)
+  $(document).on('click','.updateCartQty',function(){
     const cartId = $(this).data('cart-id');
     const dir = $(this).data('dir');
     const input = $('.cart-qty[data-cart-id="'+cartId+'"]');
     let qty = parseInt(input.val() || '1', 10);
     qty = dir === 'up' ? qty + 1 : Math.max(1, qty - 1);
+
     $.ajax({
-        url: '/cart/'+cartId,
-        type: 'PATCH',
-        headers: {'X-CSRF-TOKEN': csrf},
-        data: {qty: qty},
-        success: function(resp){
-            $('#cart-items-body').html(resp.items_html);
-            $('#cart-summary-container').html(resp.summary_html); 
-        },
-        error: function(xhr){
-            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
-            alert(msg);
+      url: '/cart/' + cartId,
+      type: 'PATCH',
+      headers: {'X-CSRF-TOKEN': csrf},
+      data: {qty: qty},
+      success: function(resp){
+        if(resp.status === true){
+          replaceFragments(resp);
+        } else {
+          alert(resp.message || 'Error updating cart!');
         }
+      },
+      error: function(xhr){
+        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
+        alert(msg);
+      }
     });
   });
-  // Manual qty change -> PATCH
-    $(document).on('change','.cart-qty',function(e){
-        const cartId = $(this).data('cart-id');
-        let qty = parseInt($(this).val(), 10);
-        if(isNaN(qty) || qty < 1){
-            qty = 1;
+
+  // Manual quantity input change
+  $(document).on('change','.cart-qty',function(){
+    const cartId = $(this).data('cart-id');
+    let qty = parseInt($(this).val() || '1', 10);
+    if(isNaN(qty) || qty < 1) qty = 1;
+
+    $.ajax({
+      url: '/cart/' + cartId,
+      type: 'PATCH',
+      headers: {'X-CSRF-TOKEN': csrf},
+      data: {qty: qty},
+      success: function(resp){
+        if(resp.status === true){
+          replaceFragments(resp);
+        } else {
+          alert(resp.message || 'Error updating cart!');
         }
-        $.ajax({
-            url: '/cart/'+cartId,
-            type: 'PATCH',
-            headers: {'X-CSRF-TOKEN': csrf},
-            data: {qty: qty},
-            success: function(resp){
-                $('#cart-items-body').html(resp.items_html);
-                $('#cart-summary-container').html(resp.summary_html); 
-            },
-            error: function(xhr){
-                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
-                alert(msg);
-            }
-            
-        });
+      },
+      error: function(xhr){
+        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
+        alert(msg);
+      } 
     });
-    // Remove item -> DELETE/cart{id}
-    $(document).on('click','.removeCartItem',function(){
-        const cartId = $(this).data('cart-id');
-        $.ajax({
-            url: '/cart/'+cartId,
-            type: 'DELETE',
-            headers: {'X-CSRF-TOKEN': csrf},
-            success: function(resp){
-                $('#cart-items-body').html(resp.items_html);
-                $('#cart-summary-container').html(resp.summary_html); 
-            },
-            error: function(xhr){
-                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
-                alert(msg);
-            }
-        });
+  });
+
+  // Remove item
+  $(document).on('click','.removeCartItem',function(){
+    const cartId = $(this).data('cart-id');
+    $.ajax({
+      url: '/cart/' + cartId,
+      type: 'DELETE',
+      headers: {'X-CSRF-TOKEN': csrf},
+      success: function(resp){
+        if(resp.status === true){
+          replaceFragments(resp);
+        } else {
+          alert(resp.message || 'Error deleting item!');
+        }
+      },
+      error: function(xhr){
+        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error";
+        alert(msg);
+      }
     });
+  });
+
 })(jQuery);
 
 

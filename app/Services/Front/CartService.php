@@ -7,14 +7,18 @@ use App\Models\Cart;
 use App\Models\ProductsAttribute;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 
 class CartService
 {
     public function getCart(): array
    {
-    $rows = $this->currentCartQuery()->with(['product' =>function($q){
+    $rows = $this->currentCartQuery()
+    ->with(['product' =>function($q){
         $q->with('product_images');
-    }])->orderBy('id', 'DESC')->get();
+    }])
+    ->orderBy('id', 'DESC')
+    ->get();
     $items = [];
     $subtotal = 0;
     foreach($rows as $row){
@@ -27,10 +31,10 @@ class CartService
         $unit = ($pricing['status'] ?? false) 
         ? ($pricing['final_price'] ?? $product['product_price'])
         : ($product->final_price ?? $product->product_price);
-        $unit = (int) $unit;
+        $unit = (int)$unit;
 
         // Image Resolution (same pattern as listing)
-        $fallbackImage = asset('front/images/products/small/no-image.png');
+        $fallbackImage = asset('front/images/products/no-image.png');
         if(!empty($product->main_image)){
             $image = asset('product-image/medium/' . $product->main_image);
         }elseif(!empty($product->product_images[0]['image'])){
@@ -109,9 +113,21 @@ class CartService
        $item->product_size = $data['size'];
        $item->product_qty = $data['qty'];
          $item->save();
-       
+         $cart = $this->getCart();
+         $itemsHtml = View::make('front.cart.ajax_cart_items', [
+            'cartItems' => $cart['cartItems'] 
+         ])->render();
+         $summaryHtml = View::make('front.cart.ajax_cart_summary', [
+            'subtotal' => $cart['subtotal'],
+            'discount' => $cart['discount'],
+            'total' => $cart['total'],
+        ])->render();
 
-      return ['status' => true, 'message' => 'Product added to cart successfully <a href="'.url('/cart').'">View Cart</a>'];
+      return ['status' => true, 'message' => 'Product added to cart successfully <a href="'.url('/cart').'">View Cart</a>',
+      'totalCartItems' => totalCartItems(),
+      'items_html' => $itemsHtml,
+      'summary_html' => $summaryHtml
+    ];
        
    }
 
@@ -135,33 +151,64 @@ class CartService
     }
     $row->product_qty = $qty;
     $row->save();
-    return ['status' => true, 'message' => 'Cart item updated successfully'];
+    $cart = $this->getCart();
+    $itemsHtml = View::make('front.cart.ajax_cart_items', 
+    ['cartItems' => $cart['cartItems'],
+    ])->render();
+    $summaryHtml = View::make('front.cart.ajax_cart_summary', 
+    ['subtotal' => $cart['subtotal'],
+    'discount' => $cart['discount'],
+    'total' => $cart['total'],
+    ])->render();
+
+    return ['status' => true, 
+    'message' => 'Cart item updated successfully', 
+    'totalCartItems' => totalCartItems(),
+    'items_html' => $itemsHtml,
+    'summary_html' => $summaryHtml,
+];
    }
 
   public function removeItem(int $cartId): array{
 
    $deleted = $this->currentCartQuery()->where('id', $cartId)->delete();
+   $cart = $this->getCart();
+   $itemsHtml = View::make('front.cart.ajax_cart_items', 
+    ['cartItems' => $cart['cartItems'],
+    ])->render();
+    $summaryHtml = View::make('front.cart.ajax_cart_summary', [
+    'subtotal' => $cart['subtotal'],
+    'discount' => $cart['discount'],
+    'total' => $cart['total'],
+    ])->render();
     
-    return $deleted ? ['status' => true] : ['status' => false, 'message' => 'unable to delete item'];
+    return $deleted
+     ? [
+        'status' => true, 
+        'message' => 'Item Removed from Cart', 
+        'totalCartItems' => totalCartItems(),
+        'items_html' => $itemsHtml,
+        'summary_html' => $summaryHtml,] 
+: 
+    ['status' => false, 'message' => 'unable to delete item'];
 
    }
 
    protected function currentCartQuery()
  {
-    $q = Cart::query();
     $sessionId = Session::get('session_id');
 
     if (empty($sessionId)) {
         $sessionId = Session::getId();
         Session::put('session_id', $sessionId);
     }
+    $q = Cart::query();
 
     if (Auth::check()) {
         $q->where('user_id', Auth::id());
     } else {
         $q->where('session_id', $sessionId);
     }
-
     return $q;
  }
 

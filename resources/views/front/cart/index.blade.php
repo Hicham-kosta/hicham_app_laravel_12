@@ -49,7 +49,6 @@
                             <h6 class="font-weight-medium">$0</h6>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
