@@ -165,6 +165,31 @@ $(document).on("click", '.updateProductStatus', function(){
     });
 });
 
+// Update Coupon Status
+
+$(document).on("click", '.updateCouponStatus', function(){
+    var status = $(this).find("i").data("status");
+    var coupon_id = $(this).data("coupon-id");
+    $.ajax({
+        headers: {'X-CSRF-TOKEN': $('meta[name ="csrf-token"]').attr('content')},
+        type: 'post',
+        url: '/admin/update-coupon-status',
+        data: {status:status, coupon_id:coupon_id},
+        success: function(resp){
+            if(resp['status'] == 0){
+                $("a[data-coupon-id='" + coupon_id + "']").html("<i class='fas fa-toggle-off' style='color:grey' data-status='Inactive'></i>")
+                
+            }else if(resp['status'] == 1){
+                $("a[data-coupon-id='" + coupon_id + "']").html("<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Aactive'></i>")
+            }
+            //window.location.reload();
+        },error: function(){
+            alert("Error");
+        }
+
+    });
+});
+
 // Update Filter Status
 
 $(document).on("click", '.updateFilterStatus', function(){

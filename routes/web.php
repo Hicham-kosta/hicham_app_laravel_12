@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\FilterController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Admin\FilterValueController;
 
@@ -17,6 +18,7 @@ use App\Http\Controllers\Front\IndexController;
 use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Front\ProductController as ProductFrontController;
+use App\Http\Controllers\Front\CouponController as CouponFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -143,6 +145,10 @@ Route::prefix('admin')->group(function () {
       Route::resource('banners', BannerController::class);
       Route::post('update-banner-status', [BannerController::class, 'updateBannerStatus']);
 
+      // Coupons
+      Route::resource('coupons', CouponController::class);
+      Route::post('update-coupon-status', [CouponController::class, 'updateCouponStatus']);
+
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
 
@@ -195,6 +201,12 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     // Delete Item
     Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+    // Apply Coupon
+    Route::post('/cart/apply-coupon', [CartController::class, 'apply'])->name('cart.apply-coupon');
+
+    // Remove Coupon
+    Route::post('/cart/remove-coupon', [CartController::class, 'remove'])->name('cart.remove-coupon');
 
 });
 

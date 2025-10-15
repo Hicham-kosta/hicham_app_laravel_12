@@ -311,6 +311,12 @@
                 hiddenCols: @json($filterValuesHiddenCols ?? []),
                 tableName: "filter_values"
               },
+              {
+                id: "coupons",
+                savedOrder: @json($couponsSavedOrder ?? null),
+                hiddenCols: @json($couponsHiddenCols ?? []),
+                tableName: "coupons"
+              },
             ];
             tablesConfig.forEach(config => {
               const tableElement = $("#" + config.id);
