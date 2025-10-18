@@ -15,7 +15,7 @@ class CartService
    {
     $rows = $this->currentCartQuery()
     ->with(['product' =>function($q){
-        $q->with('product_images');
+        $q->with('product_images', 'category'); // Product->category may be useful
     }])
     ->orderBy('id', 'DESC')
     ->get();
@@ -23,9 +23,8 @@ class CartService
     $subtotal = 0;
     foreach($rows as $row){
         $product = $row->product;
-        if(!$product){
-            continue; // Skip if product not found
-        }
+        if(!$product) continue; // Skip if product not found
+        
         // compute price based on attribute price or final price
         $pricing = Product::getAttributePrice($product->id, $row->product_size);
         $unit = ($pricing['status'] ?? false) 
@@ -33,7 +32,7 @@ class CartService
         : ($product->final_price ?? $product->product_price);
         $unit = (int)$unit;
 
-        // Image Resolution (same pattern as listing)
+        // Image Selection
         $fallbackImage = asset('front/images/products/no-image.png');
         if(!empty($product->main_image)){
             $image = asset('product-image/medium/' . $product->main_image);
@@ -54,17 +53,82 @@ class CartService
             'qty' => $row->product_qty,
             'unit_price' => $unit,
             'line_total' => $lineTotal,
+            'category_id' => $product->category_id ?? null, // helpful later
         ];
     }
-    $discount = 0; // Placeholder for future discount logic
-    $total = $subtotal - $discount;
-    return [
-        'cartItems' => $items,
-        'subtotal' => $subtotal,
-        'discount' => $discount,
-        'total' => $total,
-    ];
-  }
+
+    // ---------------------------
+    // Compute coupon discount dynamic
+    // ---------------------------
+
+    $couponDiscount = 0.0;
+    $appliedCouponId = session('applied_coupon_id');
+    if ($appliedCouponId) {
+        // Defensive: import coupon at top: use App\Models\Coupon
+        $coupon = \App\Models\Coupon::find($appliedCouponId);
+        // if coupon not found 
+        if (!$coupon || !$coupon->status || 
+        ($coupon->expiry_date && now()->gt(\Carbon\Carbon::parse($coupon->expiry_date)->endOfDay()))) {
+            // Invalid coupon - remove from session
+            Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
+            $coupon = null;
+
+        }else {
+            // Determinate applicable amount for the coupon
+            // if coupon has category restriction only sum those items line totals
+            $applicableAmount = $subtotal;
+            if(!empty($coupon->categories)) {
+                // categories might be stored as array or JSON string: handle both
+                $allowedCats = $coupon->categories;
+                if(is_string($allowedCats)) {
+                    $decoded = @json_decode($allowedCats, true);
+                    if(is_array($decoded)) $allowedCats = $decoded;
+            }
+            if(is_array($allowedCats) && count($allowedCats) > 0) {
+                $applicableAmount = 0;
+                foreach($items as $it) {
+                    if(!empty($it['category_id']) && in_array($it['category_id'], $allowedCats)) {
+                        $applicableAmount += $it['line_total'];
+                }
+            }
+        }
+     }
+     // also check min_cart_value if set on coupon
+     if(!empty($coupon->min_cart_value) && $subtotal < (float)$coupon->min_cart_value) {
+
+        // not eligible clear coupon session
+        Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
+        $coupon = null;
+     }else{
+        // compute discount based on amount type
+        if($coupon){
+            if($coupon->amount_type === 'percentage') {
+                $couponDiscount = round($applicableAmount * ($coupon->amount/100), 2);
+            }else{
+               // Fixed amount but not exceed applicable amount
+               $couponDiscount = min((float)$coupon->amount, $applicableAmount);
+            }
+            // Optional if coupon has max discount (cap) field enforce it
+            if(!empty($coupon->max_discount)) {
+                $couponDiscount = min($couponDiscount, (float)$coupon->max_discount);
+            }
+            // Store recomputed discount in session if you still want it there (optional)
+            Session::put('applied_coupon_discount', $couponDiscount);
+         }
+       }
+     }
+   }
+     // Finalize Totals
+     $subtotal = (float)$subtotal;
+     $couponDiscount = (float)$couponDiscount;
+     $total = max(0, $subtotal - $couponDiscount);
+     return [
+         'cartItems' => $items,
+         'subtotal' => $subtotal,
+         'discount' => $couponDiscount,
+         'total' => $total,
+     ];
+ }
 
     public function addToCart(array $data): array{
         // Check Product status

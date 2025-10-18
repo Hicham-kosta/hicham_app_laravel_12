@@ -1,5 +1,6 @@
 @extends('front.layout.layout')
 @section('content')
+
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <!-- Page Header Start -->
@@ -35,6 +36,16 @@
                 </table>
             </div>
             <div class="col-lg-4">
+                <form id="applyCouponForm" action="javascript:;">
+                    <div class="input-group mb-3">
+                        <input type="text" name="coupon_code" id="coupon_code" class="form-control" 
+                        placeholder="Coupon Code">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" id="applyCoupon">Apply Coupon</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="coupon-msg"></div>
                 <div class="card border-secondary mb-5">
                     <div class="card-header bg-secondary border-0">
                         <h4 class="font-weight-semi-bold m-0">Cart Summary</h4>

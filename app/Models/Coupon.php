@@ -10,7 +10,7 @@ class Coupon extends Model
         'coupon_option', 'coupon_code', 'categories', 'brands', 'users', 'coupon_type', 
         'amount_type', 'amount', 'min_qty', 'max_qty', 'min_cart_value', 'max_cart_value', 
         'total_usage_limit', 'usage_limit_per_user', 'max_dicount', 'expiry_date', 'status', 
-        'visible', 'used_acount' 
+        'visible', 'used_count' 
     ];
 
     protected $casts = [

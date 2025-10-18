@@ -173,7 +173,52 @@ $(document).on("change", ".getPrice", function() {
       }
     });
   });
+  // Apply coupon
+  $(document).on('submit','#applyCouponForm',function(e){
+    e.preventDefault();
+    var code = $('#coupon_code').val().trim();
+    if(!code){
+      $('#coupon-msg').html('<div class="alert alert-danger">Coupon code is required</div>');
+      return;
+    }
+    $.ajax({
+      url: '/cart/apply-coupon',
+      method: 'POST',
+      headers: {'X-CSRF-TOKEN': csrf},
+      data: {coupon_code: code},
+      success: function(resp){
+          $('#coupon-msg').html('<div class="alert alert-success">'+resp.message+'</div>');
+          replaceFragments(resp);
+        },
+        error: function(xhr){
+          if(xhr.responseJSON){
+            const resp = xhr.responseJSON;
+            $('#coupon-msg').html('<div class="alert alert-danger">'+(resp.message || 'Error')+'</div>');
+            replaceFragments(resp);
+          }else{
+            $('#coupon-msg').html('<div class="alert alert-danger">Something went wrong</div>');
+          }
+        }
+    });
+  });
 
+  // Remove coupon
+  $(document).on('click','#removeCouponBtn',function(e){
+    e.preventDefault();
+    $.ajax({
+     url: '/cart/remove-coupon',
+      method: 'POST',
+      headers: {'X-CSRF-TOKEN': csrf},
+      success: function(resp){
+          $('#coupon-msg').html('<div class="alert alert-success">'+resp.message+'</div>');
+          replaceFragments(resp);
+          $('#coupon_code').val('');
+      },
+      error: function(){
+        $('#coupon-msg').html('<div class="alert alert-danger">Something went wrong</div>');
+      }
+    });
+  });
 })(jQuery);
 
 

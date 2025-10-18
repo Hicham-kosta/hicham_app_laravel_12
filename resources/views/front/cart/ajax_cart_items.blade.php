@@ -1,6 +1,6 @@
 @forelse($cartItems as $item)
    <tr>
-    <td class="align-middle text-left">
+    <td class="align-middle">
       <img src="{{$item['image']}}" alt="{{$item['product_name']}}" style="width: 50px;">
       <a class="ml-2" href="{{url($item['product_url'])}}">{{$item['product_name']}}</a>
           <div class="small text-muted">Size: {{$item['size']}}</div>
@@ -10,13 +10,13 @@
        <div class="input-group-quantity mx-auto" style="width: 100px;">
          <div class="input-group-btn">
             <button type="button" class="btn btn-sm btn-primary btn-plus updateCartQty" 
-            data-cart-id="{{$item['cart_id']}}" data-dir="up"><i class="fa fa-plus"></i></button>
-          </div>
+            data-cart-id="{{$item['cart_id']}}" data-dir="up">+</button>
+         </div>
          <input type="text" class="form-control form-control-sm bg-secondary text-center cart-qty" 
          value="{{$item['qty']}}" data-cart-id="{{$item['cart_id']}}">
          <div class="input-group-btn">
             <button type="button" class="btn btn-sm btn-primary btn-minus updateCartQty" 
-            data-cart-id="{{$item['cart_id']}}" data-dir="down"><i class="fa fa-minus"></i></button>
+            data-cart-id="{{$item['cart_id']}}" data-dir="down">-</i></button>
          </div> 
        </div>
     </td>

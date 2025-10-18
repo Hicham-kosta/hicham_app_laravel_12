@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
 
+
 class CouponService
 {
     protected CartService $cartService;
@@ -23,14 +24,12 @@ class CouponService
         $code = strtoupper(trim((string)$rawCode));
         // if empty code : clear any applied coupon and return fresh cart fragments
         if($code === '') {
-            Session::forget(['applied_coupon', 'applied_coupon_id',
-        'applied-coupon_discount']);
+            Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
         $cart = $this->cartService->getCart();
         return [
             'status' => false,
             'message' => 'Coupon code is required',
-            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => 
-            $cart['cartItems']])->render(),
+            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['cartItems']])->render(),
             'summary_html' => View::make('front.cart.ajax_cart_summary', ['subtotal' => 
             $cart['subtotal'], 'discount' => 0, 'total' => $cart['total']])->render(),
             'totalCartItems' => totalCartItems(),
@@ -41,8 +40,7 @@ class CouponService
 
         if(!$coupon) {
             // Clear any applied coupon and return fresh cart fragments
-            Session::forget(['applied_coupon', 'applied_coupon_id', 
-            'applied-coupon_discount']);
+            Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
             $cart = $this->cartService->getCart();
             return [
                 'status' => false,
@@ -54,14 +52,13 @@ class CouponService
                 'totalCartItems' => totalCartItems(),
             ];
         }
-        // Normalise coupon prperties that may be stored as JSON or Arrays
+        // Normalise coupon properties that may be stored as JSON or Arrays
         $couponCategories = [];
         if(!empty($coupon->categories)) {
             if(is_array($coupon->categories)) {
                 $couponCategories = $coupon->categories;
        }else{
-            $couponCategories = json_decode($coupon->categories, true) ? : 
-            (array)$coupon->categories;
+            $couponCategories = json_decode($coupon->categories, true) ? : (array)$coupon->categories;
        }
     }
        $couponUsers = [];
@@ -143,7 +140,7 @@ class CouponService
                 $cart = $this->cartService->getCart();
                 return [
                     'status' => false,
-                    'message' => 'You have already used this coupon '.$coupon->usage_limit_per_user.' times.',
+                    'message' => 'You have already used this coupon the maximum number of times allowed.',
                     'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => 
                     $cart['cartItems']])->render(),
                     'summary_html' => View::make('front.cart.ajax_cart_summary', ['subtotal' => 
@@ -222,8 +219,8 @@ class CouponService
                 break;
          }
        }
-       if(!$matches){
-          Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
+          if(!$matches){
+            Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
                 return [
                     'status' => false,
                     'message' => 'Coupon not applicable to any product in cart',
@@ -238,7 +235,7 @@ class CouponService
 
        // User applicability check
        if(!empty($couponUsers)){
-        if(Auth::check()){
+        if(!Auth::check()){
             Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
                 return [
                     'status' => false,
@@ -254,14 +251,14 @@ class CouponService
            $userEmail = Auth::user()->email ?? null;
 
            // normalize coupon users for comparison (strings)
-           $normalizeUsers = array_map('strval', $couponUsers);
-           if(!in_array((string)$userIdOrEmail, $normalizeUsers, true) && !($userEmail 
-           && in_array($userEmail, $normalizeUsers, true))){
+           $normalizedUsers = array_map('strval', $couponUsers);
+           if(!in_array((string)$userIdOrEmail, $normalizedUsers, true) && !($userEmail 
+           && in_array($userEmail, $normalizedUsers, true))){
             Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
             $cart = $this->cartService->getCart();
                 return [
                     'status' => false,
-                    'message' => 'Cart item count is less than the coupon minimum quantity required ',
+                    'message' => 'This coupon is not applicable to you',
                     'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => 
                     $cart['cartItems']])->render(),
                     'summary_html' => View::make('front.cart.ajax_cart_summary', ['subtotal' => 
@@ -308,7 +305,7 @@ class CouponService
 
     public function removeCoupon(): array
     {
-        Session::forget('applied_coupon', 'applied_coupon_id', 'applied_coupon_discount');
+        Session::forget(['applied_coupon', 'applied_coupon_id', 'applied_coupon_discount']);
         $cart = $this->cartService->getCart();
         $itemsHtml = View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['cartItems']])->render();
         $summaryHtml = View::make('front.cart.ajax_cart_summary', [

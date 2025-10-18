@@ -40,7 +40,7 @@ class CouponController extends Controller
     {
         if($request->ajax()){
             $data = $request->all();
-            $status = ($data['status'] == 'Active') ? 0 : 1;
+            $status = ($data['status'] === 'Active') ? 0 : 1;
             $coupon = Coupon::find($data['coupon_id']);
             if($coupon){
                 $coupon->status = $status;

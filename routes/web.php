@@ -10,11 +10,12 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Admin\FilterValueController;
+use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
 use App\Http\Controllers\Front\IndexController;
+use App\Http\Controllers\Front\CartController;
 use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Front\ProductController as ProductFrontController;
@@ -203,10 +204,10 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
 
     // Apply Coupon
-    Route::post('/cart/apply-coupon', [CartController::class, 'apply'])->name('cart.apply-coupon');
+    Route::post('/cart/apply-coupon', [CouponFrontController::class, 'apply'])->name('cart.apply.coupon');
 
     // Remove Coupon
-    Route::post('/cart/remove-coupon', [CartController::class, 'remove'])->name('cart.remove-coupon');
+    Route::post('/cart/remove-coupon', [CouponFrontController::class, 'remove'])->name('cart.remove.coupon');
 
 });
 
