@@ -59,6 +59,7 @@
                                      @else
                                       INR
                                      @endif
+                                    </td>
                                     <td>
                                         @if($coupon->expiry_date)
                                         {{$coupon->expiry_date->format('Fj, Y')}}
@@ -73,7 +74,7 @@
                                         data-coupon-id="{{$coupon->id}}" 
                                         href="javascript:void(0)">
                                         <i class="fas fa-toggle-{{$coupon->status ? 'on' : 'off'}}"
-                                        dat-status="{{$coupon->status ? 'Active' : 'Inactive'}}" 
+                                        data-status="{{$coupon->status ? 'Active' : 'Inactive'}}" 
                                         style="color: {{$coupon->status ? '#3f6ed3' : 'grey'}}"></i>
                                         </a>
                                         @else

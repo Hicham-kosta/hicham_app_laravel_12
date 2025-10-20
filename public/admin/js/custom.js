@@ -372,6 +372,70 @@ $(document).on('click', '#deleteSizeChartImage', function(){
         $('#deselectAll').on('click', function(){
             $('#other_categories').val(null).trigger('change');
         });
+
+        // Initialize select2 if available
+  if($.fn.select2){
+    $('#categoriesSelect').select2({width: '100%'});
+    $('#brandsSelect').select2({width: '100%'});
+    $('#usersSelect').select2({width: '100%'});
+    $('.select2-tags').select2({
+      width: '100%',
+      tags: true,
+      tokenSeparators: [',', ';']
+    })
+  }
+
+  // Coupon code generator
+  function generateCouponCode(length = 8){
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+    var result = '';
+    for (var i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+   // Toggle Coupon input / regen button depending on option
+    function updateCouponFieldVisibility(){
+      var option = $('input[name="coupon_option"]:checked').val();
+      if(option === 'Automatic'){
+        $('#regenCoupon').show();
+        if(!$('#coupon_code').val()){
+          $('#coupon_code').val(generateCouponCode());
+        }
+      }else{
+        $('#regenCoupon').hide();
+      }
+    }
+    // Initial run
+    updateCouponFieldVisibility();
+    // When radio changes
+    $(document).on('change', 'input[name="coupon_option"]', function(){
+      updateCouponFieldVisibility();
+    });
+
+    // Regenerate on click
+    $(document).on('click', '#regenCoupon', function(e){
+      e.preventDefault();
+      $('#coupon_code').val(generateCouponCode()).focus();
+    });
+
+    // Select all / Deselect all
+    $(document).on('click', '.select-all', function(e){
+      e.preventDefault();
+      var target = $(this).data('target');
+      var $sel = $(target);
+      var vals = [];
+      $sel.find('option').each(function(){vals.push($(this).val());});
+      $sel.val(vals).trigger('change'); 
+      });
+      
+    $(document).on('click', '.deselect-all', function(e){
+      e.preventDefault();
+      var target = $(this).data('target');
+      var $sel = $(target);
+      if(!$sel.length) return;
+      $sel.val([]).trigger('change');
+    });
     });
 
 
