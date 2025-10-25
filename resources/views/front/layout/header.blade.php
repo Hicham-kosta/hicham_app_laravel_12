@@ -37,6 +37,7 @@ $totalCartItems = totalCartItems();
                 </div>
             </div>
         </div>
+        </div>
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="" class="text-decoration-none">
@@ -180,10 +181,34 @@ $totalCartItems = totalCartItems();
                             <a href="contact.html" class="nav-item nav-link">Contact</a>
                         </div>
                         <div class="navbar-nav ml-auto py-0">
-                            <a href="" class="nav-item nav-link">Login</a>
-                            <a href="" class="nav-item nav-link">Register</a>
+                        @auth
+                         <div class="nav-item dropdown">
+                            
+                          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+                          <i class="fa fa-user text-primary mr-1"></i>
+                          <span class="text-dark mr-3">
+                            👋 Welcome, <br><strong>{{ Auth::user()->name }}</strong>
+                           </span>
+                          </a>
+                        <div class="dropdown-menu dropdown-menu-right rounded-0 m-0">
+                          <a href="{{ url('/') }}" class="dropdown-item">Home</a>
+                          <a href="#" class="dropdown-item disabled">
+                            Role: {{ ucfirst(Auth::user()->user_type) }}
+                           </a>
+                          <form action="{{ route('user.logout') }}" method="POST" class="m-0">
+                          @csrf
+                            <button type="submit" class="dropdown-item text-danger">
+                             Logout
+                            </button>
+                          </form>
                         </div>
-                    </div>
+                     </div>
+                     @else
+                     <a href="{{ url('user/login') }}" class="nav-item nav-link">Login</a>
+                     <a href="{{ url('user/register') }}" class="nav-item nav-link">Register</a>
+                    @endauth
+                   </div>
+                  </div>
                 </nav>
             </div>
         </div>

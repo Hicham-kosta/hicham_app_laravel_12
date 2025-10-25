@@ -221,4 +221,119 @@ $(document).on("change", ".getPrice", function() {
   });
 })(jQuery);
 
+$(document).on('submit', '#loginForm', function (e) {
+  e.preventDefault();
+  $('.help-block.text-danger').text('');
+  
+  const $btn = $('#loginButton');
+  $btn.prop('disabled', true).text('Please wait...');
 
+  // Use FormData (more reliable with Laravel)
+  const formData = new FormData();
+  formData.append('email', $('#loginEmail').val().trim().toLowerCase());
+  formData.append('password', $('#loginPassword').val());
+  formData.append('user_type', $('input[name="user_type"]:checked').val());
+  formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+  $.ajax({
+    url: window.routes && window.routes.userLoginPost
+      ? window.routes.userLoginPost
+      : '/user/login',
+    method: 'POST',
+    processData: false, // required for FormData
+    contentType: false, // required for FormData
+    data: formData,
+    success: function (resp) {
+      $btn.prop('disabled', false).text('Login');
+      if (resp.success) {
+        $('#loginSuccess').html(
+          '<div class="alert alert-success">' + resp.message + '</div>'
+        );
+        window.location.href = resp.redirect || '/';
+      } else {
+        $('#loginSuccess').html(
+          '<div class="alert alert-danger">Login Failed</div>'
+        );
+      }
+    },
+    error: function (xhr) {
+      $btn.prop('disabled', false).text('Login');
+      if (xhr.responseJSON && xhr.responseJSON.errors) {
+        $.each(xhr.responseJSON.errors, function (key, val) {
+          $('[data-error-for="' + key + '"]').text(val[0]);
+        });
+      } else if (xhr.responseJSON && xhr.responseJSON.message) {
+        $('#loginSuccess').html(
+          '<div class="alert alert-danger">' + xhr.responseJSON.message + '</div>'
+        );
+      } else {
+        console.error(xhr.responseText || xhr);
+        $('#loginSuccess').html(
+          '<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>'
+        );
+      }
+    },
+  });
+});
+
+// Register
+
+$(document).on('submit', '#registerForm', function(e){
+    e.preventDefault();
+    $('.help-block.text-danger').text('');
+    var $btn = $('#registerButton');
+    $btn.prop('disabled', true).text('Please wait...');
+
+    // Use FormData instead of JSON for better compatibility
+    var formData = new FormData();
+    formData.append('name', $('#name').val());
+    formData.append('email', $('#email').val().trim().toLowerCase());
+    formData.append('password', $('#password').val());
+    formData.append('password_confirmation', $('#password_confirmation').val());
+    formData.append('user_type', $('input[name="user_type"]:checked').val());
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+    $.ajax({
+        url: window.routes && window.routes.userRegisterPost ? window.routes.userRegisterPost : '/user/register',
+        method: 'POST',
+        processData: false,
+        contentType: false,
+        data: formData,
+        success: function(resp){
+            console.log('✅ SUCCESS:', resp);
+            $btn.prop('disabled', false).text('Register');
+            if(resp.success){
+                $('#registerSuccess').html('<div class="alert alert-success">'+resp.message+'</div>');
+                setTimeout(() => {
+                    window.location.href = resp.redirect || '/';
+                }, 1000);
+            } else {
+                $('#registerSuccess').html('<div class="alert alert-danger">Registration Failed</div>');
+            }
+        },
+        error: function(xhr){
+            console.group('❌ AJAX Error');
+            console.log('Status:', xhr.status);
+            console.log('Response:', xhr.responseJSON);
+            console.groupEnd();
+
+            $btn.prop('disabled', false).text('Register');
+
+            if(xhr.responseJSON && xhr.responseJSON.errors){
+                $.each(xhr.responseJSON.errors, function(key, val){
+                    const $errorElement = $('[data-error-for="'+key+'"]');
+                    if ($errorElement.length) {
+                        $errorElement.text(val[0]);
+                    } else {
+                        // Fallback - show in success area
+                        $('#registerSuccess').html('<div class="alert alert-danger">'+val[0]+'</div>');
+                    }
+                });
+            } else if(xhr.responseJSON && xhr.responseJSON.message){
+                $('#registerSuccess').html('<div class="alert alert-danger">'+xhr.responseJSON.message+'</div>');
+            } else {
+                $('#registerSuccess').html('<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>');
+            }
+        }
+    });
+});

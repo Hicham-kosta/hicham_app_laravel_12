@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\FilterValueController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -20,6 +21,7 @@ use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Front\ProductController as ProductFrontController;
 use App\Http\Controllers\Front\CouponController as CouponFrontController;
+use App\Http\Controllers\Front\AuthController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -150,6 +152,10 @@ Route::prefix('admin')->group(function () {
       Route::resource('coupons', CouponController::class);
       Route::post('update-coupon-status', [CouponController::class, 'updateCouponStatus']);
 
+      // Users
+      Route::get('users', [UserController::class, 'index'])->name('users.index');
+      Route::post('update-user-status', [UserController::class, 'updateUserStatus']);
+
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
 
@@ -208,6 +214,14 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     // Remove Coupon
     Route::post('/cart/remove-coupon', [CouponFrontController::class, 'remove'])->name('cart.remove.coupon');
+
+    Route::prefix('user')->name('user.')->group(function () {
+    Route::get('login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('login', [AuthController::class, 'login'])->name('login.post');
+    Route::get('register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('register', [AuthController::class, 'register'])->name('register.post');
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+  });
 
 });
 

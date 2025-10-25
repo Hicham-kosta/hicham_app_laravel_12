@@ -73,7 +73,7 @@
                                 </ul>
                             </li>
                             <li class="nav-item" {{in_array(Session::get('page'), ['categories', 'brands', 
-                                'products', 'filters', 'banners']) ? 'menu-open' : ''}}>
+                                'products', 'filters', 'banners', 'coupons']) ? 'menu-open' : ''}}>
                                 <a href="#" class="nav-link {{in_array(Session::get('page'), ['categories', 'brands', 
                                 'products', 'filters', 'banners']) ? 'active' : ''}}">
                                 <i class="nav-icon bi bi-clipboard-fill"></i>
@@ -117,6 +117,20 @@
                                         'banners'? 'active' : '')}}">
                                             <i class="nav-icon bi bi-circle"></i>
                                             <p>Banners</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{url('admin/coupons')}}" class="nav-link {{(Session::get('page')== 
+                                        'banners'? 'active' : '')}}">
+                                            <i class="nav-icon bi bi-circle"></i>
+                                            <p>Coupons</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{url('admin/users')}}" class="nav-link {{(Session::get('page')== 
+                                        'banners'? 'active' : '')}}">
+                                            <i class="nav-icon bi bi-circle"></i>
+                                            <p>Users</p>
                                         </a>
                                     </li>
                                 </ul>

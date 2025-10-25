@@ -317,6 +317,12 @@
                 hiddenCols: @json($couponsHiddenCols ?? []),
                 tableName: "coupons"
               },
+              {
+                id: "users",
+                savedOrder: @json($couponsSavedOrder ?? null),
+                hiddenCols: @json($couponsHiddenCols ?? []),
+                tableName: "users"
+              },
             ];
             tablesConfig.forEach(config => {
               const tableElement = $("#" + config.id);

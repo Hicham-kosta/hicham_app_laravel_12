@@ -21,6 +21,17 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'user_type',
+        'status',
+        'address_line1',
+        'address_line2',
+        'city',
+        'county',
+        'postcode',
+        'country',
+        'phone',
+        'company',
+        'is_admin',
     ];
 
     /**
@@ -43,6 +54,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => 'boolean',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isActive(): bool
+    {
+        return (bool )$this->status;
     }
 }
