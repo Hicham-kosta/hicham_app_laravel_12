@@ -128,9 +128,9 @@
                     <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
                         <h6 class="text-truncate mb-3">{{$product['product_name']}}</h6>
                     <div class="d-flex justify-content-center">
-                            <h6>₹{{$product['final_price']}}</h6>
+                            <h6>{{$product['final_price']}}</h6>
                             @if($product['product_discount'] > 0)
-                            <h6 class="text-muted ml-2"><del>₹1{{$product['product_price']}}</del></h6>
+                            <h6 class="text-muted ml-2"><del>{{$product['product_price']}}</del></h6>
                             @endif
                         </div>
                     </div>

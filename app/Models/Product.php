@@ -50,6 +50,7 @@ class Product extends Model
    }
 
    public static function getAttributePrice($product_id, $size){
+    // 1- Attribute row for this size
       $attribute = ProductsAttribute::where([
         'product_id' => $product_id,
         'size'       => $size,
@@ -59,12 +60,16 @@ class Product extends Model
           return ['status' => false];
       }
       $basePrice = (float)$attribute->price;
+
+      // 2- load product (MySQL: id)
       $product = self::select('id', 'category_id', 'brand_id', 'product_discount')
                     ->where('id', $product_id)
                     ->first();
       if(!$product){
         return ['status' => false];
       }
+
+      // 3- Applicable discounts (product > category > brand)
       $productDisc = (float)($product->product_discount ?? 0);
       $categoryDisc = 0;
       if($product->category_id){
@@ -73,6 +78,7 @@ class Product extends Model
       }
       $brandDisc = 0;
       if($product->brand_id){
+        // if your brands table doesn't have 'discount' this will just be 0
         $brand = Brand::select('discount')->find($product->brand_id);
         $brandDisc = (float)($brand->discount ?? 0);
       }
@@ -90,10 +96,16 @@ class Product extends Model
         $discountAmt = $basePrice - $final;
         return [
             'status' => true,
-            'product_price' => (int)$basePrice,
-            'final_price' => (int)$final,
+            'product_price' => (int)$basePrice, // numeric - base currency
+            'final_price' => (int)$final, // numeric - base currency
+            'discount' => (int)$discountAmt,
             'percent' => (int)$applied,
-            'discount' => (int)$discountAmt
+            // Formatted strings for display (int current selected currency)
+            'product_price_formatted' => formatCurrency($basePrice),
+            'final_price_formatted' => formatCurrency($final),
+            // cCurrencience fields (old keys kept for backward compatibility)
+            'product_price_display' => formatCurrency($basePrice),
+            'final_price_display' => formatCurrency($final)  
         ];
    }
 

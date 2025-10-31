@@ -15,6 +15,26 @@ $totalCartItems = totalCartItems();
                     <a class="text-dark" href="#">Help</a>
                     <span class="text-muted px-2">|</span>
                     <a class="text-dark" href="#">Support</a>
+                    <span class="text-muted px-2">|</span>
+                    @php
+                      use App\Models\Currency;
+                      $currencies = Currency::where('status', 1)->get();
+                      $currentCurrency = getCurrentCurrency();
+                    @endphp
+                     <div class="currency-dropdown">
+                       <button id="current-currency-btn" class="btn btn-light">
+                        <img src="{{ asset('front/images/flags/' . $currentCurrency->flag) }}" alt="{{ $currentCurrency->code }}" style="height:16px;">
+                        {{ $currentCurrency->code }}
+                       </button>
+                       <ul id="currency-list" class="dropdown-menu">
+                         @foreach($currencies as $currency)
+                           <li class="currency-item" data-code="{{ $currency->code }}">
+                           <img src="{{ asset('front/images/flags/' . $currency->flag) }}" alt="{{ $currency->code }}" style="height:16px;">
+                             {{ $currency->symbol }} {{ $currency->code }}
+                           </li>
+                         @endforeach
+                      </ul>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-6 text-center text-lg-right">
@@ -214,3 +234,4 @@ $totalCartItems = totalCartItems();
         </div>
     </div>
     <!-- Navbar End -->
+     

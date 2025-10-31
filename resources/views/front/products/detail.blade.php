@@ -119,11 +119,11 @@
                 </div>
                  {{-- Price block --}}
                   <h3 class="font-weight-semi-bold mb-4 getAttributePrice">
-                    @if($pricing['has_discount'])
-                      <span class="text-danger final-price">${{$pricing['final_price']}} </span>
-                      <del class="text-muted original-price"> ${{$pricing['base_price']}}</del>
+                    @if(!empty($pricing['has_discount']) && $pricing['has_discount'])
+                      <span class="text-danger final-price">{!! formatCurrency($pricing['final_price']) !!} </span>
+                      <del class="text-muted original-price"> {!! formatCurrency($pricing['base_price']) !!}</del>
                     @else
-                      <span class="final-price">${{$pricing['base_price']}}</span>
+                      <span class="final-price">{!! formatCurrency($pricing['base_price']) !!}</span>
                     @endif
                   </h3>
                  @if(!empty($product->description))

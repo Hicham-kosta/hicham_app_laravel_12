@@ -436,9 +436,4 @@ $(document).on('click', '#deleteSizeChartImage', function(){
       if(!$sel.length) return;
       $sel.val([]).trigger('change');
     });
-    });
-
-
-
-
-
+});

@@ -29,20 +29,26 @@ $(document).on("change", ".getPrice", function() {
         type: 'POST',
         data: {size: size, product_id: product_id, _token: $('meta[name="csrf-token"]').attr('content')},
         success: function(resp) {
-            if(!resp || resp.status === false){
-                return;
-            }
-            if(resp.discount > 0){
+            if(!resp || resp.status === false) return;
+            var finalFormatted = resp.final_price_formatted || resp.final_price_display || '';
+            var baseFormatted = resp.product_price_formatted || resp.product_price_display || '';
+            if(!finalFormatted && typeof resp.final_price !== 'undefined') finalFormatted = Number(resp.final_price).toFixed(2);
+            if(!baseFormatted && typeof resp.product_price !== 'undefined') baseFormatted = Number(resp.product_price).toFixed(2);
+            if(resp.discount > 0 || (resp.percent && Number(resp.percent) > 0)){
                 $(".getAttributePrice").html(
-                    "<span class='text-danger final-price'> $"+ resp.final_price +" </span>" +
-                    "<del class='text-muted original-price'> $"+ resp.product_price +" </del>"
+                    "<span class='text-danger final-price'> "+ finalFormatted +" </span>" +
+                    "<del class='text-muted original-price'> "+ baseFormatted +" </del>"
                 );
             }else{
                 $(".getAttributePrice").html(
-                    "<span class='final-price'>$"+ resp.final_price +"</span>"
+                    "<span class='final-price'>$"+ finalFormatted +"</span>"
                 );
             }
-        }  
+            if(resp.final_price_formatted)$('mini-price').text(resp.final_price_formatted);
+        },
+        error: function(xhr, status, err){
+          console.error('Error fetching price: ', err || status);
+        }
     });
 });
 
@@ -337,3 +343,47 @@ $(document).on('submit', '#registerForm', function(e){
         }
     });
 });
+
+// Currency Switcher
+(function(){
+  function getCsrfToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+  }
+  var btn = document.getElementById('current-currency-btn'),
+  list = document.getElementById('currency-list');
+  if(!btn || !list) return;
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    list.classList.toggle('show'); });
+    document.addEventListener('click', function(){
+      list.classList.remove('show'); });
+      list.addEventListener('click', function(e){
+        e.stopPropagation(); });
+        var switchUrl = (window.appConfig && window.appConfig.switchCurrencyUrl) ? window.appConfig.switchCurrencyUrl 
+        : '/currency/switch';
+        var csrfToken = getCsrfToken();
+        document.querySelectorAll('.currency-item').forEach(function(el){
+          el.addEventListener('click', function(){
+            var code = this.getAttribute('data-code');
+            if(!code) return;
+            fetch(switchUrl, {
+              method: 'POST', credentials: 'same-origin',
+              headers: {
+                'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'
+              },
+              body: JSON.stringify({code: code})
+            }).then(function(res){
+              return res.json().catch(function(){ return {}; 
+              });
+            }).then(function(resp){
+              if(resp && resp.status === 'success') location.reload();
+              else alert(resp.message || 'Something went wrong, please try again later.');
+            }).catch(function(err){
+              console.error(err);
+              alert('Network error');
+            });
+          });
+        });
+})();
+

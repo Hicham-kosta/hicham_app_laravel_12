@@ -133,6 +133,13 @@
                                             <p>Users</p>
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a href="{{url('admin/currencies')}}" class="nav-link {{(Session::get('page')== 
+                                        'banners'? 'active' : '')}}">
+                                            <i class="nav-icon bi bi-circle"></i>
+                                            <p>Currencies</p>
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>    
                         </ul>

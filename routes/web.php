@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cookie;
+use App\Models\Currency;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\AdminController;
@@ -12,6 +15,7 @@ use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\FilterValueController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -22,6 +26,7 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Front\ProductController as ProductFrontController;
 use App\Http\Controllers\Front\CouponController as CouponFrontController;
 use App\Http\Controllers\Front\AuthController;
+use App\Http\Controllers\Front\CurrencySwitchController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -156,6 +161,10 @@ Route::prefix('admin')->group(function () {
       Route::get('users', [UserController::class, 'index'])->name('users.index');
       Route::post('update-user-status', [UserController::class, 'updateUserStatus']);
 
+      // Currencies
+      Route::resource('currencies', CurrencyController::class);
+      Route::post('update-currency-status', [CurrencyController::class, 'updateCurrencyStatus']);
+
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
 
@@ -215,6 +224,8 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     // Remove Coupon
     Route::post('/cart/remove-coupon', [CouponFrontController::class, 'remove'])->name('cart.remove.coupon');
 
+    Route::post('/currency/switch', [CurrencySwitchController::class, 'switch'])->name('currency.switch');
+
     Route::prefix('user')->name('user.')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.post');
@@ -222,6 +233,23 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('register.post');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
   });
+
+  Route::get('/debug-currency', function () {
+    $sessionCode = Session::get('currency_code');
+    $cookieCode = Cookie::get('currency_code');
+    $current = null;
+    try {
+        $current = getCurrentCurrency() ? getCurrentCurrency()->toArray() : null;
+    } catch (\Throwable $e) {
+        $current = 'getCurrentCurrency() error: '.$e->getMessage();
+    }
+    return response()->json([
+        'session' => $sessionCode,
+        'cookie' => $cookieCode,
+        'currentCurrency' => $current,
+        'format100' => function_exists('formatCurrency') ? formatCurrency(100) : 'formatCurrency() missing'
+    ]);
+});
 
 });
 

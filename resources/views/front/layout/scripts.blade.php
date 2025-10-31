@@ -41,3 +41,18 @@
             });
         });
         </script>
+<script>
+  // quick CSS toggle if you want simple show/hide without CSS file:
+  document.addEventListener('DOMContentLoaded', function () {
+    var list = document.getElementById('currency-list');
+    var btn = document.getElementById('current-currency-btn');
+    if (list && btn) {
+      // set style block/none via class .show used in JS
+      var style = document.createElement('style');
+      style.innerHTML = '#currency-list { display:none; position:absolute; background:#fff; border:1px solid #ddd; padding:0; } #currency-list.show { display:block; }';
+      document.head.appendChild(style);
+    }
+  });
+  // Optional: pass route to JS if using separate file:
+  window.appConfig = { switchCurrencyUrl: "{{ route('currency.switch') }}" };
+</script>

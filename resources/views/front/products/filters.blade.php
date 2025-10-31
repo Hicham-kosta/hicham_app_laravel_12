@@ -52,7 +52,7 @@
                              value="{{$price}}"
                              class="custom-control-input filterAjax"
                              {{ in_array($price, $selectedPrices) ? 'checked' : '' }}>
-                            <label class="custom-control-label" for="price{{$key}}">₹{{$price}}</label>
+                            <label class="custom-control-label" for="price{{$key}}">{{$price}}</label>
                         </div>
                       @endforeach
                 </div>

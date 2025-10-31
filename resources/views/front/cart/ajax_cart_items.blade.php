@@ -5,7 +5,7 @@
       <a class="ml-2" href="{{url($item['product_url'])}}">{{$item['product_name']}}</a>
           <div class="small text-muted">Size: {{$item['size']}}</div>
     </td>
-    <td class="align-middle">${{$item['unit_price']}}</td>
+    <td class="align-middle">${{formatCurrency($item['unit_price'])}}</td>
     <td class="align-middle">
        <div class="input-group-quantity mx-auto" style="width: 100px;">
          <div class="input-group-btn">
@@ -20,7 +20,7 @@
          </div> 
        </div>
     </td>
-    <td class="align-middle">${{$item['line_total']}}</td>
+    <td class="align-middle">${{formatCurrency($item['line_total'])}}</td>
     <td class="align-middle">
         <button type="button" class="btn btn-sm btn-primary removeCartItem" 
         data-cart-id="{{$item['cart_id']}}"><i class="fa fa-times"></i></button>

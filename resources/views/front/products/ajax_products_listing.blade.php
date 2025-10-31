@@ -68,9 +68,11 @@
                             <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
                                 <h6 class="text-truncate mb-3">{{$product['product_name']}}</h6>
                                 <div class="d-flex justify-content-center">
-                                    <h6>₹{{$product['final_price']}}</h6>
-                                    @if($product['product_discount'] > 0)
-                                       <h6 class="text-muted ml-2"><del>₹{{$product['product_price']}}</del></h6>
+                                    {{-- Final discounted price in selected currency --}}
+                                    <h6>{!! formatCurrency($product['final_price']) !!}</h6>
+                                    {{-- Show original price if discount applied --}}
+                                    @if(!empty($product['product_discount']) && $product['product_discount'] > 0)
+                                       <h6 class="text-muted ml-2"><del>{!! formatCurrency($product['product_price']) !!}</del></h6>
                                     @endif
                                 </div>
                             </div>

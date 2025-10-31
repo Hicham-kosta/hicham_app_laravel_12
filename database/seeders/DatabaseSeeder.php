@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BannersTableSeeder::class);
         $this->call(FiltersTableSeeder::class);
         $this->call(CouponSeeder::class);
+        $this->call(CurrenciesTableSeeder::class);
         
     }
 }

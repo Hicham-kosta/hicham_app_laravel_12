@@ -323,6 +323,12 @@
                 hiddenCols: @json($couponsHiddenCols ?? []),
                 tableName: "users"
               },
+              {
+                id: "currencies",
+                savedOrder: @json($couponsSavedOrder ?? null),
+                hiddenCols: @json($couponsHiddenCols ?? []),
+                tableName: "currencies"
+              },
             ];
             tablesConfig.forEach(config => {
               const tableElement = $("#" + config.id);
@@ -587,3 +593,8 @@
         });
       });
     </script>
+
+<script>
+  window.appConfig = window.appConfig || {};
+  window.appConfig.currencySwitchUrl = "{{ route('currency.switch') }}";
+</script>
