@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\FilterValueController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CurrencyController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -27,6 +28,7 @@ use App\Http\Controllers\Front\ProductController as ProductFrontController;
 use App\Http\Controllers\Front\CouponController as CouponFrontController;
 use App\Http\Controllers\Front\AuthController;
 use App\Http\Controllers\Front\CurrencySwitchController;
+use App\Http\Controllers\Front\ReviewController as ReviewFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -165,6 +167,10 @@ Route::prefix('admin')->group(function () {
       Route::resource('currencies', CurrencyController::class);
       Route::post('update-currency-status', [CurrencyController::class, 'updateCurrencyStatus']);
 
+      // Reviews
+      Route::resource('reviews', ReviewController::class);
+      Route::post('/update-review-status', [ReviewController::class, 'updateReviewStatus'])->name('admin.updateReviewStatus');
+
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
 
@@ -225,13 +231,27 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('/cart/remove-coupon', [CouponFrontController::class, 'remove'])->name('cart.remove.coupon');
 
     Route::post('/currency/switch', [CurrencySwitchController::class, 'switch'])->name('currency.switch');
-
+    
+    // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     Route::prefix('user')->name('user.')->group(function () {
+
+    // Routes only accessible for guests
+    Route::middleware('guest')->group(function () {
+       
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.post');
     Route::get('register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('register', [AuthController::class, 'register'])->name('register.post');
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+    });
+    
+      // Routes only accessible for auth users
+      Route::middleware('auth')->group(function (){
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+  });
+});
+
+  Route::middleware('auth')->group(function () {
+    Route::post('/product-review', [ReviewFrontController::class, 'store'])->name('product.review.store');
   });
 
   Route::get('/debug-currency', function () {
@@ -250,7 +270,6 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
         'format100' => function_exists('formatCurrency') ? formatCurrency(100) : 'formatCurrency() missing'
     ]);
 });
-
 });
 
 

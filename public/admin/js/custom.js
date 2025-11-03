@@ -267,6 +267,43 @@ $(document).on("click", '.updateBrandStatus', function(){
     });
 });
 
+$(document).on("click", '.updateReviewStatus', function(){
+    console.log('Status toggle clicked');
+    var status = $(this).find('i').data('status');
+    var review_id = $(this).data('review-id');
+    var iconElement = $(this).find('i');
+    console.log('Current status:', status);
+    console.log('Review ID:', review_id);
+
+    $.ajax({
+        type: 'post',
+        url: '/admin/update-review-status',
+        data: {
+            status: status,
+            review_id: review_id
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(resp){
+            // Update the icon and data attributes based on the new status
+            if(resp.status == 1) {
+                iconElement.removeClass('fa-toggle-off').addClass('fa-toggle-on');
+                iconElement.css('color', '#3f6ed3');
+                iconElement.data('status', 'Active');
+            } else {
+                iconElement.removeClass('fa-toggle-on').addClass('fa-toggle-off');
+                iconElement.css('color', 'grey');
+                iconElement.data('status', 'Inactive');
+            }
+        },
+        error: function(){
+            alert('Error updating review status');
+        }
+    });
+});
+
+
 
 $(document).on('click', '#deleteCategoryImage', function(){
 

@@ -2,7 +2,7 @@
 @section('content')
 
 <style>
-    color-swatch {
+    .color-swatch {
         display: inline-block;
         width: 24px;
         height: 24px;
@@ -11,7 +11,7 @@
         cursor: pointer;
         border: 2px solid transparent;
     }
-    color-swatch.active {
+    .color-swatch.active {
         border-color: 2px solid #000; /* Highlight active swatch */
         cursor: default;
         pointer-events: none; /* Disable click on active swatch */
@@ -74,6 +74,11 @@
                     if (empty($images)) {
                     $images[] = $fallbackImage;
                     }
+
+                    // Approuved reviews count and average
+                    $approuvedReviewsQuery = $product->reviews()->where('status', 1);
+                    $approuvedCount = $approuvedReviewsQuery->count();
+                    $averageRating = $approuvedCount ? round($approuvedReviewsQuery->avg('rating'), 1) : 0;
                    @endphp
 
                    @foreach($images as $key => $img)
@@ -107,16 +112,19 @@
                 @csrf
                 <input type="hidden" name="product_id" value="{{$product->id}}">
                  <h3 class="font-weight-semi-bold">{{$product->product_name}}</h3>
-                  <div class="d-flex mb-3">
-                    <div class="text-primary mr-2">
-                        <small class="fas fa-star"></small>
-                        <small class="fas fa-star"></small>
-                        <small class="fas fa-star"></small>
-                        <small class="fas fa-star-half-alt"></small>
-                        <small class="far fa-star"></small>
+                  <div class="d-flex mb-3 align-items-center">
+                    <div class="product-stars text-primary mr-2">
+                        @for($i = 1; $i <= 5; $i++)
+                          @if($i <= floor($averageRating))
+                            <small class="fa fa-star"></small>
+                            @else(i == ceil($averageRating) && $averageRating - floor($averageRating) >= 0.5)
+                               <small class="fa fa-star-half-alt"></small>
+                               
+                          @endif
+                        @endfor
                     </div>
-                    <small class="pt-1">(10 Reviews)</small>
-                </div>
+                    <small class="pt-1">({{$approuvedCount}} Reviews)</small>
+                  </div>
                  {{-- Price block --}}
                   <h3 class="font-weight-semi-bold mb-4 getAttributePrice">
                     @if(!empty($pricing['has_discount']) && $pricing['has_discount'])
@@ -224,7 +232,7 @@
                 <div class="nav nav-tabs justify-content-center border-secondary mb-4">
                     <a class="nav-item nav-link active" data-toggle="tab" href="#tab-pane-1">Description</a>
                     <a class="nav-item nav-link" data-toggle="tab" href="#tab-pane-2">Wash Care</a>
-                    <a class="nav-item nav-link" data-toggle="tab" href="#tab-pane-3">Reviews (0)</a>
+                    <a class="nav-item nav-link" data-toggle="tab" href="#tab-pane-3">Reviews ({{$approuvedCount}})</a>
                 </div>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-pane-1">
@@ -238,59 +246,103 @@
                     <div class="tab-pane fade" id="tab-pane-3">
                         <div class="row">
                             <div class="col-md-6">
-                                <h4 class="mb-4">1 review for "Product Name"</h4>
+                                <h4 class="mb-4">{{$approuvedCount}} Review(s) for "{{$product->product_name}}"</h4>
+                                @forelse($product->reviews()->where('status', 1)->latest()->get() as $review)
                                 <div class="media mb-4">
-                                    <img src="img/user.jpg" alt="Image" class="img-fluid mr-3 mt-1" style="width: 45px;">
+                                  @if(!empty($review->user->avatar))
+                                    <img src="{{$review->user && $review->user->avatar ? 
+                                    asset('storage/'.$review->user->avatar) : asset('assets/images/default-user.jpg')}}" 
+                                    alt="Image" class="img-fluid mr-3 mt-1" style="width: 45px;">
+                                  @endif  
                                     <div class="media-body">
-                                        <h6>Amit Gupta<small> - <i>01 July 2025</i></small></h6>
+                                        <h6>{{$review->user->name ?? 'Guest'}}<small> - <i>
+                                          {{$review->created_at->format('d M Y')}}</i></small></h6>
                                         <div class="text-primary mb-2">
-                                            <i class="fas fa-star"></i>
-                                            <i class="fas fa-star"></i>
-                                            <i class="fas fa-star"></i>
-                                            <i class="fas fa-star-half-alt"></i>
-                                            <i class="far fa-star"></i>
+                                            @for($i = 1; $i <= 5; $i++)
+                                              @if($i <= $review->rating)
+                                              <i class="fas fa-star"></i>
+                                              @else
+                                              <i class="far fa-star"></i>
+                                              @endif
+                                            @endfor
                                         </div>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                                        <p>{{$review->review}}.</p>
                                     </div>
                                 </div>
+                                @empty
+                                <p>No Review yet. Be the first to review this product!</p>
+                                @endforelse
                             </div>
                             <div class="col-md-6">
                                 <h4 class="mb-4">Leave a review</h4>
                                 <small>Your email address will not be published. Required fields are marked *</small>
-                                <div class="d-flex my-3">
-                                    <p class="mb-0 mr-2">Your Rating * :</p>
-                                    <div class="text-primary">
-                                        <i class="far fa-star"></i>
-                                        <i class="far fa-star"></i>
-                                        <i class="far fa-star"></i>
-                                        <i class="far fa-star"></i>
-                                        <i class="far fa-star"></i>
+                                {{-- Flash messages --}}
+                                @if(session('success_message'))
+                                <div class="alert alert-success mt-3">
+                                 {{session('success_message')}}
+                                </div>
+                                @endif
+                                @if(session('error_message'))
+                                <div class="alert alert-danger mt-3">
+                                  {{session('error_message')}}
+                                </div>
+                                @endif
+                                @auth
+                                  @php
+                                    $hasReviewed = $product->reviews()
+                                                    ->where('user_id', auth()->id())
+                                                    ->exists();
+                                  @endphp
+                                  @if($hasReviewed)
+                                    <div class="alert alert-info mt-3">
+                                      You have already reviewed this product. Thank you.
+                                    </div>
+                                    @else
+                                    <div class="d-flex my-3">
+                                      <p class="mb-0 mr-2">Your Rating * :</p>
+                                      <div id="star-rating" class="text-primary" style="font-size: 20px; cursor: pointer;">
+                                        <i class="far fa-star" data-value="1"></i>
+                                        <i class="far fa-star" data-value="2"></i>
+                                        <i class="far fa-star" data-value="3"></i>
+                                        <i class="far fa-star" data-value="4"></i>
+                                        <i class="far fa-star" data-value="5"></i>
                                     </div>
                                 </div>
-                                <form>
+                                <form id="reviewForm" action="{{ route('product.review.store') }}" method="POST">
+                                  @csrf
+                                  <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                  <input type="hidden" name="rating" id="ratingInput" value="0">
                                     <div class="form-group">
                                         <label for="message">Your Review *</label>
-                                        <textarea id="message" cols="30" rows="5" class="form-control"></textarea>
+                                        <textarea id="message" name="review" cols="30" rows="5" class="form-control" required></textarea>
                                     </div>
                                     <div class="form-group">
                                         <label for="name">Your Name *</label>
-                                        <input type="text" class="form-control" id="name">
+                                        <input type="text" class="form-control" id="name" value="{{auth()->user()->name}}" readonly>
                                     </div>
                                     <div class="form-group">
                                         <label for="email">Your Email *</label>
-                                        <input type="email" class="form-control" id="email">
+                                        <input type="email" class="form-control" id="email" value="{{auth()->user()->email}}" readonly>
                                     </div>
                                     <div class="form-group mb-0">
                                         <input type="submit" value="Leave Your Review" class="btn btn-primary px-3">
                                     </div>
                                 </form>
-                            </div>
+                                @endif
+                              @else
+                               <div class="alert alert-warning mt-3">Please <a href="{{url('user/login')}}">Login</a>
+                                to leave a review.
+                               </div>
+                               @endauth
+                           </div>
                         </div>
                     </div>
-                </div>
+                 </div>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
+     </div>
     <!-- Shop Detail End -->
 
     <!-- Products Start -->

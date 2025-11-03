@@ -32,6 +32,12 @@ class Product extends Model
         return $this->belongsToMany(FilterValue::class, 'product_filter_values', 'product_id', 'filter_value_id');
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class, 'product_id');
+    }
+
+
     public function toSearchableArray(){
         $categoryName = $this->category->name ?? null;
         return[
@@ -113,6 +119,16 @@ class Product extends Model
     public static function productStatus($product_id)
     {
         return self::where('id', $product_id)->value('status') ?? 0;
+    }
+
+    public function review()
+    {
+        return $this->hasMany(\App\Models\Review::class, 'product_id');
+    }
+
+    public function averageRating()
+    {
+        return (float)$this->reviews->where('status', 1)->avg('rating') ?? 0;
     }
 }
 

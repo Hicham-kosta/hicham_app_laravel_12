@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(FiltersTableSeeder::class);
         $this->call(CouponSeeder::class);
         $this->call(CurrenciesTableSeeder::class);
+        $this->call(ReviewSeeder::class);
         
     }
 }
