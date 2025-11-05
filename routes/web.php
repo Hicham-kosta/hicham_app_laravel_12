@@ -233,28 +233,28 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('/currency/switch', [CurrencySwitchController::class, 'switch'])->name('currency.switch');
     
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
-    Route::prefix('user')->name('user.')->group(function () {
-
-    // Routes only accessible for guests
+    // In your web.php routes file
+// User routes
+Route::prefix('user')->name('user.')->group(function () {
     Route::middleware('guest')->group(function () {
-       
-    Route::get('login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('login', [AuthController::class, 'login'])->name('login.post');
-    Route::get('register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('register', [AuthController::class, 'register'])->name('register.post');
+        Route::get('login', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('login', [AuthController::class, 'login'])->name('login.post');
+        Route::get('register', [AuthController::class, 'showRegister'])->name('register');
+        Route::post('register', [AuthController::class, 'register'])->name('register.post');
+        Route::get('password/forgot', [AuthController::class, 'showForgotForm'])->name('password.forgot');
+        Route::post('password/forgot', [AuthController::class, 'sendResetLink'])->name('password.forgot.post');
     });
-    
-      // Routes only accessible for auth users
-      Route::middleware('auth')->group(function (){
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-  });
 });
 
-  Route::middleware('auth')->group(function () {
-    Route::post('/product-review', [ReviewFrontController::class, 'store'])->name('product.review.store');
-  });
+// Password reset routes (using Laravel's default names)
+Route::get('user/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('user/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
 
-  Route::get('/debug-currency', function () {
+// Auth routes
+Route::middleware('auth')->group(function (){
+    Route::post('user/logout', [AuthController::class, 'logout'])->name('user.logout');
+});
+   Route::get('/debug-currency', function () {
     $sessionCode = Session::get('currency_code');
     $cookieCode = Cookie::get('currency_code');
     $current = null;

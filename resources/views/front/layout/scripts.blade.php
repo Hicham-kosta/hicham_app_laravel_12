@@ -56,3 +56,12 @@
   // Optional: pass route to JS if using separate file:
   window.appConfig = { switchCurrencyUrl: "{{ route('currency.switch') }}" };
 </script>
+<script>
+  window.App = {
+    csrfToken: "{{ csrf_token() }}",
+    routes: {
+        forgotPost: "{{ route('user.password.forgot.post') }}",
+        resetPost: "{{ route('password.update') }}", // Use Laravel's default name
+    }
+};
+</script>

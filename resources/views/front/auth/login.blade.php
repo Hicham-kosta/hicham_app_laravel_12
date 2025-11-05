@@ -81,6 +81,11 @@
               </button>
             </div>
           </form>
+          {{-- Forgot Password Link --}}
+          <div class="text-center mt-3">
+            <a href="{{ route('user.password.forgot.post') }}" class="text-decoration-none d-block mb-2">
+              Forgot your password?
+            </a>
 
           <div class="text-center mt-3">
             <a href="{{ route('user.register') }}" class="text-decoration-none">

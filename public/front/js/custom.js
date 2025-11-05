@@ -510,3 +510,183 @@ $(document).on('submit', '#registerForm', function(e){
     }
   }); // DOMContentLoaded
 })();
+
+(async function(){
+  'use strict';
+  
+  function getCsrfToken() {
+    if(window.App && window.App.csrfToken) return window.App.csrfToken;
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+  }
+  const csrfToken = getCsrfToken();
+  
+  function showAlert(containerId, html){
+    const el = document.getElementById(containerId);
+    if(el) el.innerHTML = html;
+  }
+  
+  function clearFieldsErrors(){
+    document.querySelectorAll('[data-error-for]').forEach(el => el.innerText = '');
+  }
+  
+  function displayFieldErrors(errors){
+    for(const key in errors){
+      const el = document.querySelector('[data-error-for="'+key+'"]');
+      if(el) el.innerText = errors[key][0];
+    }
+  }
+  
+  async function handleFetch(fetchPromise, btn, originalText, successCallback){
+    try{
+      const res = await fetchPromise;
+      btn.disabled = false;
+      btn.innerText = originalText;
+      
+      console.log('Response status:', res.status); // Debug log
+      
+      // Try to parse response as JSON
+      let json;
+      try {
+        const text = await res.text();
+        json = text ? JSON.parse(text) : {};
+        console.log('Response data:', json); // Debug log
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        showAlert('forgotSuccess', '<div class="alert alert-danger">Invalid response from server.</div>');
+        return;
+      }
+      
+      if(res.ok){
+        if(successCallback) successCallback(json);
+        return;
+      }
+      
+      if(res.status === 422){
+        displayFieldErrors(json.errors || {});
+        return;
+      }
+      
+      // Show specific error message from server if available
+      const errorMessage = json.message || json.error || 'An error occurred. Please try again.';
+      showAlert('forgotSuccess', '<div class="alert alert-danger">' + errorMessage + '</div>');
+      
+    }catch(err){
+      btn.disabled = false;
+      btn.innerText = originalText;
+      console.error('Network error:', err);
+      showAlert('forgotSuccess', '<div class="alert alert-danger">Network error. Please check your connection.</div>');
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', function(){
+    const csrfToken = getCsrfToken();
+    
+    // Forgot Form
+    const forgotForm = document.getElementById('forgotForm');
+    if(forgotForm) {
+      const forgotBtn = document.getElementById('forgotBtn');
+      forgotForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        clearFieldsErrors();
+        showAlert('forgotSuccess', '');
+        
+        if(!forgotBtn) {
+          console.error('Forgot button not found!');
+          return;
+        }
+        
+        const originalText = forgotBtn.innerText;
+        forgotBtn.disabled = true;
+        forgotBtn.innerText = 'Sending...';
+        
+        const email = forgotForm.email ? forgotForm.email.value : '';
+        const url = window.App && window.App.routes && window.App.routes.forgotPost 
+          ? window.App.routes.forgotPost 
+          : '/user/password/forgot';
+        
+        console.log('Sending request to:', url, 'with email:', email);
+        
+        const fetchPromise = fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': csrfToken, 
+            'Accept': 'application/json', 
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({email: email}),
+        });
+        
+        handleFetch(fetchPromise, forgotBtn, originalText, function(json) {
+          const message = json.message || 'Reset link sent.';
+          showAlert('forgotSuccess', '<div class="alert alert-success">' + message + '</div>');
+          // Clear form on success
+          forgotForm.reset();
+        });
+      });
+    }
+  });
+  // In your reset form event listener, add this:
+// Fixed Reset Form Handler
+// Fixed Reset Form Handler with better error handling
+const resetForm = document.getElementById('resetForm');
+if (resetForm) {
+  const resetBtn = document.getElementById('resetBtn');
+  resetForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    console.log('Reset form submitted');
+
+    clearFieldsErrors();
+    showAlert('resetSuccess', '');
+
+    if (!resetBtn) {
+      console.error('Reset button not found!');
+      return;
+    }
+
+    const originalText = resetBtn.innerText;
+    resetBtn.disabled = true;
+    resetBtn.innerText = 'Resetting...';
+
+    // Collect form data
+    const formData = new FormData(resetForm);
+    const payload = {
+      token: formData.get('token') || '',
+      email: formData.get('email') || '',
+      password: formData.get('password') || '',
+      password_confirmation: formData.get('password_confirmation') || '',
+    };
+
+    console.log('Sending reset payload:', payload);
+
+    const resetUrl = window.App?.resetUrl || '/user/password/reset';
+    const csrfToken = window.App?.csrfToken || getCsrfToken();
+
+    const fetchPromise = fetch(resetUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    handleFetch(fetchPromise, resetBtn, originalText, function(json) {
+      console.log('Reset successful:', json);
+      showAlert('resetSuccess', '<div class="alert alert-success">' + (json.message || 'Password reset successfully.') + '</div>');
+      
+      // Clear form on success
+      resetForm.reset();
+      
+      if (json.redirect) {
+        console.log('Redirecting to:', json.redirect);
+        setTimeout(() => {
+          window.location.href = json.redirect;
+        }, 1500);
+      }
+    });
+  });
+}
+})();
