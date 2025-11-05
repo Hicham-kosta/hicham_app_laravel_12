@@ -129,8 +129,8 @@ class AuthController extends Controller
      * Handle reset password POST
      */
 
-public function resetPassword(ResetPasswordRequest $request)
-{
+    public function resetPassword(ResetPasswordRequest $request)
+     {
     try {
         Log::info('Password reset attempt for email: ' . $request->email);
         Log::info('Token received: ' . $request->token);
@@ -169,8 +169,8 @@ public function resetPassword(ResetPasswordRequest $request)
             'success' => false,
             'message' => 'An error occurred during password reset.',
         ], 500);
+      }
     }
-}
 
     public function logout(Request $request)
     {

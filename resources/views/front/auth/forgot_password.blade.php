@@ -1,28 +1,133 @@
 @extends('front.layout.layout')
 @section('content')
-  <!-- Page Header ... same as other pages -->
-   <div class="containe-fluid mt-2">
-      <div class="text-center mb-4">
-        <h2 class="section-title px-5"><span class="px-2">Reset Your Password</span></h2>
-      </div>
-      <div class="row px-xl-5 justify-content-center">
-        <div class="col-lg-5 mb-5">
-            <div class="contact-form">
-               <div id="forgotSuccess"></div>
-                 <form name="forgotForm" id="forgotForm" novalidate>
-                    @csrf
-                    <div class="control-group mb-3">
-                        <input type="email" class="form-control" name="email" id="forgotEmail" 
-                        placeholder="Enter your account Email" required />
-                        <p class="help-block text-danger" data-error-for="email"></p>
-                    </div>
-                    <div>
-                        <button class="btn btn-primary py-2 px-4" type="submit" id="forgotBtn">Send Reset Link</button>
-                    </div>
-                 </form>
-                 <p class="mt-3">Remembered your password? <a href="{{ route('user.login') }}">Back to Login</a></p>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-lg rounded-4 border-0">
+        <div class="card-body p-4">
+          <h3 class="text-center mb-4">Reset Your Password</h3>
+          <p class="text-muted text-center mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+
+          {{-- Success/Error Messages --}}
+          <div id="forgotSuccess"></div>
+
+          <form name="forgotForm" id="forgotForm" novalidate>
+            @csrf
+
+            {{-- Email --}}
+            <div class="mb-4">
+              <label for="forgotEmail" class="form-label">Email Address</label>
+              <input 
+                type="email" 
+                id="forgotEmail" 
+                class="form-control" 
+                name="email" 
+                placeholder="Enter your account email" 
+                required
+              >
+              <small class="help-block text-danger" data-error-for="email"></small>
             </div>
+
+            {{-- Submit Button --}}
+            <div class="d-grid">
+              <button 
+                type="submit" 
+                id="forgotBtn" 
+                class="btn btn-primary btn-lg rounded-pill"
+              >
+                Send Reset Link
+              </button>
+            </div>
+          </form>
+
+          {{-- Back to Login Link --}}
+          <div class="text-center mt-4">
+            <a href="{{ route('user.login') }}" class="text-decoration-none">
+              <i class="fas fa-arrow-left me-2"></i>Back to Login
+            </a>
+          </div>
+
+          {{-- Additional Help --}}
+          <div class="text-center mt-3">
+            <small class="text-muted">
+              If you don't receive an email within a few minutes, please check your spam folder.
+            </small>
+          </div>
         </div>
       </div>
-   </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.card-body {
+  padding: 2.5rem !important;
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border: none;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.help-block {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.text-decoration-none {
+  color: #6c757d;
+  transition: color 0.3s ease;
+}
+
+.text-decoration-none:hover {
+  color: #007bff;
+}
+
+.alert {
+  border-radius: 12px;
+  border: none;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+  color: #721c24;
+}
+</style>
+
+{{-- Font Awesome for icons --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 @endsection
