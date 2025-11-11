@@ -274,67 +274,131 @@
                                 @endforelse
                             </div>
                             <div class="col-md-6">
-                                <h4 class="mb-4">Leave a review</h4>
-                                <small>Your email address will not be published. Required fields are marked *</small>
-                                {{-- Flash messages --}}
-                                @if(session('success_message'))
-                                <div class="alert alert-success mt-3">
-                                 {{session('success_message')}}
-                                </div>
-                                @endif
-                                @if(session('error_message'))
-                                <div class="alert alert-danger mt-3">
-                                  {{session('error_message')}}
-                                </div>
-                                @endif
-                                @auth
-                                  @php
-                                    $hasReviewed = $product->reviews()
-                                                    ->where('user_id', auth()->id())
-                                                    ->exists();
-                                  @endphp
-                                  @if($hasReviewed)
-                                    <div class="alert alert-info mt-3">
-                                      You have already reviewed this product. Thank you.
-                                    </div>
-                                    @else
-                                    <div class="d-flex my-3">
-                                      <p class="mb-0 mr-2">Your Rating * :</p>
-                                      <div id="star-rating" class="text-primary" style="font-size: 20px; cursor: pointer;">
-                                        <i class="far fa-star" data-value="1"></i>
-                                        <i class="far fa-star" data-value="2"></i>
-                                        <i class="far fa-star" data-value="3"></i>
-                                        <i class="far fa-star" data-value="4"></i>
-                                        <i class="far fa-star" data-value="5"></i>
-                                    </div>
-                                </div>
-                                <form id="reviewForm" action="{{ route('product.review.store') }}" method="POST">
-                                  @csrf
-                                  <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                  <input type="hidden" name="rating" id="ratingInput" value="0">
-                                    <div class="form-group">
-                                        <label for="message">Your Review *</label>
-                                        <textarea id="message" name="review" cols="30" rows="5" class="form-control" required></textarea>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="name">Your Name *</label>
-                                        <input type="text" class="form-control" id="name" value="{{auth()->user()->name}}" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="email">Your Email *</label>
-                                        <input type="email" class="form-control" id="email" value="{{auth()->user()->email}}" readonly>
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <input type="submit" value="Leave Your Review" class="btn btn-primary px-3">
-                                    </div>
-                                </form>
-                                @endif
-                              @else
-                               <div class="alert alert-warning mt-3">Please <a href="{{url('user/login')}}">Login</a>
-                                to leave a review.
-                               </div>
-                               @endauth
-                           </div>
+    <div class="card shadow-lg rounded-4 border-0">
+        <div class="card-body p-4">
+            <h4 class="text-center mb-3">Leave a Review</h4>
+            <p class="text-muted text-center mb-4">
+                <small>Your email address will not be published. Required fields are marked *</small>
+            </p>
+
+            {{-- Flash Messages --}}
+            @if(session('success_message'))
+                <div class="alert alert-success border-0 rounded-3 mt-3">
+                    <i class="fas fa-check-circle me-2"></i>{{ session('success_message') }}
+                </div>
+            @endif
+
+            @if(session('error_message'))
+                <div class="alert alert-danger border-0 rounded-3 mt-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error_message') }}
+                </div>
+            @endif
+
+            @auth
+                @php
+                    $hasReviewed = $product->reviews()
+                                    ->where('user_id', auth()->id())
+                                    ->exists();
+                @endphp
+
+                @if($hasReviewed)
+                    <div class="alert alert-info border-0 rounded-3 mt-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-3" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h6 class="mb-1">Review Submitted</h6>
+                                <p class="mb-0">You have already reviewed this product. Thank you for your feedback!</p>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    {{-- Star Rating --}}
+                    <div class="mb-4">
+                        <label class="form-label d-block mb-3">Your Rating <span class="text-danger">*</span></label>
+                        <div id="star-rating" class="star-container" style="font-size: 24px; cursor: pointer;">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="far fa-star rating-star" data-value="{{ $i }}" 
+                                   style="margin-right: 8px; transition: all 0.2s ease;"></i>
+                            @endfor
+                        </div>
+                        <div class="rating-feedback mt-2">
+                            <small class="text-muted" id="ratingText">Click on stars to rate</small>
+                        </div>
+                        <small class="help-block text-danger" data-error-for="rating"></small>
+                    </div>
+
+                    {{-- Review Form --}}
+                    <form id="reviewForm" action="{{ route('product.review.store') }}" method="POST" novalidate>
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="rating" id="ratingInput" value="0">
+
+                        {{-- Review Message --}}
+                        <div class="mb-4">
+                            <label for="message" class="form-label">Your Review <span class="text-danger">*</span></label>
+                            <textarea 
+                                id="message" 
+                                name="review" 
+                                cols="30" 
+                                rows="5" 
+                                class="form-control" 
+                                placeholder="Share your experience with this product..."
+                                required
+                            ></textarea>
+                            <small class="help-block text-danger" data-error-for="review"></small>
+                        </div>
+
+                        {{-- User Name --}}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Your Name <span class="text-danger">*</span></label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="name" 
+                                value="{{ auth()->user()->name }}" 
+                                readonly
+                            >
+                        </div>
+
+                        {{-- User Email --}}
+                        <div class="mb-4">
+                            <label for="email" class="form-label">Your Email <span class="text-danger">*</span></label>
+                            <input 
+                                type="email" 
+                                class="form-control" 
+                                id="email" 
+                                value="{{ auth()->user()->email }}" 
+                                readonly
+                            >
+                        </div>
+
+                        {{-- Submit Button --}}
+                        <div class="d-grid">
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary btn-lg rounded-pill"
+                            >
+                                <i class="fas fa-paper-plane me-2"></i>Submit Review
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            @else
+                {{-- Login Required Message --}}
+                <div class="alert alert-warning border-0 rounded-3 mt-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-3" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <h6 class="mb-1">Login Required</h6>
+                            <p class="mb-0">Please <a href="{{ url('user/login') }}" class="alert-link">login</a> to leave a review.</p>
+                        </div>
+                    </div>
+                </div>
+            @endauth
+        </div>
+    </div>
+</div>
+
                         </div>
                     </div>
                  </div>
@@ -403,5 +467,266 @@
         </div>
     </div>
     <!-- Products End -->
+     <style>
+.card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.card-body {
+    padding: 2.5rem !important;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #6c757d;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.help-block {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-link {
+    color: #0056b3;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.alert-link:hover {
+    color: #003d82;
+    text-decoration: underline;
+}
+
+.star-container {
+    display: flex;
+    align-items: center;
+}
+
+.rating-star {
+    transition: all 0.2s ease;
+    color: #ffc107;
+}
+
+.rating-star:hover {
+    transform: scale(1.2);
+}
+
+.rating-star.active {
+    color: #ffc107 !important;
+}
+
+.rating-star.fas {
+    color: #ffc107;
+}
+
+.rating-feedback {
+    min-height: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+    }
+    
+    .star-container {
+        justify-content: center;
+    }
+    
+    .alert {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Textarea specific styling */
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Form label styling */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Star rating functionality
+    const stars = document.querySelectorAll('.rating-star');
+    const ratingInput = document.getElementById('ratingInput');
+    const ratingText = document.getElementById('ratingText');
+    const reviewForm = document.getElementById('reviewForm');
+    
+    const ratingMessages = {
+        1: 'Poor - Very disappointed',
+        2: 'Fair - Could be better',
+        3: 'Good - Met expectations',
+        4: 'Very Good - Happy with purchase',
+        5: 'Excellent - Exceeded expectations!'
+    };
+    
+    // Initialize stars
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.getAttribute('data-value'));
+            ratingInput.value = rating;
+            
+            // Update star display
+            stars.forEach((s, index) => {
+                const starValue = parseInt(s.getAttribute('data-value'));
+                if (starValue <= rating) {
+                    s.classList.remove('far');
+                    s.classList.add('fas', 'active');
+                } else {
+                    s.classList.remove('fas', 'active');
+                    s.classList.add('far');
+                }
+            });
+            
+            // Update rating text
+            if (ratingText && ratingMessages[rating]) {
+                ratingText.textContent = ratingMessages[rating];
+                ratingText.className = 'text-success fw-bold';
+            }
+        });
+        
+        // Hover effects
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.getAttribute('data-value'));
+            stars.forEach((s, index) => {
+                const starValue = parseInt(s.getAttribute('data-value'));
+                if (starValue <= rating) {
+                    s.style.transform = 'scale(1.1)';
+                    s.style.color = '#ffc107';
+                }
+            });
+        });
+        
+        star.addEventListener('mouseleave', function() {
+            const currentRating = parseInt(ratingInput.value);
+            stars.forEach((s, index) => {
+                const starValue = parseInt(s.getAttribute('data-value'));
+                s.style.transform = 'scale(1)';
+                if (starValue > currentRating) {
+                    s.style.color = '#ffc107';
+                }
+            });
+        });
+    });
+    
+    // Form validation
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            const rating = parseInt(ratingInput.value);
+            const reviewText = document.getElementById('message').value.trim();
+            
+            if (rating === 0) {
+                e.preventDefault();
+                ratingText.textContent = 'Please select a rating before submitting';
+                ratingText.className = 'text-danger fw-bold';
+                
+                // Shake animation for stars
+                stars.forEach(star => {
+                    star.style.animation = 'shake 0.5s ease-in-out';
+                });
+                setTimeout(() => {
+                    stars.forEach(star => {
+                        star.style.animation = '';
+                    });
+                }, 500);
+                return false;
+            }
+            
+            if (!reviewText) {
+                e.preventDefault();
+                // You can add specific validation for review text here
+                return false;
+            }
+        });
+    }
+});
+
+// Shake animation for validation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+{{-- Font Awesome for icons --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 @endsection

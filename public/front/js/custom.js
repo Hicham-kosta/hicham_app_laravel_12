@@ -690,3 +690,615 @@ if (resetForm) {
   });
 }
 })();
+
+/*document.addEventListener('DOMContentLoaded', function() {
+    // Get elements with null checks
+    const accountForm = document.getElementById('accountForm');
+    const countrySelect = document.getElementById('country');
+    const countySelect = document.getElementById('county_select');
+    const countySelectWrapper = document.getElementById('county_select_wrapper');
+    const countyTextWrapper = document.getElementById('county_text_wrapper');
+    const countyTextInput = document.getElementById('county_text');
+    const postcodeInput = document.getElementById('postcode');
+    const postcodeLoader = document.getElementById('postcode_loader');
+    const saveBtn = document.getElementById('SaveBtn');
+    const accountSuccess = document.getElementById('accountSuccess');
+
+    // Check if all required elements exist
+    if (!accountForm || !countrySelect) {
+        console.error('Required form elements not found');
+        return;
+    }
+
+    // Set the form action to match your route
+    accountForm.action = '{{ route("user.account.update") }}';
+
+    // Initialize form state
+    function initializeForm() {
+        const selectedCountry = countrySelect.value;
+        toggleCountyFields(selectedCountry);
+    }
+
+    // Toggle between county dropdown and text input with null checks
+    function toggleCountyFields(country) {
+        if (!countySelectWrapper || !countyTextWrapper) {
+            console.warn('County wrapper elements not found');
+            return;
+        }
+
+        if (country === 'United States') {
+            countySelectWrapper.style.display = 'block';
+            countyTextWrapper.style.display = 'none';
+            
+            if (countySelect && countyTextInput) {
+                countySelect.disabled = false;
+                countyTextInput.disabled = true;
+            }
+        } else {
+            countySelectWrapper.style.display = 'none';
+            countyTextWrapper.style.display = 'block';
+            
+            if (countySelect && countyTextInput) {
+                countySelect.disabled = true;
+                countyTextInput.disabled = false;
+            }
+        }
+    }
+
+    // Country change handler
+    countrySelect.addEventListener('change', function() {
+        const selectedCountry = this.value;
+        toggleCountyFields(selectedCountry);
+    });
+
+    // Postcode lookup with debouncing
+    let postcodeTimeout;
+    if (postcodeInput && postcodeLoader) {
+        postcodeInput.addEventListener('input', function() {
+            const postcode = this.value.trim();
+            
+            clearTimeout(postcodeTimeout);
+            postcodeLoader.style.display = 'none';
+            
+            // Basic validation for UK postcodes
+            if (postcode.length >= 5 && /^[A-Za-z0-9 ]+$/.test(postcode)) {
+                postcodeLoader.style.display = 'block';
+                
+                postcodeTimeout = setTimeout(() => {
+                    lookupPostcode(postcode);
+                }, 800);
+            }
+        });
+    }
+
+    // Postcode lookup function
+    function lookupPostcode(postcode) {
+        // Use the correct route - fix the 404 error
+        const url = '{{ route("user.postcode.lookup", ["postcode" => "PLACEHOLDER"]) }}'.replace('PLACEHOLDER', encodeURIComponent(postcode));
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken()
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (postcodeLoader) postcodeLoader.style.display = 'none';
+            
+            if (data.success) {
+                // Auto-fill city
+                const cityInput = document.getElementById('city');
+                if (cityInput && (!cityInput.value || cityInput.value.trim() === '')) {
+                    cityInput.value = data.data.city || '';
+                }
+                
+                // Auto-fill county/state based on country
+                const selectedCountry = countrySelect.value;
+                if (selectedCountry === 'United States') {
+                    if (countySelect && data.data.state) {
+                        const stateName = data.data.state;
+                        const option = Array.from(countySelect.options).find(opt => 
+                            opt.value.toLowerCase() === stateName.toLowerCase() ||
+                            opt.text.toLowerCase() === stateName.toLowerCase()
+                        );
+                        if (option) {
+                            countySelect.value = option.value;
+                        } else {
+                            showMessage(`State "${stateName}" not found in list. Please select manually.`, 'warning');
+                        }
+                    }
+                } else {
+                    if (countyTextInput && (!countyTextInput.value || countyTextInput.value.trim() === '')) {
+                        countyTextInput.value = data.data.state || '';
+                    }
+                }
+                
+                showMessage('Postcode lookup successful! Address details auto-filled.', 'success');
+            } else {
+                showMessage('Postcode not found. Please enter address details manually.', 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Postcode lookup error:', error);
+            if (postcodeLoader) postcodeLoader.style.display = 'none';
+            showMessage('Postcode lookup service temporarily unavailable. Please enter details manually.', 'error');
+        });
+    }
+
+    // Form submission handler
+    accountForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Disable submit button and show loading state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        
+        // Clear previous messages
+        clearMessages();
+        
+        // Handle county field before submission
+        const selectedCountry = countrySelect.value;
+        if (selectedCountry === 'United States') {
+            // Remove text input from form data
+            if (countyTextInput) countyTextInput.disabled = true;
+        } else {
+            // Remove select from form data
+            if (countySelect) countySelect.disabled = true;
+        }
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        // Log for debugging
+        console.log('Submitting form data:', Object.fromEntries(formData));
+        
+        // Submit via AJAX
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: formData
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                showMessage('Account updated successfully!', 'success');
+                if (data.user) {
+                    updateFormFields(data.user);
+                }
+            } else {
+                if (data.errors) {
+                    displayFormErrors(data.errors);
+                } else {
+                    showMessage(data.message || 'Failed to update account.', 'error');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Update error:', error);
+            showMessage('An error occurred while updating your account. Please try again.', 'error');
+        })
+        .finally(() => {
+            // Re-enable all fields and submit button
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+            if (countySelect) countySelect.disabled = false;
+            if (countyTextInput) countyTextInput.disabled = false;
+        });
+    });
+
+    // Display form validation errors
+    function displayFormErrors(errors) {
+        // Clear previous errors
+        document.querySelectorAll('.help-block.text-danger').forEach(el => {
+            el.textContent = '';
+        });
+        
+        // Display new errors
+        Object.keys(errors).forEach(field => {
+            const errorElement = document.querySelector(`[data-error-for="${field}"]`);
+            if (errorElement) {
+                errorElement.textContent = errors[field][0];
+            }
+        });
+    }
+
+    // Show message to user
+    function showMessage(message, type = 'info') {
+        if (!accountSuccess) {
+            console.warn('Account success element not found');
+            return;
+        }
+        
+        // Remove any existing messages
+        const existingAlert = accountSuccess.querySelector('.alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        
+        accountSuccess.innerHTML = alertHtml;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                const alert = accountSuccess.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    }
+
+    // Clear all messages
+    function clearMessages() {
+        if (accountSuccess) {
+            accountSuccess.innerHTML = '';
+        }
+        document.querySelectorAll('.help-block.text-danger').forEach(el => {
+            el.textContent = '';
+        });
+    }
+
+    // Update form fields with server data
+    function updateFormFields(userData) {
+        Object.keys(userData).forEach(field => {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (input && userData[field] !== undefined) {
+                input.value = userData[field] || '';
+            }
+        });
+    }
+
+    // Get CSRF token
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    // Initialize the form
+    initializeForm();
+});
+
+// Add CSS for spinner animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .postcode-spinner {
+        animation: spin .8s linear infinite;
+    }
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+`;
+document.head.appendChild(style);*/
+// Simple, clean JavaScript without complex route handling
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Account form initialized');
+    
+    // Get elements
+    const accountForm = document.getElementById('accountForm');
+    const countrySelect = document.getElementById('country');
+    const countySelect = document.getElementById('county_select');
+    const countySelectWrapper = document.getElementById('county_select_wrapper');
+    const countyTextInput = document.getElementById('county_text');
+    const countyTextWrapper = document.getElementById('county_text_wrapper');
+    const postcodeInput = document.getElementById('postcode');
+    const postcodeLoader = document.getElementById('postcode_loader');
+    const saveBtn = document.getElementById('SaveBtn');
+    const accountSuccess = document.getElementById('accountSuccess');
+
+    // Check if elements exist
+    if (!accountForm || !countrySelect) {
+        console.error('Required form elements not found');
+        return;
+    }
+
+    // Set form URLs
+    const accountUpdateUrl = '/user/account';
+    const postcodeLookupBaseUrl = '/user/postcode-lookup/';
+
+    // Initialize form
+    function initializeForm() {
+        const selectedCountry = countrySelect.value;
+        console.log('Initial country:', selectedCountry);
+        toggleCountyFields(selectedCountry);
+    }
+
+    // Toggle county fields - SIMPLIFIED VERSION
+    function toggleCountyFields(country) {
+        console.log('Toggling county fields for:', country);
+        
+        if (!countySelectWrapper || !countyTextWrapper) return;
+        
+        if (country === 'United States') {
+            // Show dropdown, hide text input
+            countySelectWrapper.style.display = 'block';
+            countyTextWrapper.style.display = 'none';
+            
+            // Ensure dropdown has name attribute and text input doesn't
+            countySelect.setAttribute('name', 'county');
+            countyTextInput.removeAttribute('name');
+            
+            console.log('US mode - using dropdown');
+        } else {
+            // Show text input, hide dropdown
+            countySelectWrapper.style.display = 'none';
+            countyTextWrapper.style.display = 'block';
+            
+            // Ensure text input has name attribute and dropdown doesn't
+            countyTextInput.setAttribute('name', 'county');
+            countySelect.removeAttribute('name');
+            
+            console.log('Non-US mode - using text input');
+        }
+    }
+
+    // Country change handler
+    countrySelect.addEventListener('change', function() {
+        const selectedCountry = this.value;
+        console.log('Country changed to:', selectedCountry);
+        toggleCountyFields(selectedCountry);
+        
+        // Debug: log current field states
+        console.log('County select has name:', countySelect.hasAttribute('name'));
+        console.log('County text has name:', countyTextInput.hasAttribute('name'));
+    });
+
+    // Postcode lookup
+    let postcodeTimeout;
+    if (postcodeInput && postcodeLoader) {
+        postcodeInput.addEventListener('input', function() {
+            const postcode = this.value.trim();
+            
+            clearTimeout(postcodeTimeout);
+            if (postcodeLoader) postcodeLoader.style.display = 'none';
+            
+            if (postcode.length >= 3) {
+                if (postcodeLoader) postcodeLoader.style.display = 'block';
+                
+                postcodeTimeout = setTimeout(() => {
+                    lookupPostcode(postcode);
+                }, 800);
+            }
+        });
+    }
+
+    // Postcode lookup function
+    function lookupPostcode(postcode) {
+        if (!postcode) return;
+        
+        const url = postcodeLookupBaseUrl + encodeURIComponent(postcode);
+        console.log('Looking up postcode:', url);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Postcode response:', data);
+            if (postcodeLoader) postcodeLoader.style.display = 'none';
+            
+            if (data.success) {
+                // Auto-fill city
+                const cityInput = document.getElementById('city');
+                if (cityInput && !cityInput.value) {
+                    cityInput.value = data.data.city || '';
+                }
+                
+                // Auto-fill county/state based on current country
+                const selectedCountry = countrySelect.value;
+                if (selectedCountry === 'United States') {
+                    if (countySelect && data.data.state) {
+                        // For US, try to match the state from postcode data
+                        const stateName = data.data.state;
+                        const option = Array.from(countySelect.options).find(opt => 
+                            opt.value.toLowerCase().includes(stateName.toLowerCase()) ||
+                            opt.text.toLowerCase().includes(stateName.toLowerCase())
+                        );
+                        if (option) {
+                            countySelect.value = option.value;
+                        } else {
+                            // If no exact match, just set the value
+                            countySelect.value = stateName;
+                        }
+                        console.log('Set county select value to:', countySelect.value);
+                    }
+                } else {
+                    if (countyTextInput && data.data.state) {
+                        countyTextInput.value = data.data.state;
+                        console.log('Set county text value to:', countyTextInput.value);
+                    }
+                }
+                showMessage('Address details auto-filled!', 'success');
+            } else {
+                showMessage(data.message || 'Postcode not found', 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Postcode lookup failed:', error);
+            if (postcodeLoader) postcodeLoader.style.display = 'none';
+            showMessage('Using demo address data', 'info');
+        });
+    }
+
+    // Form submission with debug logging
+    accountForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Ensure fields are properly configured before submission
+        const selectedCountry = countrySelect.value;
+        toggleCountyFields(selectedCountry);
+        
+        const originalHtml = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+        
+        clearMessages();
+        
+        const formData = new FormData(this);
+        
+        // Debug: log what's being submitted
+        console.log('=== FORM SUBMISSION DEBUG ===');
+        console.log('Country:', countrySelect.value);
+        console.log('County select value:', countySelect.value);
+        console.log('County select has name:', countySelect.hasAttribute('name'));
+        console.log('County text value:', countyTextInput.value);
+        console.log('County text has name:', countyTextInput.hasAttribute('name'));
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+        console.log('=== END DEBUG ===');
+        
+        fetch(accountUpdateUrl, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: formData
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Form response:', data);
+            
+            if (data.success) {
+                showMessage('Account updated successfully!', 'success');
+                // Update form with server data
+                if (data.user) {
+                    updateFormFields(data.user);
+                }
+            } else {
+                if (data.errors) {
+                    displayFormErrors(data.errors);
+                    // Log validation errors
+                    console.log('Validation errors:', data.errors);
+                } else {
+                    showMessage(data.message || 'Update failed', 'error');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Form submission error:', error);
+            showMessage('Error saving changes. Please try again.', 'error');
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalHtml;
+        });
+    });
+
+    // Update form fields with server data
+    function updateFormFields(userData) {
+        Object.keys(userData).forEach(field => {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (input && userData[field] !== undefined) {
+                input.value = userData[field] || '';
+            }
+        });
+        // Re-initialize form after update
+        initializeForm();
+    }
+
+    // Display validation errors
+    function displayFormErrors(errors) {
+        document.querySelectorAll('.help-block.text-danger').forEach(el => {
+            el.textContent = '';
+        });
+        
+        Object.keys(errors).forEach(field => {
+            const errorElement = document.querySelector(`[data-error-for="${field}"]`);
+            if (errorElement) {
+                errorElement.textContent = errors[field][0];
+            }
+        });
+    }
+
+    // Show message
+    function showMessage(message, type = 'info') {
+        if (!accountSuccess) return;
+        
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        accountSuccess.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    // Clear messages
+    function clearMessages() {
+        if (accountSuccess) accountSuccess.innerHTML = '';
+        document.querySelectorAll('.help-block.text-danger').forEach(el => {
+            el.textContent = '';
+        });
+    }
+
+    // Initialize form
+    initializeForm();
+});
+
+

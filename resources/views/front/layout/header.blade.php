@@ -211,10 +211,11 @@ $totalCartItems = totalCartItems();
                            </span>
                           </a>
                         <div class="dropdown-menu dropdown-menu-right rounded-0 m-0">
-                          <a href="{{ url('/') }}" class="dropdown-item">Home</a>
-                          <a href="#" class="dropdown-item disabled">
+                          <a href="{{ url('user/account') }}" class="dropdown-item">My Account</a>
+                          <a href="{{ url('user/orders') }}" class="dropdown-item">My Orders</a>
+                          <!--<a href="#" class="dropdown-item disabled">
                             Role: {{ ucfirst(Auth::user()->user_type) }}
-                           </a>
+                           </a>-->
                           <form action="{{ route('user.logout') }}" method="POST" class="m-0">
                           @csrf
                             <button type="submit" class="dropdown-item text-danger">

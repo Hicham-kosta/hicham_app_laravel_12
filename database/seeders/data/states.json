@@ -1,0 +1,83 @@
+[
+    {
+        "country_id": "US",
+        "states": [
+            "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+            "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana",
+            "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts",
+            "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska",
+            "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York",
+            "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+            "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+            "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+            "Wisconsin", "Wyoming"
+        ]
+    },
+    {
+        "country_id": "MA",
+        "states": [
+            "Tanger-Tétouan-Al Hoceïma",
+            "L’Oriental",
+            "Fès-Meknès",
+            "Rabat-Salé-Kénitra",
+            "Béni Mellal-Khénifra",
+            "Casablanca-Settat",
+            "Marrakech-Safi",
+            "Drâa-Tafilalet",
+            "Souss-Massa",
+            "Guelmim-Oued Noun",
+            "Laâyoune-Sakia El Hamra",
+            "Dakhla-Oued Ed-Dahab"
+        ]
+    },
+    {
+        "country_id": "CA",
+        "states": [
+            "Alberta",
+            "British Columbia",
+            "Manitoba",
+            "New Brunswick",
+            "Newfoundland and Labrador",
+            "Nova Scotia",
+            "Ontario",
+            "Prince Edward Island",
+            "Quebec",
+            "Saskatchewan",
+            "Northwest Territories",
+            "Nunavut",
+            "Yukon"
+        ]
+    },
+    {
+        "country_id": "FR",
+        "states": [
+            "Auvergne-Rhône-Alpes",
+            "Bourgogne-Franche-Comté",
+            "Bretagne",
+            "Centre-Val de Loire",
+            "Corse",
+            "Grand Est",
+            "Hauts-de-France",
+            "Île-de-France",
+            "Normandie",
+            "Nouvelle-Aquitaine",
+            "Occitanie",
+            "Pays de la Loire",
+            "Provence-Alpes-Côte d’Azur",
+            "Guadeloupe",
+            "Martinique",
+            "Guyane",
+            "La Réunion",
+            "Mayotte"
+        ]
+    },
+    {
+        "country_id": "GB",
+        "states": [
+            "England",
+            "Scotland",
+            "Wales",
+            "Northern Ireland"
+        ]
+    }
+]

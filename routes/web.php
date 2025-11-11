@@ -14,9 +14,9 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\FilterValueController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -29,6 +29,8 @@ use App\Http\Controllers\Front\CouponController as CouponFrontController;
 use App\Http\Controllers\Front\AuthController;
 use App\Http\Controllers\Front\CurrencySwitchController;
 use App\Http\Controllers\Front\ReviewController as ReviewFrontController;
+use App\Http\Controllers\Front\AccountController;
+use App\Http\Controllers\Front\PostcodeLookupController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -235,7 +237,7 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     // In your web.php routes file
 // User routes
-Route::prefix('user')->name('user.')->group(function () {
+    Route::prefix('user')->name('user.')->group(function () {
     Route::middleware('guest')->group(function () {
         Route::get('login', [AuthController::class, 'showLogin'])->name('login');
         Route::post('login', [AuthController::class, 'login'])->name('login.post');
@@ -247,11 +249,16 @@ Route::prefix('user')->name('user.')->group(function () {
 });
 
 // Password reset routes (using Laravel's default names)
-Route::get('user/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
-Route::post('user/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
+   Route::get('user/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+   Route::post('user/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
 
 // Auth routes
-Route::middleware('auth')->group(function (){
+  Route::middleware('auth')->group(function (){
+    Route::post('/product/review', [ReviewFrontController::class, 'store'])->name('product.review.store');
+    Route::get('user/account', [AccountController::class, 'showAccount'])->name('user.account');
+    Route::post('user/account', [AccountController::class, 'updateAccount'])->name('user.account.update');
+    Route::get('user/postcode-lookup/{postcode}', [PostcodeLookupController::class, 'lookup'])->name('user.postcode.lookup');
+
     Route::post('user/logout', [AuthController::class, 'logout'])->name('user.logout');
 });
    Route::get('/debug-currency', function () {

@@ -47,4 +47,40 @@ class AuthService
         }
         return false;
     }
+    /**
+     * 
+     * Update user account details
+     * @param User $user
+     * @param array $data
+     * @return User
+     */
+
+    public function updateAccount(User $user, array $data): User
+{
+    // Prevent email change
+    if(isset($data['email'])){
+        unset($data['email']);
+    }
+    
+    // Debug: log what data is being received
+    \Log::info('Updating account with data:', $data);
+    
+    // Handle county field - don't unset it!
+    if(isset($data['county'])) {
+        // County is already in the correct format, just keep it
+        \Log::info('County value being saved:', ['county' => $data['county']]);
+    }
+    
+    // Remove any transient fields that shouldn't be saved
+    if(isset($data['county_text'])){
+        unset($data['county_text']);
+    }
+    
+    $user->fill($data);
+    $user->save();
+    
+    \Log::info('User after update:', $user->toArray());
+    
+    return $user;
+}
 }
