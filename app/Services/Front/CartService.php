@@ -8,6 +8,7 @@ use App\Models\ProductsAttribute;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\DB;
 
 class CartService
 {
@@ -275,5 +276,44 @@ class CartService
     }
     return $q;
  }
+
+ /**
+  * Move all guest cart rows to user cart upon login
+  * If same product+size exists, sum quantities
+  * Othewise just update user_id and clear session_id
+  */
+    public function migrateGuestCartToUser(?string $guestSessionId, ?int $userId): void
+    {
+        if(empty($guestSessionId) || empty($userId)){
+            return;
+        }
+
+        // Fetch guest cart items
+        $guestRows = Cart::where('session_id', $guestSessionId)->get();
+        if($guestRows->isEmpty()){
+            return;
+        }
+        DB::transaction(function() use ($guestRows, $userId){
+            foreach($guestRows as $row){
+                // Look for existing user cart item with same product+size
+                $existing = Cart::where('user_id', $userId)
+                ->whereNull('session_id')
+                ->where('product_id', $row->product_id)
+                ->where('product_size', $row->product_size)
+                ->first();
+                if($existing){
+                    // Merge quantities, delete guest row
+                    $existing->increment('product_qty', (int)$row->product_qty);
+                    $row->delete();
+                }else{
+                    // Reassign to user
+                    $row->update([
+                        'user_id' => $userId,
+                        'session_id' => null,
+                    ]);
+                }
+            }
+        });
+    }
 
 }

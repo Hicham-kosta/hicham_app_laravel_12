@@ -16,8 +16,10 @@ use App\Mail\UserRegistered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\CustomResetPassword;
+use App\Services\Front\CartService;
 
 class AuthController extends Controller
 {
@@ -41,6 +43,9 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $data = $request->validated();
+        // Capture guest session id BEFORE registration
+        $gustSessionId = Session::get('session_id') ?: $request->session()->getId();
+
         $user = $this->authService->registerUser($data);
 
         // tell static analyzer this is the App\Models\User instance
@@ -51,6 +56,9 @@ class AuthController extends Controller
         //Auto login
         Auth::login($user);
 
+        // Merge guest cart to user cart
+        app(CartService::class)->migrateGuestCartToUser($gustSessionId, Auth::id());
+        
         return response()->json([
             'success' => true,
             'message' => 'registered successfully.',
@@ -61,6 +69,9 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $data = $request->validated();
+        // Capture guest session cart before login
+        $gustSessionId = Session::get('session_id') ?: $request->session()->getId();
+
         $credentials = ['email' => $data['email'], 'password' => $data['password']];
         // Pre check if inactive return frendly error
         $user = \App\Models\User::where('email', $data['email'])->first();
@@ -71,7 +82,8 @@ class AuthController extends Controller
          ], 422);
        }
        if ($this->authService->attemptLogin($credentials, $request->boolean('remember'))) {
-           $request->session()->regenerate();
+              // Merge guest cart with user cart after login
+              app(CartService::class)->migrateGuestCartToUser($gustSessionId, Auth::id());
            return response()->json([
                'success' => true,
                'message' => 'logged in successfully.',
