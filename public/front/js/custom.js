@@ -1301,4 +1301,71 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeForm();
 });
 
+// Change Password
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('changePasswordForm');
+  const btn = document.getElementById('changePasswordBtn');
+  const box = document.getElementById('changePasswordSuccess');
 
+  function clearErrors() {
+    document.querySelectorAll('[data-error-for]').forEach(el => el.innerText = '');
+  }
+  
+  function showErrors(errors) {
+    for (const k in errors) {
+      const el = document.querySelector('[data-error-for="'+k+'"]');
+      if (el) el.innerText = errors[k][0];
+    }
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    clearErrors();
+    if(box) box.innerHTML = '';
+
+    btn.disabled = true;
+    btn.innerText = 'Please wait...';
+
+    const payload = {
+      current_password: (document.getElementById('current_password') || {}).value || '',
+      password: (document.getElementById('password') || {}).value || '',
+      password_confirmation: (document.getElementById('password_confirmation') || {}).value || '',
+    };
+    
+    fetch("/user/change-password", {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('input[name=_token]').value,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    })
+    .then(async res => {
+      btn.disabled = false;
+      btn.innerText = 'Change Password';
+
+      if(res.ok) {
+        const json = await res.json();
+        box.innerHTML = '<div class="alert alert-success">'+(json.message || 'Password changed successfully')+'</div>';
+        form.reset();
+        return;
+      }
+      if(res.status === 422) {
+        const json = await res.json();
+        showErrors(json.errors || {});
+        return;
+      }
+      const text = await res.text();
+      console.error(text);
+      box.innerHTML = '<div class="alert alert-danger">Error changing password. Please try again.</div>';
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerText = 'Change Password';
+      console.error(err);
+      box.innerHTML = '<div class="alert alert-danger">Server error. Please try again later.</div>';
+    });
+  });
+});

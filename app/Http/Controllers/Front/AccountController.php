@@ -6,6 +6,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Front\UpdateAccountRequest;
+use App\Http\Requests\Front\UpdatePasswordRequest;
 use App\Models\Country;
 use App\Models\State;
 use App\Services\Front\AuthService;
@@ -54,4 +55,25 @@ class AccountController extends BaseController
             ], 500);
         }
     }
+
+    // In your controller
+public function showChangePasswordForm()
+{
+    $user = Auth::user();
+    return view('front.auth.change_password', compact('user'));
+}
+
+public function changePassword(UpdatePasswordRequest $request)
+{
+    $user = Auth::user();
+    $this->authService->changePassword($user, $request->validated()['password']);
+    
+    if($request->wantsJson() || $request->ajax()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully'
+        ]);
+    }
+    return redirect()->route('user.change.password')->with('success', 'Password changed successfully');
+}
 }

@@ -213,6 +213,9 @@ $totalCartItems = totalCartItems();
                         <div class="dropdown-menu dropdown-menu-right rounded-0 m-0">
                           <a href="{{ url('user/account') }}" class="dropdown-item">My Account</a>
                           <a href="{{ url('user/orders') }}" class="dropdown-item">My Orders</a>
+                          <a class="dropdown-item" href="{{ url('user/change-password') }}">
+                            Change Password
+                           </a>
                           <!--<a href="#" class="dropdown-item disabled">
                             Role: {{ ucfirst(Auth::user()->user_type) }}
                            </a>-->

@@ -5,6 +5,8 @@ namespace App\Services\Front;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AuthService
 {
@@ -55,32 +57,43 @@ class AuthService
      * @return User
      */
 
-    public function updateAccount(User $user, array $data): User
-{
-    // Prevent email change
-    if(isset($data['email'])){
+      public function updateAccount(User $user, array $data): User
+      {
+      // Prevent email change
+      if(isset($data['email'])){
         unset($data['email']);
-    }
+       }
     
-    // Debug: log what data is being received
-    \Log::info('Updating account with data:', $data);
+      // Debug: log what data is being received
+      Log::info('Updating account with data:', $data);
     
-    // Handle county field - don't unset it!
-    if(isset($data['county'])) {
+      // Handle county field - don't unset it!
+      if(isset($data['county'])) {
         // County is already in the correct format, just keep it
-        \Log::info('County value being saved:', ['county' => $data['county']]);
-    }
+        Log::info('County value being saved:', ['county' => $data['county']]);
+       }
     
-    // Remove any transient fields that shouldn't be saved
-    if(isset($data['county_text'])){
+      // Remove any transient fields that shouldn't be saved
+      if(isset($data['county_text'])){
         unset($data['county_text']);
-    }
+       }
     
-    $user->fill($data);
-    $user->save();
+       $user->fill($data);
+       $user->save();
     
-    \Log::info('User after update:', $user->toArray());
+       Log::info('User after update:', $user->toArray());
     
-    return $user;
-}
+      return $user;
+     }
+
+     /**
+      * Change the user's password (after validation)
+      */
+        public function changePassword(User $user, string $newPassword): User
+        {
+            $user->password = Hash::make($newPassword);
+            $user->setRememberToken(Str::random(60));
+            $user->save();
+            return $user;
+        }
 }

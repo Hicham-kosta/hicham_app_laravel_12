@@ -257,6 +257,8 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('/product/review', [ReviewFrontController::class, 'store'])->name('product.review.store');
     Route::get('user/account', [AccountController::class, 'showAccount'])->name('user.account');
     Route::post('user/account', [AccountController::class, 'updateAccount'])->name('user.account.update');
+    Route::get('user/change-password', [AccountController::class, 'showChangePasswordForm'])->name('user.change.password');
+    Route::post('user/change-password', [AccountController::class, 'changePassword'])->name('user.change.password.post');
     Route::get('user/postcode-lookup/{postcode}', [PostcodeLookupController::class, 'lookup'])->name('user.postcode.lookup');
 
     Route::post('user/logout', [AuthController::class, 'logout'])->name('user.logout');
