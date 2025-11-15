@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\FilterValueController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WalletCreditController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -172,6 +173,11 @@ Route::prefix('admin')->group(function () {
       // Reviews
       Route::resource('reviews', ReviewController::class);
       Route::post('/update-review-status', [ReviewController::class, 'updateReviewStatus'])->name('admin.updateReviewStatus');
+
+      // Wallet Credits
+      Route::resource('wallet-credits', WalletCreditController::class);
+      Route::post('update-wallet-credit-status', [WalletCreditController::class, 'updateWalletCreditStatus']);
+
 
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');

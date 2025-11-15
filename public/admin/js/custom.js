@@ -91,6 +91,59 @@ $(document).ready(function () {
         });
     });
 
+    // update Wallet Credit Status
+    // Update Wallet Credit Status - FIXED VERSION
+$(document).on("click", '.updateWalletCreditStatus', function(){
+    var $button = $(this);
+    var $icon = $button.find("i"); // Get the icon element specifically
+    var status = $icon.data("status"); // Get status from the icon, not the button
+    var wallet_credit_id = $button.data("wallet-credit-id");
+    
+    console.log('Clicked - Status:', status, 'ID:', wallet_credit_id);
+    
+    // Show loading state
+    var originalHtml = $button.html();
+    $button.html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        type: 'POST',
+        url: '/admin/update-wallet-credit-status',
+        data: {
+            status: status, 
+            wallet_credit_id: wallet_credit_id
+        },
+        success: function(response) {
+            console.log('Full Response:', response);
+            console.log('Response Status:', response.status);
+            console.log('Response Type:', typeof response.status);
+            
+            // Reset button state
+            $button.prop('disabled', false);
+            
+            if (response.status === 0 || response.status === "0") {
+                $button.html("<i class='fas fa-toggle-off' style='color:grey' data-status='Inactive'></i>");
+                console.log('Set to INACTIVE');
+            } else if (response.status === 1 || response.status === "1") {
+                $button.html("<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Active'></i>");
+                console.log('Set to ACTIVE');
+            } else {
+                // Unexpected response - restore original
+                $button.html(originalHtml);
+                console.error('Unexpected response:', response);
+                alert('Unexpected response from server: ' + JSON.stringify(response));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            console.error('XHR Response:', xhr.responseText);
+            $button.html(originalHtml);
+            alert('Error updating status. Check console for details.');
+        }
+    });
+});
 
 // Update Category Status
 
@@ -108,7 +161,7 @@ $(document).on("click", '.updateCategoryStatus', function(){
                 $("a[data-category-id='" + category_id + "']").html("<i class='fas fa-toggle-off' style='color:grey' data-status='Inactive'></i>")
                 
             }else if(resp['status'] == 1){
-                $("a[data-category-id='" + category_id + "']").html("<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Aactive'></i>")
+                $("a[data-category-id='" + category_id + "']").html("<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Active'></i>")
             }
             //window.location.reload();
         },error: function(){
@@ -130,7 +183,7 @@ $(document).on("click", '.updateBannerStatus', function(){
         data: {status:status, banner_id:banner_id},
         success: function(resp){
             var icon = (resp['status'] == 1)
-                ? "<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Aactive'></i>" 
+                ? "<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Active'></i>" 
                 : "<i class='fas fa-toggle-off' style='color:grey' data-status='Inactive'></i>";
             $("a[data-banner-id='" + banner_id + "']").html(icon);    
         },
