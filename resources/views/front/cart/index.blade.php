@@ -41,7 +41,7 @@
                         <input type="text" name="coupon_code" id="coupon_code" class="form-control" 
                         placeholder="Coupon Code">
                         <div class="input-group-append">
-                            <button class="btn btn-primary" id="applyCoupon">Apply Coupon</button>
+                            <button class="btn btn-primary" id="applyCoupon">Apply Coupon/Credit</button>
                         </div>
                     </div>
                 </form>

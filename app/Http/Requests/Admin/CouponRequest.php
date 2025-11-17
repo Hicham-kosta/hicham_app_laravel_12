@@ -3,52 +3,46 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class CouponRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
         return true;
     }
 
-    public function rules(): array
+    public function rules()
     {
-        $id = $this->route('coupon') instanceof \App\Models\Coupon
-            ? $this->route('coupon')->id
-            : $this->route('coupon');
-
         return [
-            'coupon_option' => 'nullable|string|in:Automatic,Manual,automatic,manual',
-            'coupon_code' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('coupons', 'coupon_code')->ignore($id),
-            ],
-            'coupon_type' => 'required|string|in:Single,Multiple,single,multiple',
-            'amount_type' => 'required|string|in:Percentage,Fixed,percentage,fixed',
+            'coupon_option' => 'required|in:Automatic,Manual',
+            'coupon_code' => 'required_if:coupon_option,Manual|string|max:50',
+            'categories' => 'nullable|array',
+            'categories.*' => 'nullable|integer',
+            'brands' => 'nullable|array', 
+            'brands.*' => 'nullable|integer',
+            'users' => 'nullable|array',
+            'users.*' => 'nullable|string|email',
+            'coupon_type' => 'required|in:Multiple,Single',
+            'amount_type' => 'required|in:percentage,fixed',
             'amount' => 'required|numeric|min:0',
-            'expiry_date' => 'nullable|date',
-            'min_qty' => 'nullable|integer|min:0',
-            'max_qty' => 'nullable|integer|min:0',
+            'min_qty' => 'nullable|integer|min:1',
+            'max_qty' => 'nullable|integer|min:1|gt:min_qty',
             'min_cart_value' => 'nullable|numeric|min:0',
-            'max_cart_value' => 'nullable|numeric|min:0',
+            'max_cart_value' => 'nullable|numeric|min:0|gt:min_cart_value',
             'usage_limit_per_user' => 'nullable|integer|min:0',
             'total_usage_limit' => 'nullable|integer|min:0',
-            'visible' => 'nullable|in:0,1',
-            'status' => 'nullable|in:0,1',
-            'categories' => 'nullable|array',
-            'brands' => 'nullable|array',
-            'users' => 'nullable|array',
+            'max_discount' => 'nullable|numeric|min:0',
+            'expiry_date' => 'required|date|after:today',
+            'visible' => 'boolean',
+            'status' => 'boolean',
         ];
     }
 
-    protected function prepareForValidation()
+    public function messages()
     {
-        $this->merge([
-            'visible' => $this->has('visible') ? (int)$this->input('visible') : 0,
-            'status' => $this->has('status') ? (int)$this->input('status') : 0,
-        ]);
+        return [
+            'coupon_code.required_if' => 'Coupon code is required when coupon option is Manual',
+            'expiry_date.after' => 'Expiry date must be a future date',
+        ];
     }
 }

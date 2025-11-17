@@ -226,7 +226,7 @@
                             <label for="usersSelect">Users</label>
                             <select name="users[]" id="usersSelect" class="form-control select2-tags" multiple>
                                 @foreach($users as $email)
-                                  <option value="{{$email}}" {{ in_array($email, $selUsers) ? 'selected' : '' }}>
+                                  <option value="{{$email}}" {{ in_array($email, $selUsers ?? []) ? 'selected' : '' }}>
                                     {{$email}}
                                   </option>
                                 @endforeach
@@ -261,3 +261,39 @@
     </div>
 </main>
 @endsection
+<script>
+    $(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        placeholder: "Select options",
+        allowClear: true
+    });
+
+    $('.select2-tags').select2({
+        theme: 'bootstrap4',
+        tags: true,
+        placeholder: "Select or enter emails",
+        allowClear: true
+    });
+
+    // Select All / Deselect All buttons
+    $('.select-all').on('click', function() {
+        var target = $(this).data('target');
+        $(target).find('option').prop('selected', true);
+        $(target).trigger('change');
+    });
+
+    $('.deselect-all').on('click', function() {
+        var target = $(this).data('target');
+        $(target).find('option').prop('selected', false);
+        $(target).trigger('change');
+    });
+
+    // Regenerate coupon code
+    $('#regenCoupon').on('click', function() {
+        var randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        $('#coupon_code').val(randomCode);
+    });
+});
+</script>

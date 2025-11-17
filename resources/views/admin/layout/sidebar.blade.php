@@ -147,6 +147,13 @@
                                             <p>reviews</p>
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a href="{{url('admin/wallet-credits')}}" class="nav-link {{(Session::get('page')== 
+                                        'banners'? 'active' : '')}}">
+                                            <i class="nav-icon bi bi-circle"></i>
+                                            <p>Wallet Credits/Debits</p>
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>    
                         </ul>

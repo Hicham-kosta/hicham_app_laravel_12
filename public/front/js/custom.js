@@ -179,31 +179,53 @@ $(document).on("change", ".getPrice", function() {
       }
     });
   });
-  // Apply coupon
+  // Apply coupon / credit wallet via the same input
   $(document).on('submit','#applyCouponForm',function(e){
     e.preventDefault();
-    var code = $('#coupon_code').val().trim();
-    if(!code){
-      $('#coupon-msg').html('<div class="alert alert-danger">Coupon code is required</div>');
-      return;
+    var raw = ($('#coupon_code').val() || '').trim();
+    if(!raw){
+      $('#coupon-msg').html('<div class="alert alert-danger">Please enter a coupon code</div>');
+      return ;
     }
+    var lc = raw.toLowerCase();
+    var isNumeric = /^[0-9]+(\.[0-9]{1,2})?$/.test(raw);
+
+    var url = (lc === 'wallet' || isNumeric) ? '/cart/apply-wallet' : '/cart/apply-coupon';
+
     $.ajax({
-      url: '/cart/apply-coupon',
+      url: url,
       method: 'POST',
       headers: {'X-CSRF-TOKEN': csrf},
-      data: {coupon_code: code},
+      data: {coupon_code: raw},
       success: function(resp){
-          $('#coupon-msg').html('<div class="alert alert-success">'+resp.message+'</div>');
-          replaceFragments(resp);
-        },
-        error: function(xhr){
-          if(xhr.responseJSON){
-            const resp = xhr.responseJSON;
-            $('#coupon-msg').html('<div class="alert alert-danger">'+(resp.message || 'Error')+'</div>');
-            replaceFragments(resp);
-          }else{
-            $('#coupon-msg').html('<div class="alert alert-danger">Something went wrong</div>');
-          }
+        $('#coupon-msg').html('<div class="alert alert-success">'+(resp.message || 'Applied')+'</div>');
+        if(typeof replaceFragments === 'function') replaceFragments(resp);
+      },
+      error: function(xhr){
+        var resp = xhr.responseJSON || {};
+        var msg = resp.message || 'Something went wrong';
+
+        if(/login/i.test(msg)){
+          msg += ' <a href="/user/login" class=">Login</a>';
+        }
+        $('#coupon-msg').html('<div class="alert alert-danger">'+msg+'</div>');
+        
+        if(typeof replaceFragments === 'function' && resp) replaceFragments(resp);
+      }
+    });
+});
+
+  $(document).on('click', '#removeWalletBtn', function(){
+    $.ajax({
+      url: '/cart/remove-wallet',
+      method: 'POST',
+      headers: {'X-CSRF-TOKEN': csrf},
+      success: function(resp){
+          $('#coupon-msg').html('<div class="alert alert-success">'+(resp.message || 'wallet Removed')+'</div>');
+          if(typeof replaceFragments === 'function') replaceFragments(resp);
+      },
+      error: function(){
+        $('#coupon-msg').html('<div class="alert alert-danger">Something went wrong</div>');
         }
     });
   });
@@ -690,326 +712,6 @@ if (resetForm) {
   });
 }
 })();
-
-/*document.addEventListener('DOMContentLoaded', function() {
-    // Get elements with null checks
-    const accountForm = document.getElementById('accountForm');
-    const countrySelect = document.getElementById('country');
-    const countySelect = document.getElementById('county_select');
-    const countySelectWrapper = document.getElementById('county_select_wrapper');
-    const countyTextWrapper = document.getElementById('county_text_wrapper');
-    const countyTextInput = document.getElementById('county_text');
-    const postcodeInput = document.getElementById('postcode');
-    const postcodeLoader = document.getElementById('postcode_loader');
-    const saveBtn = document.getElementById('SaveBtn');
-    const accountSuccess = document.getElementById('accountSuccess');
-
-    // Check if all required elements exist
-    if (!accountForm || !countrySelect) {
-        console.error('Required form elements not found');
-        return;
-    }
-
-    // Set the form action to match your route
-    accountForm.action = '{{ route("user.account.update") }}';
-
-    // Initialize form state
-    function initializeForm() {
-        const selectedCountry = countrySelect.value;
-        toggleCountyFields(selectedCountry);
-    }
-
-    // Toggle between county dropdown and text input with null checks
-    function toggleCountyFields(country) {
-        if (!countySelectWrapper || !countyTextWrapper) {
-            console.warn('County wrapper elements not found');
-            return;
-        }
-
-        if (country === 'United States') {
-            countySelectWrapper.style.display = 'block';
-            countyTextWrapper.style.display = 'none';
-            
-            if (countySelect && countyTextInput) {
-                countySelect.disabled = false;
-                countyTextInput.disabled = true;
-            }
-        } else {
-            countySelectWrapper.style.display = 'none';
-            countyTextWrapper.style.display = 'block';
-            
-            if (countySelect && countyTextInput) {
-                countySelect.disabled = true;
-                countyTextInput.disabled = false;
-            }
-        }
-    }
-
-    // Country change handler
-    countrySelect.addEventListener('change', function() {
-        const selectedCountry = this.value;
-        toggleCountyFields(selectedCountry);
-    });
-
-    // Postcode lookup with debouncing
-    let postcodeTimeout;
-    if (postcodeInput && postcodeLoader) {
-        postcodeInput.addEventListener('input', function() {
-            const postcode = this.value.trim();
-            
-            clearTimeout(postcodeTimeout);
-            postcodeLoader.style.display = 'none';
-            
-            // Basic validation for UK postcodes
-            if (postcode.length >= 5 && /^[A-Za-z0-9 ]+$/.test(postcode)) {
-                postcodeLoader.style.display = 'block';
-                
-                postcodeTimeout = setTimeout(() => {
-                    lookupPostcode(postcode);
-                }, 800);
-            }
-        });
-    }
-
-    // Postcode lookup function
-    function lookupPostcode(postcode) {
-        // Use the correct route - fix the 404 error
-        const url = '{{ route("user.postcode.lookup", ["postcode" => "PLACEHOLDER"]) }}'.replace('PLACEHOLDER', encodeURIComponent(postcode));
-        
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCsrfToken()
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (postcodeLoader) postcodeLoader.style.display = 'none';
-            
-            if (data.success) {
-                // Auto-fill city
-                const cityInput = document.getElementById('city');
-                if (cityInput && (!cityInput.value || cityInput.value.trim() === '')) {
-                    cityInput.value = data.data.city || '';
-                }
-                
-                // Auto-fill county/state based on country
-                const selectedCountry = countrySelect.value;
-                if (selectedCountry === 'United States') {
-                    if (countySelect && data.data.state) {
-                        const stateName = data.data.state;
-                        const option = Array.from(countySelect.options).find(opt => 
-                            opt.value.toLowerCase() === stateName.toLowerCase() ||
-                            opt.text.toLowerCase() === stateName.toLowerCase()
-                        );
-                        if (option) {
-                            countySelect.value = option.value;
-                        } else {
-                            showMessage(`State "${stateName}" not found in list. Please select manually.`, 'warning');
-                        }
-                    }
-                } else {
-                    if (countyTextInput && (!countyTextInput.value || countyTextInput.value.trim() === '')) {
-                        countyTextInput.value = data.data.state || '';
-                    }
-                }
-                
-                showMessage('Postcode lookup successful! Address details auto-filled.', 'success');
-            } else {
-                showMessage('Postcode not found. Please enter address details manually.', 'warning');
-            }
-        })
-        .catch(error => {
-            console.error('Postcode lookup error:', error);
-            if (postcodeLoader) postcodeLoader.style.display = 'none';
-            showMessage('Postcode lookup service temporarily unavailable. Please enter details manually.', 'error');
-        });
-    }
-
-    // Form submission handler
-    accountForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Disable submit button and show loading state
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
-        
-        // Clear previous messages
-        clearMessages();
-        
-        // Handle county field before submission
-        const selectedCountry = countrySelect.value;
-        if (selectedCountry === 'United States') {
-            // Remove text input from form data
-            if (countyTextInput) countyTextInput.disabled = true;
-        } else {
-            // Remove select from form data
-            if (countySelect) countySelect.disabled = true;
-        }
-        
-        // Prepare form data
-        const formData = new FormData(this);
-        
-        // Log for debugging
-        console.log('Submitting form data:', Object.fromEntries(formData));
-        
-        // Submit via AJAX
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCsrfToken()
-            },
-            body: formData
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            
-            if (data.success) {
-                showMessage('Account updated successfully!', 'success');
-                if (data.user) {
-                    updateFormFields(data.user);
-                }
-            } else {
-                if (data.errors) {
-                    displayFormErrors(data.errors);
-                } else {
-                    showMessage(data.message || 'Failed to update account.', 'error');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Update error:', error);
-            showMessage('An error occurred while updating your account. Please try again.', 'error');
-        })
-        .finally(() => {
-            // Re-enable all fields and submit button
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Changes';
-            if (countySelect) countySelect.disabled = false;
-            if (countyTextInput) countyTextInput.disabled = false;
-        });
-    });
-
-    // Display form validation errors
-    function displayFormErrors(errors) {
-        // Clear previous errors
-        document.querySelectorAll('.help-block.text-danger').forEach(el => {
-            el.textContent = '';
-        });
-        
-        // Display new errors
-        Object.keys(errors).forEach(field => {
-            const errorElement = document.querySelector(`[data-error-for="${field}"]`);
-            if (errorElement) {
-                errorElement.textContent = errors[field][0];
-            }
-        });
-    }
-
-    // Show message to user
-    function showMessage(message, type = 'info') {
-        if (!accountSuccess) {
-            console.warn('Account success element not found');
-            return;
-        }
-        
-        // Remove any existing messages
-        const existingAlert = accountSuccess.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        const alertClass = {
-            'success': 'alert-success',
-            'error': 'alert-danger',
-            'warning': 'alert-warning',
-            'info': 'alert-info'
-        }[type] || 'alert-info';
-        
-        const alertHtml = `
-            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        `;
-        
-        accountSuccess.innerHTML = alertHtml;
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                const alert = accountSuccess.querySelector('.alert');
-                if (alert) {
-                    alert.remove();
-                }
-            }, 5000);
-        }
-    }
-
-    // Clear all messages
-    function clearMessages() {
-        if (accountSuccess) {
-            accountSuccess.innerHTML = '';
-        }
-        document.querySelectorAll('.help-block.text-danger').forEach(el => {
-            el.textContent = '';
-        });
-    }
-
-    // Update form fields with server data
-    function updateFormFields(userData) {
-        Object.keys(userData).forEach(field => {
-            const input = document.querySelector(`[name="${field}"]`);
-            if (input && userData[field] !== undefined) {
-                input.value = userData[field] || '';
-            }
-        });
-    }
-
-    // Get CSRF token
-    function getCsrfToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    }
-
-    // Initialize the form
-    initializeForm();
-});
-
-// Add CSS for spinner animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .postcode-spinner {
-        animation: spin .8s linear infinite;
-    }
-    .spinner-border-sm {
-        width: 1rem;
-        height: 1rem;
-    }
-`;
-document.head.appendChild(style);*/
-// Simple, clean JavaScript without complex route handling
-
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Account form initialized');

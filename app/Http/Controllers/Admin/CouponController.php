@@ -74,26 +74,31 @@ class CouponController extends Controller
 
     // Show edit
     public function edit($id)
-    {
-        $title = "Edit Coupon";
-        $coupon = Coupon::findOrFail($id);
-        // Normalize strored JSON arrays into php arrays for the Form
-        $coupon->categories = $coupon->categories ? (is_array($coupon->categories) ? 
-        $coupon->categories : json_decode($coupon->categories, true)) : [];
-        $coupon->brands = $coupon->brands ? (is_array($coupon->brands) ? 
-        $coupon->brands : json_decode($coupon->brands, true)) : [];
-        $coupon->users = $coupon->users ? (is_array($coupon->users) ? 
-        $coupon->users : json_decode($coupon->users, true)) : [];
-        $categories = Category::getCategories('Admin');
-        $brands = Brand::orderBy('name')->pluck('id', 'name')->toArray();
-        $users = User::select('email')->get()->toArray();
-        $selCats = $coupon->categories;
-        $selBrands = $coupon->brands;
-        $selUsers = $coupon->users;
-        return view('admin.coupons.add_edit_coupon', 
-        compact('title', 'coupon', 'categories', 'brands', 'users', 'selCats', 'selBrands', 'selUsers'
-      ));
-    }
+{
+    $title = "Edit Coupon";
+    $coupon = Coupon::findOrFail($id);
+    
+    // Normalize stored JSON arrays into php arrays for the Form
+    $coupon->categories = $coupon->categories ? 
+        (is_array($coupon->categories) ? $coupon->categories : json_decode($coupon->categories, true)) : [];
+    $coupon->brands = $coupon->brands ? 
+        (is_array($coupon->brands) ? $coupon->brands : json_decode($coupon->brands, true)) : [];
+    $coupon->users = $coupon->users ? 
+        (is_array($coupon->users) ? $coupon->users : json_decode($coupon->users, true)) : [];
+    
+    $categories = Category::getCategories('Admin');
+    $brands = Brand::orderBy('name')->pluck('name', 'id')->toArray(); // Fixed: pluck('name', 'id')
+    $users = User::pluck('email')->toArray(); // Simplified
+    
+    // Use the normalized arrays from coupon
+    $selCats = $coupon->categories;
+    $selBrands = $coupon->brands;
+    $selUsers = $coupon->users;
+    
+    return view('admin.coupons.add_edit_coupon', 
+        compact('title', 'coupon', 'categories', 'brands', 'users', 'selCats', 'selBrands', 'selUsers')
+    );
+}
 
     // Update coupon
     public function update(CouponRequest $request, $id)

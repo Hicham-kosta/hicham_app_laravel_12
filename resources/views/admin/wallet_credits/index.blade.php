@@ -49,7 +49,7 @@
                         </div>
                         @endif
 
-                        <table id="walletCredits" class="table table-bordered table-striped">
+                        <table id="wallet_credits" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>ID</th>

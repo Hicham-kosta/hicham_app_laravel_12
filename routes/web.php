@@ -32,6 +32,7 @@ use App\Http\Controllers\Front\CurrencySwitchController;
 use App\Http\Controllers\Front\ReviewController as ReviewFrontController;
 use App\Http\Controllers\Front\AccountController;
 use App\Http\Controllers\Front\PostcodeLookupController;
+use App\Http\Controllers\Front\WalletController as WalletFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -234,9 +235,13 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     // Apply Coupon
     Route::post('/cart/apply-coupon', [CouponFrontController::class, 'apply'])->name('cart.apply.coupon');
-
     // Remove Coupon
     Route::post('/cart/remove-coupon', [CouponFrontController::class, 'remove'])->name('cart.remove.coupon');
+
+    // Apply / Remove Wallet Credit
+    Route::post('/cart/apply-wallet', [WalletFrontController::class, 'apply'])->name('cart.apply.wallet');
+    Route::post('/cart/remove-wallet', [WalletFrontController::class, 'remove'])->name('cart.remove.wallet');
+
 
     Route::post('/currency/switch', [CurrencySwitchController::class, 'switch'])->name('currency.switch');
     

@@ -9,6 +9,8 @@ use App\Services\Admin\WalletCreditService;
 use App\Models\WalletCredit;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use App\Models\ColumnPreference;
+use Illuminate\Support\Facades\Auth;
 
 class WalletCreditController extends Controller
 {
@@ -25,15 +27,15 @@ class WalletCreditController extends Controller
             return redirect('admin/dashboard')->with('error_message', $result['message']);
         }
 
-        $userIds = $result['credits']->pluck('user_id')->unique()->filter()->values()->all();
-        $balanceMap = $this->walletCreditService->activeBalanceMap($userIds);
+        // $userIds = $result['credits']->pluck('user_id')->unique()->filter()->values()->all();
+        //$balanceMap = $this->walletCreditService->activeBalanceMap($userIds);
 
         // build running balance per row (consider only active credits & non-expired-entires)
         $runningMap = [];
         $running = [];
 
         // Work on ASC order to accumulate credits
-        $asc = $result['credits']->sortBy('created_at');
+        $asc = $result['credits']->sortBy('id');
 
         foreach($asc as $row){
             $uid = (int) $row->user_id;
@@ -49,11 +51,23 @@ class WalletCreditController extends Controller
             $runningMap[$row->id] = $running[$uid];
         }
 
-            return view('admin.wallet_credits.index', [
-                'credits' => $result['credits'],
-                'walletCreditsModule' => $result['walletCreditsModule'],
-                'runningMap' => $runningMap,
-            ]);
+        // Column Preferences (just like categories, brands...)
+        $columnPrefs = ColumnPreference::where('admin_id', Auth::guard('admin')->id())
+        ->where('table_name', 'wallet_credits')
+        ->first();
+
+        $walletCreditsSavedOrder = $columnPrefs ? json_decode($columnPrefs->column_order, true) : null;
+        $walletCreditsHiddenCols = $columnPrefs ? json_decode($columnPrefs->hidden_columns, true) : [];
+
+        return view('admin.wallet_credits.index', [
+            'credits' => $result['credits'],
+            'walletCreditsModule' => $result['walletCreditsModule'],
+            'runningMap' => $runningMap,
+            'columnPrefs' => $columnPrefs,
+            'walletCreditsSavedOrder' => $walletCreditsSavedOrder,
+            'walletCreditsHiddenCols' => $walletCreditsHiddenCols,
+        ]);
+
     }
 
     /**
