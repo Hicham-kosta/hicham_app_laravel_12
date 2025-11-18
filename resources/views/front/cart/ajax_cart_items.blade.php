@@ -6,7 +6,7 @@
         <div class="small text-muted">Size: {{ $item['size'] }}</div>
     </td>
     <td class="align-middle">{{ formatCurrency($item['unit_price']) }}</td>
-    <td class="align-middle">
+    <td class="align-middle">S
         <div class="input-group-quantity mx-auto" style="width: 100px;">
             <div class="input-group-btn">
                 <button type="button" class="btn btn-sm btn-primary btn-plus updateCartQty" 

@@ -30,7 +30,7 @@
                             <th>Remove</th>
                         </tr>
                     </thead>
-                    <tbody id="cart-items-body" class="align-middle"> 
+                    <tbody id="cart-items-body" data-cart-container="true" class="align-middle"> 
                        <tr><td colspan="5">Loading...</td></tr>
                     </tbody>
                 </table>

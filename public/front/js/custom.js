@@ -59,7 +59,9 @@ $(document).on("change", ".getPrice", function() {
   const csrf = $('meta[name="csrf-token"]').attr('content');
 
   function replaceFragments(resp){
+    
     if(resp.items_html !== undefined){
+      console.log('Cart items after update:', $('#cart-items').html());
       $('#cart-items-body').html(resp.items_html);
     }
     if(resp.summary_html !== undefined){

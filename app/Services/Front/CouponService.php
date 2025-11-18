@@ -30,7 +30,7 @@ class CouponService
         return [
             'status' => false,
             'message' => 'Coupon code is required',
-            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['items'] ?? []])->render(),
+            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['cartItems'] ?? []])->render(),
             'summary_html' => View::make('front.cart.ajax_cart_summary', [
                 'subtotal_numeric' => $cart['subtotal_numeric'] ?? 0,
                 'discount' => 0,
@@ -52,7 +52,7 @@ class CouponService
         return [
             'status' => false,
             'message' => 'Coupon code is invalid',
-            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['items'] ?? []])->render(),
+            'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['carItems'] ?? []])->render(),
             'summary_html' => View::make('front.cart.ajax_cart_summary', [
                 'subtotal_numeric' => $cart['subtotal_numeric'] ?? 0,
                 'discount' => 0,
@@ -271,7 +271,7 @@ class CouponService
             return [
                 'status' => false,
                 'message' => 'This coupon is not applicable to you',
-                'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['items'] ?? []])->render(),
+                'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cart['cartItems'] ?? []])->render(),
                 'summary_html' => View::make('front.cart.ajax_cart_summary', [
                     'subtotal_numeric' => $cart['subtotal_numeric'] ?? 0,
                     'discount' => 0,
@@ -309,7 +309,7 @@ class CouponService
     return [
         'status' => true,
         'message' => 'Coupon applied successfully',
-        'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cartAfter['items'] ?? []])->render(),
+        'items_html' => View::make('front.cart.ajax_cart_items', ['cartItems' => $cartAfter['cartItems'] ?? []])->render(),
         'summary_html' => View::make('front.cart.ajax_cart_summary', [
             'subtotal_numeric' => $cartAfter['subtotal_numeric'] ?? 0,
             'discount' => $discount,
