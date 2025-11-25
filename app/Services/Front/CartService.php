@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CartService
 {
@@ -336,5 +337,27 @@ class CartService
             }
         });
     }
+
+        public function clear(): void
+    {
+        // Delete cart items from database for current user/session
+        $this->currentCartQuery()->delete();
+
+        // Clear all cart-related session data
+        Session::forget([
+            'applied_coupon_id',
+            'applied_coupon',
+            'applied_coupon_discount',
+            'applied_wallet_amount',
+            // Note: Don't forget 'session_id' as it's needed for guest identification
+        ]);
+
+        // Optional: Log the cart clearing
+        Log::debug('Cart cleared successfully', [
+            'user_id' => Auth::id(),
+            'session_id' => Session::get('session_id')
+        ]);
+    }
+
 
 }

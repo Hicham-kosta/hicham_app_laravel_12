@@ -33,6 +33,7 @@ use App\Http\Controllers\Front\ReviewController as ReviewFrontController;
 use App\Http\Controllers\Front\AccountController;
 use App\Http\Controllers\Front\PostcodeLookupController;
 use App\Http\Controllers\Front\WalletController as WalletFrontController;
+use App\Http\Controllers\Front\checkoutController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -271,6 +272,31 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::get('user/change-password', [AccountController::class, 'showChangePasswordForm'])->name('user.change.password');
     Route::post('user/change-password', [AccountController::class, 'changePassword'])->name('user.change.password.post');
     Route::get('user/postcode-lookup/{postcode}', [PostcodeLookupController::class, 'lookup'])->name('user.postcode.lookup');
+
+    // Show checkout page
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+
+    // Place order (form submit)
+    Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('checkout.placeOrder');
+
+    // Place Order thanks
+    Route::get('/order/thanks/{orderId}', [CheckoutController::class, 'thanks'])
+    ->name('checkout.thanks');
+
+
+    // Save new delevery address (AJAX or Normal Post)
+    Route::post('/checkout/add-address', [CheckoutController::class, 'addAddress'])->name('checkout.addAddress');
+
+    // Update delevery address (AJAX or Normal Post)
+    Route::post('/checkout/update-address', [CheckoutController::class, 'updateAddress'])->name('checkout.updateAddress');
+
+    // Delete delevery address (AJAX)
+    Route::post('/checkout/delete-address', [CheckoutController::class, 'deleteAddress'])->name('checkout.deleteAddress');
+
+    // Update payment method (AJAX)
+    Route::post('/checkout/update-payment-method', [CheckoutController::class, 'updatePaymentMethod'])->name('checkout.updatePaymentMethod');
+
+    // Update shipping method (AJAX)
 
     Route::post('user/logout', [AuthController::class, 'logout'])->name('user.logout');
 });

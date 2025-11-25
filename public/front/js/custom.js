@@ -59,9 +59,7 @@ $(document).on("change", ".getPrice", function() {
   const csrf = $('meta[name="csrf-token"]').attr('content');
 
   function replaceFragments(resp){
-    
     if(resp.items_html !== undefined){
-      console.log('Cart items after update:', $('#cart-items').html());
       $('#cart-items-body').html(resp.items_html);
     }
     if(resp.summary_html !== undefined){
@@ -417,13 +415,15 @@ $(document).on('submit', '#registerForm', function(e){
     const starContainer = document.getElementById('star-rating');
     const ratingInput = document.getElementById('ratingInput');
     const reviewForm = document.getElementById('reviewForm');
-
+    if(starContainer && ratingInput && reviewForm){
     console.log('[review debug] init', {starContainer: !!starContainer, ratingInput: !!ratingInput, reviewForm: !!reviewForm});
 
     if(!starContainer || !ratingInput) {
-      console.warn('[review debug] starContainer or ratingInput missing. Aborting star init.');
       return;
     }
+  }else{
+    console.warn('[review debug] starContainer or ratingInput missing. Aborting star init.');
+  }
 
     // Ensure there is exactly one form/input/container (defensive)
 
@@ -719,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Account form initialized');
     
     // Get elements
-    const accountForm = document.getElementById('accountForm');
+    const accountForm = document.getElementById('account-Form');
     const countrySelect = document.getElementById('country');
     const countySelect = document.getElementById('county_select');
     const countySelectWrapper = document.getElementById('county_select_wrapper');
@@ -731,10 +731,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const accountSuccess = document.getElementById('accountSuccess');
 
     // Check if elements exist
+    if(accountForm){
     if (!accountForm || !countrySelect) {
-        console.error('Required form elements not found');
+        
         return;
     }
+  }else{
+    console.error('Required form elements not found');
+  }
 
     // Set form URLs
     const accountUpdateUrl = '/user/account';
@@ -1072,4 +1076,523 @@ document.addEventListener('DOMContentLoaded', function() {
       box.innerHTML = '<div class="alert alert-danger">Server error. Please try again later.</div>';
     });
   });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Address selection handler
+    document.querySelectorAll('input[name="selected_address"]').forEach(function(el) {
+      el.addEventListener('change', function() {
+        var hidden = document.getElementById('hidden_address_input');
+        if(hidden) hidden.value = this.value;
+      });
+    });
+
+    /* ===============================
+       UK POSTCODE + COUNTY AUTOFILL
+     =============================== */
+
+    const countryEl = document.getElementById('country');
+    const countySelectWrapper = document.getElementById('county_select_wrapper');
+    const countyTextWrapper = document.getElementById('county_text_wrapper');
+    const countySelect = document.getElementById('county_select');
+    const countyText = document.getElementById('county_text');
+    const postcodeInput = document.getElementById('postcode');
+    const cityInput = document.getElementById('city');
+    const postcodeLoader = document.getElementById('postcodeLoader');
+
+    function safeHide(el) {
+      if(el) el.style.display = 'none';
+    }
+
+    function safeShow(el) {
+      if(el) el.style.display = '';
+    }
+
+    function formalizeForMatch(s) {
+      if(!s) return '';
+      let str = s.toString().toLowerCase().trim();
+      str = str.replace(/[.,\/#!$%\^&\*;:{}=\-_'"~()]/g, '');
+      str = str.replace(/\b(county|county of|city of|city|borough of|metropolitan borough|district|district of)\b/g, '');
+      return str.replace(/\s+/g, ' ').trim();
+    }
+
+    // Add the missing function
+    function normalizeForMatch(s) {
+      return formalizeForMatch(s);
+    }
+
+    const countyAliasMap = {
+      'york': 'north yorkshire',
+      'city of york': 'north yorkshire',
+      'westminster': 'greater london',
+      'city of westminster': 'greater london',
+      'camden': 'greater london',
+      'lambeth': 'greater london',
+      'sheffield': 'greater yorkshire',
+      'liverpool': 'merseyside',
+      'belfast': 'antrim',
+      'hull': 'east riding of yorkshire',
+      'manchester': 'greater manchester',
+      'nottingham': 'greater nottingham',
+      'newcastl upon tyne': 'tyne and wear',
+      'glasgow': 'glasgow city',
+      'edindurgh': 'city of edinburgh',
+      'cardiff': 'cardiff',
+      'swansea': 'swansea city',
+    };
+
+    function matchCountyOptions(countyVal) {
+      if(!countySelect || !countyVal) return null;
+      const target = normalizeForMatch(countyVal);
+
+      // 1) Check alias map first
+      if(countyAliasMap[target]) {
+        const aliasNorm = countyAliasMap[target];
+        const aliasOpt = Array.from(countySelect.options).find(o => 
+          normalizeForMatch(o.value) === aliasNorm || 
+          normalizeForMatch(o.text) === aliasNorm
+        );
+        if(aliasOpt) return aliasOpt;
+      }
+
+      // 2) Check options
+      let opt = Array.from(countySelect.options).find(o => 
+        normalizeForMatch(o.value) === target && 
+        normalizeForMatch(o.text) !== ''
+      );
+      if(opt) return opt;
+
+      opt = Array.from(countySelect.options).find(o => 
+        normalizeForMatch(o.text) === target && 
+        normalizeForMatch(o.value) !== ''
+      );
+      if(opt) return opt;
+    
+      // 3) Partial match
+      opt = Array.from(countySelect.options).find(o => {
+        const t = normalizeForMatch(o.value || o.text);
+        return t && (t.includes(target) || target.includes(t));
+      });
+      return opt || null;
+    }
+
+    function toggleCountyInputs() {
+      if(!countryEl) return;
+      if(countryEl.value === 'United Kingdom') {
+        safeShow(countySelectWrapper);
+        safeHide(countyTextWrapper);
+        if(countyText) countyText.value = '';
+      } else {
+        safeShow(countyTextWrapper);
+        safeHide(countySelectWrapper);
+      }
+    }
+    
+    toggleCountyInputs();
+
+    if(countryEl) countryEl.addEventListener('change', toggleCountyInputs);
+
+    if(countySelect) {
+      countySelect.addEventListener('change', function() {
+        if(this.value === 'other') {
+          safeShow(countyTextWrapper);
+          if(countyText) countyText.focus();
+        } else if(countryEl && countryEl.value === 'United Kingdom') {
+          safeHide(countyTextWrapper);
+          if(countyText) countyText.value = '';
+        }
+      });
+    }
+
+    function showLoader() {
+      if(postcodeLoader) postcodeLoader.style.display = 'inline-block';
+    }
+    
+    function hideLoader() {
+      if(postcodeLoader) postcodeLoader.style.display = 'none';
+    }
+
+    let debounce;
+    if(postcodeInput) {
+      postcodeInput.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+          const val = postcodeInput.value.trim();
+          if(!val) return;
+          if(!countryEl || countryEl.value !== 'United Kingdom') return;
+          const compact = val.replace(/\s+/g, '');
+          if(compact.length < 5) return;
+
+          showLoader();
+
+          // Fixed URL construction
+          fetch("/user/postcode/lookup?postcode=" + encodeURIComponent(val), {
+            headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept':'application/json'},
+            credentials: 'same-origin'
+          })
+          .then(r => {
+            if(!r.ok) throw new Error('Network response was not ok');
+            return r.json();
+          })
+          .then(data => {
+            hideLoader();
+            if(data && data.success) {
+              if(cityInput) cityInput.value = data.city || '';
+              const countyVal = (data.county || '').trim();
+              if(!countyVal) return;
+
+              const matched = matchCountyOptions(countyVal);
+              if(matched) {
+                try { 
+                  countySelect.value = matched.value; 
+                } catch(e) { 
+                  countySelect.selectedIndex = Array.from(countySelect.options).indexOf(matched); 
+                }
+                safeHide(countyTextWrapper);
+                if(countyText) countyText.value = '';
+              } else {
+                safeShow(countyTextWrapper);
+                if(countyText) countyText.value = countyVal;
+                if(countySelect) countySelect.value = 'other';
+              }
+            } else {
+              console.log('Postcode lookup failed:', data && data.message);
+            }
+          })
+          .catch(err => {
+            hideLoader();
+            console.error('Postcode lookup failed:', err);
+          });
+        }, 600);
+      });
+    }
+
+    /* ============================
+      AUTO EXPAND ADD ADDRESS COLLAPSE
+      ============================ */
+    
+    // Note: This part should be handled server-side with Blade templates
+    // or passed as a variable from your backend
+    const hasErrors = false; // This should come from your server
+    
+    if(hasErrors) {
+      var collapseEl = document.getElementById('add-address-formm'); // Typo in ID?
+      if(collapseEl && !collapseEl.classList.contains('show')) {
+        try {
+          if(typeof $ !== 'undefined' && typeof $(collapseEl).collapse === 'function') {
+            $(collapseEl).collapse('show');
+          } else {
+            collapseEl.classList.add('show');
+          }
+        } catch(e) {
+          collapseEl.classList.add('show');
+        }
+      }
+
+      // Scroll smoothly to the Add Address section
+      setTimeout(function() {
+        var rect = collapseEl ? collapseEl.getBoundingClientRect() : null;
+        if(rect) {
+          var scrollY = window.pageYOffset + rect.top - 100;
+          window.scrollTo({top: scrollY, behavior: 'smooth'});
+        }
+      }, 300);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAddressActions();
+});
+
+function initializeAddressActions() {
+    // Edit Address functionality
+    document.querySelectorAll('.edit-address-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const addressId = this.getAttribute('data-address-id');
+            const addressData = JSON.parse(this.getAttribute('data-address'));
+            populateEditForm(addressData, addressId);
+        });
+    });
+
+    // Delete Address functionality
+    document.querySelectorAll('.delete-address-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const addressId = this.getAttribute('data-address-id');
+            deleteAddress(addressId);
+        });
+    });
+
+    // Cancel Edit functionality
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', resetToAddMode);
+    }
+}
+
+function populateEditForm(address, addressId) {
+    // Switch form to edit mode
+    const form = document.getElementById('checkoutAddAddressForm');
+    const saveBtn = document.getElementById('checkoutSaveBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const formTitle = document.querySelector('#add-address-form h4');
+    
+    // Show the form if it's collapsed
+    const addressFormSection = document.getElementById('add-address-form');
+    if (addressFormSection && !addressFormSection.classList.contains('show')) {
+        addressFormSection.classList.add('show');
+    }
+    
+    // Change form title and button text
+    if (formTitle) formTitle.textContent = 'Edit Delivery Address';
+    if (saveBtn) saveBtn.textContent = 'Update Address';
+    if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    
+    // Populate form fields
+    document.querySelector('[name="first_name"]').value = address.first_name || '';
+    document.querySelector('[name="last_name"]').value = address.last_name || '';
+    document.querySelector('[name="mobile"]').value = address.mobile || '';
+    document.querySelector('[name="address_line1"]').value = address.address_line1 || '';
+    document.querySelector('[name="address_line2"]').value = address.address_line2 || '';
+    document.querySelector('[name="city"]').value = address.city || '';
+    document.querySelector('[name="postcode"]').value = address.postcode || '';
+    
+    // Handle country selection
+    const countrySelect = document.getElementById('country');
+    if (countrySelect) {
+        countrySelect.value = address.country || '';
+        // Trigger change to update county fields
+        setTimeout(() => countrySelect.dispatchEvent(new Event('change')), 100);
+    }
+    
+    // Handle county/state fields based on country
+    setTimeout(() => {
+        if (address.country === 'United Kingdom') {
+            // UK address - use county select
+            const countySelect = document.getElementById('county_select');
+            if (countySelect) {
+                if (address.state && Array.from(countySelect.options).some(opt => opt.value === address.state)) {
+                    countySelect.value = address.state;
+                } else {
+                    countySelect.value = 'other';
+                    const countyText = document.getElementById('county_text');
+                    if (countyText) countyText.value = address.state || '';
+                }
+            }
+        } else {
+            // Non-UK address - use county text
+            const countyText = document.getElementById('county_text');
+            if (countyText) countyText.value = address.state || '';
+        }
+    }, 200);
+    
+    // Change form action to update route
+    form.action = `/checkout/update-address`;
+    
+    // Add address_id as hidden input if it doesn't exist
+    let addressIdInput = form.querySelector('input[name="address_id"]');
+    if (!addressIdInput) {
+        addressIdInput = document.createElement('input');
+        addressIdInput.type = 'hidden';
+        addressIdInput.name = 'address_id';
+        form.appendChild(addressIdInput);
+    }
+    addressIdInput.value = addressId;
+    
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetToAddMode() {
+    const form = document.getElementById('checkoutAddAddressForm');
+    const saveBtn = document.getElementById('checkoutSaveBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const formTitle = document.querySelector('#add-address-form h4');
+    
+    // Reset form
+    form.reset();
+    
+    // Remove address_id hidden input
+    const addressIdInput = form.querySelector('input[name="address_id"]');
+    if (addressIdInput) {
+        addressIdInput.remove();
+    }
+    
+    // Reset form action and UI
+    form.action = `/checkout/add-address`;
+    if (formTitle) formTitle.textContent = 'Add Delivery Address';
+    if (saveBtn) saveBtn.textContent = 'Save Address';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    
+    // Reset county fields
+    const countrySelect = document.getElementById('country');
+    if (countrySelect) {
+        countrySelect.value = '';
+        countrySelect.dispatchEvent(new Event('change'));
+    }
+}
+
+function deleteAddress(addressId) {
+    if (!confirm('Are you sure you want to delete this address?')) {
+        return;
+    }
+    
+    // Show loading state on the delete button
+    const deleteBtn = document.querySelector(`.delete-address-btn[data-address-id="${addressId}"]`);
+    const originalText = deleteBtn.textContent;
+    deleteBtn.textContent = 'Deleting...';
+    deleteBtn.disabled = true;
+    
+    // Send delete request
+    fetch('/checkout/delete-address', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            address_id: addressId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the address element from DOM
+            const addressElement = deleteBtn.closest('.border.p-3.mb-3');
+            if (addressElement) {
+                addressElement.remove();
+            }
+            
+            // Show success message
+            showToast('Address deleted successfully', 'success');
+            
+            // If no addresses left, show message
+            const addressesContainer = document.querySelector('.mb-4');
+            const existingAddresses = addressesContainer.querySelectorAll('.border.p-3.mb-3');
+            if (existingAddresses.length === 0) {
+                const noAddressMsg = document.createElement('p');
+                noAddressMsg.textContent = 'No Saved Addresses Found';
+                noAddressMsg.className = 'text-muted';
+                addressesContainer.appendChild(noAddressMsg);
+            }
+        } else {
+            throw new Error(data.message || 'Failed to delete address');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        showToast(error.message || 'Failed to delete address', 'error');
+        // Reset button
+        deleteBtn.textContent = originalText;
+        deleteBtn.disabled = false;
+    });
+}
+
+// Utility function to show toast messages
+function showToast(message, type = 'info') {
+    // You can use your existing toast library or create a simple one
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+// Handle form submission for both add and update
+document.getElementById('checkoutAddAddressForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const isEditMode = this.action.includes('update-address');
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = isEditMode ? 'Updating...' : 'Saving...';
+    submitBtn.disabled = true;
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(
+                isEditMode ? 'Address updated successfully' : 'Address added successfully', 
+                'success'
+            );
+            
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Operation failed');
+        }
+    })
+    .catch(error => {
+        console.error('Save error:', error);
+        showToast(error.message || 'Operation failed', 'error');
+        
+        // Reset button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Set hidden input when selecting an address
+  document.querySelectorAll('input[name="selected_address"]').forEach(function(rad) {
+    rad.addEventListener('change', function() {
+      const hidden = document.getElementById('selected_address_input');
+      if (hidden) hidden.value = this.value;
+    });
+
+    // Pre-fill on page load
+    if (rad.checked) {
+      const hidden = document.getElementById('selected_address_input');
+      if (hidden) hidden.value = rad.value;
+    }
+  });
+
+  const placeOrderForm = document.getElementById('placeOrderForm');
+
+  if (placeOrderForm) {
+    placeOrderForm.addEventListener('submit', function(e) {
+
+      const addressInput = document.getElementById('selected_address_input');
+      const addressVal = addressInput ? addressInput.value : '';
+
+      if (!addressVal.trim()) {
+        e.preventDefault();
+        alert('Please select a delivery address or add one before placing the order');
+
+        const addAddressCollapse = document.getElementById('add-address-form');
+        if (addAddressCollapse && addAddressCollapse.classList) {
+          addAddressCollapse.classList.add('show');
+        }
+        return false;
+      }
+    });
+  }
+
 });
