@@ -155,6 +155,24 @@
                                         </a>
                                     </li>
                                 </ul>
+                            </li>
+                            <li class="nav-item" {{in_array(Session::get('page'), ['orders']) ? 'menu-open' : ''}}>
+                                <a href="#" class="nav-link {{in_array(Session::get('page'), ['orders']) ? 'active' : ''}}">
+                                    <i class="nav-icon bi bi-clipboard-fill"></i>
+                                    <p>
+                                        Orders Management
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="{{url('admin/orders')}}" class="nav-link {{(Session::get('page')== 'orders'
+                                        ? 'active' : '')}}">
+                                            <i class="nav-icon bi bi-circle"></i>
+                                            <p>Orders</p>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>    
                         </ul>
                         <!--end::Sidebar Menu-->

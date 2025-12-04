@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WalletCreditController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -34,6 +35,7 @@ use App\Http\Controllers\Front\AccountController;
 use App\Http\Controllers\Front\PostcodeLookupController;
 use App\Http\Controllers\Front\WalletController as WalletFrontController;
 use App\Http\Controllers\Front\checkoutController;
+use App\Http\Controllers\Front\OrderController as OrderFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -180,7 +182,10 @@ Route::prefix('admin')->group(function () {
       Route::resource('wallet-credits', WalletCreditController::class);
       Route::post('update-wallet-credit-status', [WalletCreditController::class, 'updateWalletCreditStatus']);
 
-
+      // Admin Orders
+      Route::resource('orders', OrderController::class);
+      Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
 
@@ -295,6 +300,10 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     // Update payment method (AJAX)
     Route::post('/checkout/update-payment-method', [CheckoutController::class, 'updatePaymentMethod'])->name('checkout.updatePaymentMethod');
+    
+    // Orders
+    Route::get('user/orders', [OrderFrontController::class, 'index'])->name('user.orders.index');
+    Route::get('user/orders/{order}', [OrderFrontController::class, 'show'])->name('user.orders.show');
 
     // Update shipping method (AJAX)
 

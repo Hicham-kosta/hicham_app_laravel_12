@@ -25,11 +25,11 @@ class AddAddressRequest extends FormRequest
             'postcode'       => 'required|string|max:20',
         ];
 
-        if ($this->input('country') === 'United Kingdom') {
+       /* if ($this->input('country') === 'United Kingdom') {
             $rules['county'] = 'required|string|max:255';
         } else {
             $rules['county_text'] = 'required|string|max:255';
-        }
+        }*/
 
         return $rules;
     }

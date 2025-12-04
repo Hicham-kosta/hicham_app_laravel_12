@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\OrderItem;
+use App\Models\Address;
 
 class Order extends Model
 {
@@ -19,6 +21,8 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'status',
+        'tracking_number',
+        'shipping_partner',
         'transaction_id',
         'order_number',
     ];
@@ -32,14 +36,6 @@ class Order extends Model
     }
 
     /**
-     * Relationship with user
-     */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
      * Relationship with address
      */
     public function address(): BelongsTo
@@ -50,16 +46,36 @@ class Order extends Model
     /**
      * Calculate order total from items (for verification)
      */
-    public function calculateTotal(): float
+    public function calculateSubtotal(): float
     {
         return $this->orderItems->sum('subtotal');
+    }
+
+    public function shippingAddress(): BelongsTo
+    {
+        return $this->belongsTo(Address::class, 'address_id');
+    }
+
+    public function getShippingAmountAttribute()
+    {
+        return $this->attributes('shipping') ?? 0;
+    }
+
+    public function getGrandTotalAttribute()
+    {
+        return $this->attributes('total') ?? 0;
     }
 
     /**
      * Check if order belongs to authenticated user
      */
-    public function belongsToUser($user): bool
+    public function user()
     {
-        return $this->user_id === $user->id;
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(OrderLog::class);
     }
 }

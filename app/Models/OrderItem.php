@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Order;
+use App\Models\Product;
 
 class OrderItem extends Model
 {
@@ -37,7 +39,12 @@ class OrderItem extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function getQuantity()
+    {
+        return $this->attributes['qty'];
     }
 
     /**
@@ -45,7 +52,7 @@ class OrderItem extends Model
      */
     public function calculateSubtotal(): float
     {
-        return $this->qty * $this->price;
+        return $this->attributes['subtotal'];
     }
 
     /**
