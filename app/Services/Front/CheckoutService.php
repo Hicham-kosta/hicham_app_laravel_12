@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Session;
 use App\Services\Front\CartService;
 use App\Models\Address;
 use Illuminate\Support\Facades\Log;
+use App\Mail\OrderPlaced;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderStatusUpdated;
 
 class CheckoutService
 {
@@ -123,7 +126,15 @@ class CheckoutService
         Log::debug("Created $itemCount order items");
         DB::commit();
 
-        return ['success' => true, 'order_id' => $order->id];
+        if (strtolower($order->payment_method ?? '') === 'cod' && $order->user) {
+    try {
+        Mail::to($order->user->email)->queue(new OrderPlaced($order));
+    } catch (\Throwable $e) {
+        \Log::error('Failed to queue OrderPlaced email for order ' . $order->id . ': ' . $e->getMessage());
+    }
+}
+
+        return ['success' => true, 'order' => $order];
         
     } catch(\Throwable $e) {
         DB::rollBack();

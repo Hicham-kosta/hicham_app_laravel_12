@@ -79,8 +79,8 @@ public function placeOrder(CheckoutRequest $request)
         Log::debug('ORDER SUCCESS - clearing cart and redirecting to thanks page');
         $this->checkoutService->clearCart($user);
 
-        return redirect()->route('checkout.thanks', ['orderId' => $result['order_id']])
-            ->with('success', 'Order placed successfully. Order ID: '.$result['order_id']);
+        return redirect()->route('checkout.thanks', ['orderId' => $result['order']])
+            ->with('success', 'Order placed successfully. Order ID: '.$result['order']);
     }
     
     Log::debug('ORDER FAILED - returning back with error');

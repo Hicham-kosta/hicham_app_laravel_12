@@ -6,6 +6,11 @@ use App\Models\OrderStatus;
 use App\Models\OrderLog;
 use App\Models\AdminsRole;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\OrderPlaced;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use App\Mail\OrderStatusUpdated;
 
 class OrderService
 {
@@ -96,6 +101,13 @@ class OrderService
         'remarks' => $data['remarks'] ?? null,
         'updated_by' => Auth::guard('admin')->id(),
     ]);
+
+    try{
+        Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, $log));
+        \Log::info('OrderStatusUpdated email queued for order: ' . $order->id);
+    }catch(\Throwable $e){
+        \Log::error('Failed to queue OrderStatusUpdated email for order ' . $order->id . ': ' . $e->getMessage());
+    }
     
     return ['status' => 'success', 'message' => 'Order status updated successfully', 'log' => $log];
 }

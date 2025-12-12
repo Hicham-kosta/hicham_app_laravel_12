@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\OrderItem;
 use App\Models\Address;
+use App\Models\User;
 
 class Order extends Model
 {
@@ -30,17 +31,18 @@ class Order extends Model
     /**
      * Relationship with order items
      */
-    public function orderItems(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
+    public function orderItems()
+{
+    return $this->hasMany(OrderItem::class, 'order_id');
+}
+
 
     /**
      * Relationship with address
      */
     public function address(): BelongsTo
     {
-        return $this->belongsTo(Address::class);
+        return $this->belongsTo(Address::class, 'address_id');
     }
 
     /**
@@ -48,12 +50,7 @@ class Order extends Model
      */
     public function calculateSubtotal(): float
     {
-        return $this->orderItems->sum('subtotal');
-    }
-
-    public function shippingAddress(): BelongsTo
-    {
-        return $this->belongsTo(Address::class, 'address_id');
+        return $this->items->sum('subtotal');
     }
 
     public function getShippingAmountAttribute()
