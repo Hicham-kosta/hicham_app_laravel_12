@@ -72,20 +72,33 @@
                                                 </td>
                                                 <td class="text-center py-4">
                                                     @php
-                                                        $statusConfig = [
-                                                            'pending' => ['class' => 'bg-warning text-dark', 'icon' => 'clock'],
-                                                            'processing' => ['class' => 'bg-info', 'icon' => 'sync'],
-                                                            'completed' => ['class' => 'bg-success', 'icon' => 'check'],
-                                                            'cancelled' => ['class' => 'bg-danger', 'icon' => 'times'],
-                                                            'shipped' => ['class' => 'bg-primary', 'icon' => 'shipping-fast']
-                                                        ];
-                                                        $status = strtolower($order->status);
-                                                        $config = $statusConfig[$status] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
+                                                        $latest = $order->latestLog ?? null;
+                                                        $displayStatus = $latest?->status?->name ?? $order->status ?? 'Pending';
                                                     @endphp
-                                                    <span class="badge {{ $config['class'] }} rounded-pill px-3 py-2">
-                                                        <i class="fas fa-{{ $config['icon'] }} me-1"></i>
-                                                        {{ ucfirst($order->status) }}
+                                                    <span class="badge 
+                                                    @if(strtolower($displayStatus) === 'pending') bg-warning text-dark 
+                                                    @elseif(strtolower($displayStatus) === 'completed') bg-success
+                                                    @elseif(strtolower($displayStatus) === 'cancelled') bg-danger 
+                                                    @else bg-secondary 
+                                                    @endif">
+                                                    {{ $displayStatus }} 
                                                     </span>
+                                                    @if($latest)
+                                                    <div class="small text-muted mt-1">
+                                                        Updated at: {{ $latest->created_at->diffForHumans() }}
+                                                        @if(!empty($latest->tracking_link) || !empty($latest->tracking_number))
+                                                        <br>&nbsp;&nbsp;
+                                                        @if(!empty($latest->tracking_link))
+                                                        <a href="{{ $latest->tracking_link }}" target="_blank" class="small">
+                                                            Track</a>
+                                                            @else
+                                                            <a href="https://www.google.com/search?q={{ rawurlencode(($latest->
+                                                            shipping_partner ?? '').' '.$latest->tracking_number) }}" target="_blank" 
+                                                            class="small">Track</a>
+                                                        @endif
+                                                        @endif
+                                                    </div>
+                                                    @endif
                                                 </td>
                                                 <td class="text-center pe-4 py-4">
                                                     <a href="{{ route('user.orders.show', $order->id) }}" 

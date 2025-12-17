@@ -10,6 +10,7 @@ class OrderLog extends Model
         'order_id',
         'order_status_id', // Make sure this is included
         'tracking_number',
+        'tracking_link',
         'shipping_partner',
         'remarks',
         'updated_by'

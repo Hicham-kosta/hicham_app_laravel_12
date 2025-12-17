@@ -90,13 +90,15 @@ class OrderService
         'status' => $status->name,
         'order_status_id' => $status->id, // Add this to update the foreign key
         'tracking_number' => $data['tracking_number'] ?? null,
+        'tracking_link' => $data['tracking_link'] ?? null,
         'shipping_partner' => $data['shipping_partner'] ?? null,
     ]);
-
+    
     $log = OrderLog::create([
         'order_id' => $order->id,
         'order_status_id' => $status->id, // Use the NEW status ID
         'tracking_number' => $data['tracking_number'] ?? null,
+        'tracking_link' => $data['tracking_link'] ?? null,
         'shipping_partner' => $data['shipping_partner'] ?? null,
         'remarks' => $data['remarks'] ?? null,
         'updated_by' => Auth::guard('admin')->id(),

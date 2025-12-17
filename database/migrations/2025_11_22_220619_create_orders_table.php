@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('payment_status', 20)->default('pending');
             $table->string('status')->default('pending');
             $table->string('tracking_number')->nullable();
+            $table->string('tracking_link', 1000)->nullable();
             $table->string('shipping_partner')->nullable();
             $table->string('transaction_id')->nullable();
             $table->string('order_number')->nullable();

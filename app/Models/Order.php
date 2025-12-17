@@ -23,6 +23,7 @@ class Order extends Model
         'payment_status',
         'status',
         'tracking_number',
+        'tracking_link',
         'shipping_partner',
         'transaction_id',
         'order_number',
@@ -55,12 +56,12 @@ class Order extends Model
 
     public function getShippingAmountAttribute()
     {
-        return $this->attributes('shipping') ?? 0;
+        return $this->attributes['shipping'] ?? 0;
     }
 
     public function getGrandTotalAttribute()
     {
-        return $this->attributes('total') ?? 0;
+        return $this->attributes['total'] ?? 0;
     }
 
     /**
@@ -74,5 +75,13 @@ class Order extends Model
     public function logs()
     {
         return $this->hasMany(OrderLog::class);
+    }
+
+    /**
+     * Latest single log for quick access in listing
+     */
+    public function latestLog()
+    {
+        return $this->hasOne(OrderLog::class)->latestOfMany();
     }
 }

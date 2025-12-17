@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id')->index();
             $table->unsignedBigInteger('order_status_id')->index();
             $table->string('tracking_number')->nullable();
+            $table->string('tracking_link', 1000)->nullable();
             $table->string('shipping_partner')->nullable();
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable()->comment('Admin who updated status');

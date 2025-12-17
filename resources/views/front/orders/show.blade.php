@@ -129,6 +129,62 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-8">
+                  <div class="card-shadow-sm border-0 rounded-lg mt-4">
+                   <div class="card-body">
+                    <h5 class="mb-4">Order Tracking</h5>
+                    @if($order->logs && $order->logs->count())
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Tracking</th>
+                                    <th>Partner</th>
+                                    <th>Remarks</th>
+                                    <th>Updated By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($order->logs as $log)
+                                @php
+                                $isShipped = strtolower($log->status->name ?? '') === 'shipped';
+                                $trackLink = $log->tracking_link ?? $order->tracking_link ?? null;
+                                $trackNumber = $log->tracking_number ?? $order->tracking_number ?? null; 
+                                @endphp
+                                <tr>
+                                    <td>{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
+                                    <td>{{ optional($log->status)->name ?? '--' }}</td>
+                                    <td>{{ $trackNumber ?? '--' }}
+                                    @if($trackLink)
+                                    <div>
+                                    <a href="{{ $trackLink }}" target="_blank" class="btn btn-sm btn-outline-primary">Track</a></td>
+                                    </div>
+                                    @elseif($trackNumber)
+                                    @php
+                                    $search = rawurlencode(($log->shipping_partner ?? '').' '. $trackNumber);
+                                    $searchUrl = 'https://www.google.com/search?q='.$search;
+                                    @endphp
+                                    <div>
+                                    <a href="{{ $searchUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">Track</a>
+                                    </div>
+                                    @endif
+                                    </td>
+                                    <td>{{ $log->shipping_partner ?? '--' }}</td>
+                                    <td style="max-width: 280px;">{!! nl2br(e($log->remarks ?? '--')) !!}</td>
+                                    <td>{{ optional($log->updatedByAdmin)->name ?? optional('Admin #'.($log->updated_by ?? '--')) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <p class="text-muted mb-0">No tracking information available.</p>
+                    @endif 
+                </div>
+            </div>
+            </div>  
 
                 <!-- Order Summary & Shipping -->
                 <div class="col-lg-4">
@@ -217,6 +273,7 @@
                             @endif
                         </div>
                     </div>
+                    
 
                     <!-- Payment Information -->
                     <div class="card shadow-sm border-0 rounded-lg mt-4">
@@ -233,19 +290,26 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Status</span>
                                 @php
-                                    $paymentStatusClass = 'bg-warning';
-                                    if ($order->payment_status === 'paid') $paymentStatusClass = 'bg-success';
-                                    elseif ($order->payment_status === 'failed') $paymentStatusClass = 'bg-danger';
-                                @endphp
-                                <span class="badge {{ $paymentStatusClass }} rounded-pill text-capitalize">
-                                    {{ $order->payment_status ?? 'pending' }}
-                                </span>
+                                        $statusConfig = [
+                                            'pending' => ['class' => 'bg-warning text-dark', 'icon' => 'clock'],
+                                            'processing' => ['class' => 'bg-info', 'icon' => 'sync'],
+                                            'completed' => ['class' => 'bg-success', 'icon' => 'check'],
+                                            'cancelled' => ['class' => 'bg-danger', 'icon' => 'times'],
+                                            'shipped' => ['class' => 'bg-primary', 'icon' => 'shipping-fast']
+                                        ];
+                                        $status = strtolower($order->status);
+                                        $config = $statusConfig[$status] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
+                                    @endphp
+                                    <span class="badge {{ $config['class'] }} rounded-pill px-4 py-2 fs-6">
+                                        <i class="fas fa-{{ $config['icon'] }} me-2"></i>
+                                        {{ ucfirst($order->status) }}
+                                    </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
+        
             <!-- Action Buttons -->
             <div class="row mt-5">
                 <div class="col-12">

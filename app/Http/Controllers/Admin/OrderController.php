@@ -65,11 +65,29 @@ class OrderController extends Controller
             'order_status_id' => 'required|exists:order_statuses,id',
             'tracking_number' => 'nullable|string|max:255',
             'shipping_partner' => 'nullable|string|max:255',
+            'tracking_link' => 'nullable|url|max:1000',
             'remarks' => 'nullable|string|max:1000',
         ]);
-        $data = $request->only(['order_status_id', 'tracking_number', 'shipping_partner', 'remarks']);
+        $data = $request->only(['order_status_id', 'tracking_number', 'tracking_link', 'shipping_partner', 'remarks']);
         $result = $this->orderService->updateOrderStatus($id, $data);
         return redirect()->back()->with($result['status'] === 'success' 
         ? 'success_message' : 'error_message', $result['message']);
+    }
+
+    public function invoice($id){
+        Session::put('page', 'orders');
+        $result = $this->orderService->getOrderDetail($id);
+        
+        if($result['status'] === 'error'){
+            return redirect()->route('orders.index')->with('error_message', $result['message']);
+        }
+        $order = $result['order'];
+
+        // Allow invoice for only shipped orders
+        if(strtolower($order->status !== 'shipped')){
+            return redirect()->route('orders.index')->with('error_message', 'invoice available only for shipped orders');
+        }
+        $order->loadMissing(['orderItems.product', 'address', 'user']);
+        return view('admin.orders.invoice', compact('order'));
     }
 }

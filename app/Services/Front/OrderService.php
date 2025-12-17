@@ -14,7 +14,9 @@ class OrderService
     public function getUserOrders($user, int $perPage = 10): LengthAwarePaginator
     {
         return Order::where('user_id', $user->id)
-            ->with('orderItems.product', 'address') // Fixed: 'orderItems' not 'items'
+            ->with('orderItems.product', 
+            'address', 
+            'latestLog.status') // Fixed: 'orderItems' not 'items'
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
@@ -26,7 +28,12 @@ class OrderService
     {
         return Order::where('id', $orderId)
             ->where('user_id', $user->id)
-            ->with('orderItems.product', 'address') // Fixed: 'orderItems' not 'tems'
+            ->with(['orderItems.product', 
+            'address', 
+            'logs' => function($q){
+                $q->with(['status', 'updatedByAdmin'])->orderBy('created_at', 'desc');
+            }
+            ]) // Fixed: 'orderItems' not 'tems'
             ->first();
     }
 }

@@ -294,6 +294,40 @@
             font-weight: 500;
         }
         
+        .tracking-link-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .tracking-link-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tracking-link-title::before {
+            content: '🔗';
+            margin-right: 8px;
+        }
+        
+        .tracking-url {
+            display: inline-block;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #2c3e50;
+            word-break: break-all;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 10px;
+        }
+        
         /* Remarks Section */
         .remarks-section {
             background: #f0f7ff;
@@ -551,9 +585,26 @@
             @php
                 $shippingPartner = $log->shipping_partner ?? $order->shipping_partner ?? null;
                 $trackingNumber = $log->tracking_number ?? $order->tracking_number ?? null;
+                // NEW: Check for direct tracking link (first in log, then in order)
+                $trackingLink = $log->tracking_link ?? $order->tracking_link ?? null;
+                
+                // Determine which tracking URL to use
+                if ($trackingLink) {
+                    // Use direct tracking link if provided by admin
+                    $trackUrl = $trackingLink;
+                    $trackUrlType = 'direct';
+                } elseif ($trackingNumber) {
+                    // Fallback to Google search if no direct link
+                    $searchQuery = rawurlencode(($shippingPartner ?? '') . ' ' . $trackingNumber);
+                    $trackUrl = "https://www.google.com/search?q=" . $searchQuery;
+                    $trackUrlType = 'google';
+                } else {
+                    $trackUrl = null;
+                    $trackUrlType = null;
+                }
             @endphp
             
-            @if(strtolower($statusName) === 'shipped' || $trackingNumber)
+            @if(strtolower($statusName) === 'shipped' || $trackingNumber || $trackingLink)
             <div class="shipping-card">
                 <h3 class="shipping-title">Shipping Information</h3>
                 
@@ -590,6 +641,48 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Tracking Link Section -->
+                @if($trackUrl)
+                <div class="tracking-link-container">
+                    <div class="tracking-link-title">
+                        @if($trackUrlType === 'direct')
+                        📍 Direct Tracking Link
+                        @else
+                        🔍 Track Your Package
+                        @endif
+                    </div>
+                    
+                    @if($trackUrlType === 'direct')
+                    <p style="margin-bottom: 15px; color: #555;">
+                        You can track your package directly using the link below:
+                    </p>
+                    <div class="tracking-url">{{ $trackingLink }}</div>
+                    @else
+                    <p style="margin-bottom: 15px; color: #555;">
+                        Click the button below to track your package:
+                    </p>
+                    @endif
+                    
+                    <a href="{{ $trackUrl }}" target="_blank" class="btn btn-track" style="display: inline-block;">
+                        @if($trackUrlType === 'direct')
+                        🚚 Track Package Directly
+                        @else
+                        🔍 Track on Google
+                        @endif
+                    </a>
+                    
+                    @if($trackUrlType === 'direct')
+                    <p style="margin-top: 10px; font-size: 13px; color: #666;">
+                        <small>This is a direct link to the carrier's tracking page.</small>
+                    </p>
+                    @else
+                    <p style="margin-top: 10px; font-size: 13px; color: #666;">
+                        <small>We'll search for your tracking number on Google. You can also copy the tracking number above and visit your carrier's website.</small>
+                    </p>
+                    @endif
+                </div>
+                @endif
             </div>
             @endif
             
@@ -605,12 +698,14 @@
             
             <!-- CTA Buttons -->
             <div class="cta-section">
-                @if($trackingNumber && in_array(strtolower($statusName), ['shipped', 'delivered']))
-                    @php
-                        $searchQuery = rawurlencode(($shippingPartner ?? '') . ' ' . $trackingNumber);
-                        $trackUrl = "https://www.google.com/search?q=" . $searchQuery;
-                    @endphp
-                    <a href="{{ $trackUrl }}" target="_blank" class="btn btn-track">Track Your Shipment</a>
+                @if($trackUrl && in_array(strtolower($statusName), ['shipped', 'delivered']))
+                    <a href="{{ $trackUrl }}" target="_blank" class="btn btn-track">
+                        @if($trackUrlType === 'direct')
+                        🚚 Track Your Shipment
+                        @else
+                        🔍 Track on Google
+                        @endif
+                    </a>
                 @endif
                 
                 <a href="{{ url('/orders/' . $order->id) }}" class="btn" target="_blank">View Order Details</a>

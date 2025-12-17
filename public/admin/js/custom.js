@@ -540,18 +540,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const shippedFields = document.querySelectorAll('.shipped-field');
 
     function toggleShippedFields() {
-        const selected = statusSelect.options[statusSelect.selectedIndex];
-        const statusName = selected ? selected.text.trim().toLowerCase() : '';
+        const selectedText = statusSelect.options[statusSelect.selectedIndex].text.toLowerCase();
+        const show = (selectedText === 'shipped' || selectedText.includes('ship'));
 
         // Show fields if status is "shipped"
         shippedFields.forEach(el => {
-            el.style.display = (statusName === 'shipped') ? 'block' : 'none';
+            el.style.display = show ? '' : 'none';
         });
     }
 
-    // Initial toggle on page load
+    // Initial toggle (if current status is "shipped")
     toggleShippedFields();
-
-    // Toggle on status change
     statusSelect.addEventListener('change', toggleShippedFields);
 });

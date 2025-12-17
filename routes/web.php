@@ -185,6 +185,8 @@ Route::prefix('admin')->group(function () {
       // Admin Orders
       Route::resource('orders', OrderController::class);
       Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+      Route::get('orders/{id}/invoice', [OrderController::class, 'invoice'])->name('admin.orders.invoice');
+
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
