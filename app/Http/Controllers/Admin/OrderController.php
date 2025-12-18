@@ -8,6 +8,8 @@ use App\Services\Admin\OrderService;
 use App\Models\ColumnPreference;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 
 class OrderController extends Controller
@@ -88,6 +90,57 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('error_message', 'invoice available only for shipped orders');
         }
         $order->loadMissing(['orderItems.product', 'address', 'user']);
-        return view('admin.orders.invoice', compact('order'));
+
+        // Generate barcode (CODE 128)
+        $barcodeBase64 = null;
+        try{
+            $generator = new BarcodeGeneratorPNG();
+            $raw = $generator->getBarcode((string)$order->id, $generator::TYPE_CODE_128, 2, 60);
+            $barcodeBase64 = base64_encode($raw);
+        }
+        catch(\Throwable $e){
+            Log::error('Failed to generate barcode for order ' . $order->id . ': ' . $e->getMessage());
+        }
+        
+        
+        return view('admin.orders.invoice', compact('order', 'barcodeBase64'));
+    }
+
+    public function invoicePdf($id){
+        Session::put('page', 'orders');
+        $result = $this->orderService->getOrderDetail($id);
+        
+        if($result['status'] === 'error'){
+            return redirect()->route('orders.index')->with('error_message', $result['message']);
+        }
+        $order = $result['order'];
+
+        // Allow invoice for only shipped orders
+        if(strtolower($order->status !== 'shipped')){
+            return redirect()->route('orders.index')->with('error_message', 'invoice available only for shipped orders');
+        }
+        $order->loadMissing(['orderItems.product', 'address', 'user']);
+
+        // Generate barcode (CODE 128)
+        $barcodeBase64 = null;
+        try{
+            $generator = new BarcodeGeneratorPNG();
+            $barcode = $generator->getBarcode((string)$order->id, $generator::TYPE_CODE_128, 2, 60);
+            $barcodeBase64 = base64_encode($barcode);
+        }
+        catch(\Throwable $e){}
+            $data = compact('order', 'barcodeBase64');
+            try{
+                $pdf = \PDF::setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                ])->loadView('admin.orders.invoice_pdf', $data)
+                ->setPaper('a4', 'portrait');
+                return $pdf->stream("invoice_{$order->id}.pdf");
+            }
+            catch(\Throwable $e){
+                Log::error("PDF Generation Failed: " .$e->getMessage());
+                return view('admin.orders.invoice_pdf', $data);
+            }
     }
 }

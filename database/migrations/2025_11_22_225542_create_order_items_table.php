@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id')->index();
             $table->unsignedBigInteger('product_id')->nullable()->index();
             $table->string('product_name')->nullable();
+            $table->string('sku')->nullable();
             $table->unsignedBigInteger('qty')->default(1);   ;
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);

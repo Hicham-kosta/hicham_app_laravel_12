@@ -102,6 +102,13 @@
                         <div class="invoice-meta">
                             <small><strong>Invoice #:</strong> INV {{ $order->id }}</small>
                             <small><strong>Invoice Date:</strong> {{ $order->created_at->format('Y-m-d') }}</small>
+                            @if(!empty($barcodeBase64))
+                            <div style="margin-top: 10px;">
+                                <img src="data:image/png;base64,{{ $barcodeBase64 }}" alt="Order Barcode" 
+                                style="height:60px; display:block;">
+                                <small>Order ID: {{ $order->id }}</small>
+                            </div>
+                            @endif
                         </div>
                     </div>
                     <div class="text-end">

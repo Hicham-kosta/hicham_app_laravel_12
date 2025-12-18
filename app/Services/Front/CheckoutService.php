@@ -114,6 +114,7 @@ class CheckoutService
                 'color' => $ci['color'] ?? null,
                 'price' => $ci['unit_price'] ?? 0,
                 'subtotal' => $ci['line_total'] ?? (($ci['qty'] ?? 1) * ($ci['unit_price'] ?? 0)),
+                'sku' => $ci['sku'] ?? null,
             ];
 
             Log::debug('Order item data:', $orderItemData);

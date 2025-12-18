@@ -186,6 +186,7 @@ Route::prefix('admin')->group(function () {
       Route::resource('orders', OrderController::class);
       Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
       Route::get('orders/{id}/invoice', [OrderController::class, 'invoice'])->name('admin.orders.invoice');
+      Route::get('orders/{id}/invoice-pdf', [OrderController::class, 'invoicePdf'])->name('admin.orders.invoice_pdf');
 
     
       //Route logout

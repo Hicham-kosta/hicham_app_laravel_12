@@ -52,6 +52,9 @@
                                     <a href="{{route('admin.orders.invoice', $order->id)}}" target="_blank" 
                                     class="btn btn-sm btn-outline-secondary ms-1">
                                     <i class="fas fa-file-invoice"></i> Invoice </a>
+                                    <a href="{{route('admin.orders.invoice_pdf', $order->id)}}" target="_blank" 
+                                    class="btn btn-sm btn-outline-info ms-1">
+                                    <i class="fas fa-file-pdf"></i> Invoice PDF </a>
                                     @endif
                               </td>
                             </tr>
