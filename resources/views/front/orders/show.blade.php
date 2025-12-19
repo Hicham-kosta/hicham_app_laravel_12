@@ -100,7 +100,9 @@
                                                     </div>
                                                     @endif
                                                     <div>
-                                                        <h6 class="mb-1 text-dark">{{ optional($item->product)->name ?? $item->product_name }}</h6>
+                                                        <h6 class="mb-1 text-dark">{{ optional($item->product)->name ?? $item->product_name }} 
+                                                            ({{optional($item->product)->sku ?? $item->sku}})
+                                                        </h6>
                                                         @if($item->size || $item->product->product_color)
                                                         <p class="text-muted mb-0 small">
                                                             @if($item->size)<span class="me-2">Size: {{ $item->size }}</span>@endif

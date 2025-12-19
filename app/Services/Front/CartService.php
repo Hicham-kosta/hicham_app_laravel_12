@@ -51,6 +51,7 @@ class CartService
             'cart_id' => $row->id,
             'product_id' => $product->id,
             'product_name' => $product->product_name,
+            'sku' => $product->sku,
             'product_url' => $product->product_url,
             'image' => $image,
             'size' => $row->product_size,

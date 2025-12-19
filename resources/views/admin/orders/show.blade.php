@@ -45,7 +45,9 @@
                         <tbody>
                             @foreach ($order->orderItems as $item)
                             <tr>
-                                <td>{{ optional($item->product)->name ?? $item->product_name}}</td>
+                                <td>{{ optional($item->product)->name ?? $item->product_name}} 
+                                    ({{optional($item->product)->sku ?? $item->sku}})
+                                </td>
                                 <td>{{ $item->qty }}</td>
                                 <td>{{ formatCurrency($item->price, 2) }}</td>
                                 <td>{{ formatCurrency($item->subtotal, 2) }}</td>

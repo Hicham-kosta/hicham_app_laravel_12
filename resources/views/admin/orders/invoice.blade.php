@@ -157,7 +157,9 @@
                             @foreach ($order->orderItems as $index => $item)
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
-                                <td>{{ optional($item->product)->name ?? $item->product_name }}</td>
+                                <td>{{ optional($item->product)->name ?? $item->product_name }} 
+                                    ({{optional($item->product)->sku ?? $item->sku}})
+                                </td>
                                 <td class="text-center">{{ $item->size ?? '-' }}</td>
                                 <td class="text-end">{{ config('app.currency_symbol', '$') }}{{ number_format($item->price, 2) }}</td>
                                 <td class="text-center">{{ $item->qty }}</td>
