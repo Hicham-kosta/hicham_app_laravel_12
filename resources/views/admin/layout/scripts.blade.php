@@ -283,133 +283,156 @@
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
         <script>
           $(document).ready(function(){
-            $("#subadmins").DataTable();
-            $("#brands").DataTable();
-            // Inject PHP data into JS safely
-            const tablesConfig = [
-              {
-                id: "categories",
-                savedOrder: @json($categoriesSavedOrder ?? null),
-                hiddenCols: @json($categoriesHiddenCols ?? []),
-                tableName: "Categories"
-              },
-              {
-                id: "products",
-                savedOrder: @json($productsSavedOrder ?? null),
-                hiddenCols: @json($productsHiddenCols ?? []),
-                tableName: "products"
-              },
-              {
-                id: "filters",
-                savedOrder: @json($filtersSavedOrder ?? null),
-                hiddenCols: @json($filtersHiddenCols ?? []),
-                tableName: "filters"
-              },
-              {
-                id: "filters_values",
-                savedOrder: @json($filterValuesSavedOrder ?? null),
-                hiddenCols: @json($filterValuesHiddenCols ?? []),
-                tableName: "filter_values"
-              },
-              {
-                id: "coupons",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "coupons"
-              },
-              {
-                id: "users",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "users"
-              },
-              {
-                id: "currencies",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "currencies"
-              },
-              {
-                id: "reviews",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "reviews"
-              },
-              {
-                id: "wallet_credits",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "wallet_credits"
-              },
-              {
-                id: "orders",
-                savedOrder: @json($couponsSavedOrder ?? null),
-                hiddenCols: @json($couponsHiddenCols ?? []),
-                tableName: "orders"
-              },
-            ];
-            tablesConfig.forEach(config => {
-              const tableElement = $("#" + config.id);
-              if(tableElement.length > 0){
-                let dataTable = tableElement.DataTable({
-                  order: [[0, 'desc']],
-                  colReorder:{
-                    order: config.savedOrder
-                  },
-                  stateSave: true,
-                  dom: 'Bfrtip',
-                  buttons: ['colvis'],
-                  columnDefs: config.hiddenCols.map(index => ({
-                    targets: parseInt(index),
-                    visible: false
-                  }))
-                });
-                dataTable.on('column-reorder', function(){
-                  savePreferences(config.tableName, dataTable.colReorder.order(),
-                getHiddenColumnIndexes(dataTable));
-                });
-                dataTable.on('column-visibility.dt', function(){
-                  savePreferences(config.tableName, dataTable.colReorder.order(),
-                getHiddenColumnIndexes(dataTable));
-                });
-              }
-              });
-              function getHiddenColumnIndexes(dataTable) {
-                let hidden = [];
-                dataTable.columns().every(function(index){
-                  if(!this.visible()) hidden.push(index);
-                });
-                return hidden;
-              }
-              function savePreferences(tableName, columnOrder, hiddenCols) {
-                $.ajax({
-                  url: "{{url('admin/save-column-visibility')}}",
-                  type: 'POST',
-                  data: {
-                    _token: "{{ csrf_token() }}",
-                    table_key: tableName,
-                    column_order: columnOrder,
-                    hidden_column: hiddenCols
-                  },
-                  success: function(response) {
-                    console.log("Preferences saved successfully for " + tableName + ":", response);
-                  }
-                  
-                });
-                $.ajax({
-                  url: "{{url('admin/save-column-order')}}",
-                  type: 'POST',
-                  data: {
-                    _token: "{{ csrf_token() }}",
-                    table_key: tableName,
-                    column_order: columnOrder
-                  },
-                  success: function(response) {
-                    console.log("Column order saved successfully for", response);
-                  }
-                });
-              }           
+    // REMOVE THESE LINES:
+    // $("#subadmins").DataTable();
+    // $("#brands").DataTable();
+    // $("#pages").DataTable();
+    
+    // Inject PHP data into JS safely
+    const tablesConfig = [
+      {
+        id: "categories",
+        savedOrder: @json($categoriesSavedOrder ?? null),
+        hiddenCols: @json($categoriesHiddenCols ?? []),
+        tableName: "Categories"
+      },
+      {
+        id: "products",
+        savedOrder: @json($productsSavedOrder ?? null),
+        hiddenCols: @json($productsHiddenCols ?? []),
+        tableName: "products"
+      },
+      {
+        id: "filters",
+        savedOrder: @json($filtersSavedOrder ?? null),
+        hiddenCols: @json($filtersHiddenCols ?? []),
+        tableName: "filters"
+      },
+      {
+        id: "filters_values",
+        savedOrder: @json($filterValuesSavedOrder ?? null),
+        hiddenCols: @json($filterValuesHiddenCols ?? []),
+        tableName: "filter_values"
+      },
+      {
+        id: "coupons",
+        savedOrder: @json($couponsSavedOrder ?? null),
+        hiddenCols: @json($couponsHiddenCols ?? []),
+        tableName: "coupons"
+      },
+      {
+        id: "users",
+        savedOrder: @json($usersSavedOrder ?? null),
+        hiddenCols: @json($usersHiddenCols ?? []),
+        tableName: "users"
+      },
+      {
+        id: "currencies",
+        savedOrder: @json($currenciesSavedOrder ?? null),
+        hiddenCols: @json($currenciesHiddenCols ?? []),
+        tableName: "currencies"
+      },
+      {
+        id: "reviews",
+        savedOrder: @json($reviewsSavedOrder ?? null),
+        hiddenCols: @json($reviewsHiddenCols ?? []),
+        tableName: "reviews"
+      },
+      {
+        id: "wallet_credits",
+        savedOrder: @json($walletCreditsSavedOrder ?? null),
+        hiddenCols: @json($walletCreditsHiddenCols ?? []),
+        tableName: "wallet_credits"
+      },
+      {
+        id: "orders",
+        savedOrder: @json($ordersSavedOrder ?? null),
+        hiddenCols: @json($ordersHiddenCols ?? []),
+        tableName: "orders"
+      },
+      {
+        id: "pages",
+        savedOrder: @json($pagesSavedOrder ?? null),
+        hiddenCols: @json($pagesHiddenCols ?? []),
+        tableName: "pages"
+      },
+      {
+        id: "subscribers",
+        savedOrder: @json($subscribersSavedOrder ?? null),
+        hiddenCols: @json($subscribersHiddenCols ?? []),
+        tableName: "subscribers"
+      },
+    ];
+    
+    tablesConfig.forEach(config => {
+      const tableElement = $("#" + config.id);
+      if(tableElement.length > 0){
+        // Check if DataTable is already initialized
+        if (!$.fn.DataTable.isDataTable("#" + config.id)) {
+          let dataTable = tableElement.DataTable({
+            order: [[0, 'desc']],
+            colReorder:{
+              order: config.savedOrder
+            },
+            stateSave: true,
+            dom: 'Bfrtip',
+            buttons: ['colvis'],
+            columnDefs: config.hiddenCols.map(index => ({
+              targets: parseInt(index),
+              visible: false
+            }))
           });
+          
+          dataTable.on('column-reorder', function(){
+            savePreferences(config.tableName, dataTable.colReorder.order(),
+          getHiddenColumnIndexes(dataTable));
+          });
+          
+          dataTable.on('column-visibility.dt', function(){
+            savePreferences(config.tableName, dataTable.colReorder.order(),
+          getHiddenColumnIndexes(dataTable));
+          });
+        }
+      }
+    });
+    
+    function getHiddenColumnIndexes(dataTable) {
+      let hidden = [];
+      dataTable.columns().every(function(index){
+        if(!this.visible()) hidden.push(index);
+      });
+      return hidden;
+    }
+    
+    function savePreferences(tableName, columnOrder, hiddenCols) {
+      $.ajax({
+        url: "{{url('admin/save-column-visibility')}}",
+        type: 'POST',
+        data: {
+          _token: "{{ csrf_token() }}",
+          table_key: tableName,
+          column_order: columnOrder,
+          hidden_column: hiddenCols
+        },
+        success: function(response) {
+          console.log("Preferences saved successfully for " + tableName + ":", response);
+        }
+      });
+      
+      $.ajax({
+        url: "{{url('admin/save-column-order')}}",
+        type: 'POST',
+        data: {
+          _token: "{{ csrf_token() }}",
+          table_key: tableName,
+          column_order: columnOrder
+        },
+        success: function(response) {
+          console.log("Column order saved successfully for", response);
+        }
+      });
+    }           
+});
         </script>
         
         <!-- SweetAlert2 -->

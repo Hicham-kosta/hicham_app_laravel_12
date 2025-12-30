@@ -15,11 +15,11 @@
                     <div class="col-md-4 mb-5">
                         <h5 class="font-weight-bold text-dark mb-4">Quick Links</h5>
                         <div class="d-flex flex-column justify-content-start">
-                            <a class="text-dark mb-2" href="about.html"><i class="fa fa-angle-right mr-2"></i>About Us</a>
-                            <a class="text-dark mb-2" href="contact.html"><i class="fa fa-angle-right mr-2"></i>Contact Us</a>
-                            <a class="text-dark mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>FAQ</a>
-                            <a class="text-dark mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Terms & Conditions</a>
-                            <a class="text-dark mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Privacy Policy</a>
+                            <a class="text-dark mb-2" href="{{url('about-us')}}"><i class="fa fa-angle-right mr-2"></i>About Us</a>
+                            <a class="text-dark mb-2" href="{{url('contact-us')}}"><i class="fa fa-angle-right mr-2"></i>Contact Us</a>
+                            <a class="text-dark mb-2" href="{{url('faq')}}"><i class="fa fa-angle-right mr-2"></i>FAQ</a>
+                            <a class="text-dark mb-2" href="{{url('terms-conditions')}}"><i class="fa fa-angle-right mr-2"></i>Terms & Conditions</a>
+                            <a class="text-dark mb-2" href="{{url('privacy-policy')}}"><i class="fa fa-angle-right mr-2"></i>Privacy Policy</a>
                         </div>
                     </div>
                     <div class="col-md-4 mb-5">
@@ -33,15 +33,20 @@
                     </div>
                     <div class="col-md-4 mb-5">
                         <h5 class="font-weight-bold text-dark mb-4">Newsletter</h5>
-                        <form action="">
+                        <form id="footer-subscribe-form" 
+                        action="{{route('front.subscribers.store')}}"
+                        method="POST">
+                            @csrf
                             <div class="form-group">
-                                <input type="email" class="form-control border-0 py-4" placeholder="Your Email"
-                                    required="required" />
+                                <input id="subscriber-email" name="email" type="email" 
+                                class="form-control border-0 py-4" placeholder="Your Email" required />
                             </div>
                             <div>
-                                <button class="btn btn-primary btn-block border-0 py-3" type="submit">Subscribe Now</button>
+                                <button id="subscriber-submit"class="btn btn-primary btn-block border-0 py-3" 
+                                type="submit">Subscribe Now</button>
                             </div>
                         </form>
+                        <div id="subscriber-alert" style="margin-top: 10px;"></div>
                     </div>
                 </div>
             </div>

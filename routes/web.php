@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 use App\Models\Currency;
+use App\Models\Page;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\AdminController;
@@ -19,6 +20,8 @@ use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WalletCreditController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -36,6 +39,8 @@ use App\Http\Controllers\Front\PostcodeLookupController;
 use App\Http\Controllers\Front\WalletController as WalletFrontController;
 use App\Http\Controllers\Front\checkoutController;
 use App\Http\Controllers\Front\OrderController as OrderFrontController;
+use App\Http\Controllers\Front\PageController as PageFrontController;
+use App\Http\Controllers\Front\SubscriberController as SubscriberFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -174,6 +179,11 @@ Route::prefix('admin')->group(function () {
       Route::resource('currencies', CurrencyController::class);
       Route::post('update-currency-status', [CurrencyController::class, 'updateCurrencyStatus']);
 
+      //Pages
+      Route::resource('pages', PageController::class);
+      Route::post('update-page-status', [PageController::class, 'updatePageStatus'])->name('page.update.status');
+
+
       // Reviews
       Route::resource('reviews', ReviewController::class);
       Route::post('/update-review-status', [ReviewController::class, 'updateReviewStatus'])->name('admin.updateReviewStatus');
@@ -188,6 +198,10 @@ Route::prefix('admin')->group(function () {
       Route::get('orders/{id}/invoice', [OrderController::class, 'invoice'])->name('admin.orders.invoice');
       Route::get('orders/{id}/invoice-pdf', [OrderController::class, 'invoicePdf'])->name('admin.orders.invoice_pdf');
 
+      // Subscribers
+      Route::resource('subscribers', SubscriberController::class);
+      Route::post('update-subscriber-status', [SubscriberController::class, 'updateSubscriberStatus']);
+
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
@@ -198,19 +212,7 @@ Route::prefix('admin')->group(function () {
 });
 
 Route::namespace('App\Http\Controllers\Front')->group(function () {
-    Route::get('/', [IndexController::class, 'index']);
-  
-
-    // Only register category routes if table exists
-    if(Schema::hasTable('categories')){
-      try{$catUrls = Category::where('status', 1)->pluck('url')->toArray();
-      foreach ($catUrls as $url) {
-        Route::get("/$url", [ProductFrontController::class, 'index']);
-      }
-      }catch(\Exception $e){
-        //Ignore Errors during migration/seed
-      }
-    }
+    Route::get('/', [IndexController::class, 'index'])->name('front.home');
 
     // Product Detail Page
     if(Schema::hasTable('products')){
@@ -223,6 +225,34 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
         //Ignore Errors during migration/seed
       }
     }
+  
+
+    // Only register category routes if table exists
+    if(Schema::hasTable('categories')){
+    try{
+        $catUrls = Category::where('status', 1)->pluck('url')->toArray();
+        foreach ($catUrls as $url) {
+            Route::get("/{$url}", [ProductFrontController::class, 'index']);
+        }
+    }catch(\Throwable $e){
+        //Ignore Errors during migration/seed
+    }
+}
+
+    // CMS page URLs last
+    if(Schema::hasTable('pages')){
+      try{
+        $pageUrls = Page::where('status', 1)->pluck('url')->toArray();
+        foreach ($pageUrls as $url) {
+          Route::get("/{$url}", [PageFrontController::class, 'show'])
+          ->defaults('url', $url)
+          ->name("front.page.{$url}");
+        }
+      }catch(\Throwable $e){
+        //Ignore Errors during migration/seed
+      }
+    }
+    
 
     Route::post('/get-product-price', [ProductFrontController::class, 'getProductPrice']);
 
@@ -253,6 +283,9 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
 
     Route::post('/currency/switch', [CurrencySwitchController::class, 'switch'])->name('currency.switch');
+
+    //Subscribe (footrer)
+    Route::post('/subscriber', [SubscriberFrontController::class, 'store'])->name('front.subscribers.store');
     
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     // In your web.php routes file

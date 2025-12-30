@@ -154,14 +154,21 @@
                     <h2 class="section-title px-5 mb-3"><span class="bg-secondary px-2">Stay Updated</span></h2>
                     <p>Stay updated with the latest products, offers & exclusive deals!</p>
                 </div>
-                <form action="">
+                <form id="index-subscribe-form" action="{{route('front.subscribers.store')}}" method="POST">
+                    @csrf
                     <div class="input-group">
-                        <input type="text" class="form-control border-white p-4" placeholder="Enter your email">
+                        <input 
+                        id="index-subscriber-email" 
+                        type="email" 
+                        class="form-control border-white p-4" 
+                        placeholder="Enter your email" 
+                        required>
                         <div class="input-group-append">
-                            <button class="btn btn-primary px-4">Subscribe</button>
+                            <button id="index-subscribe-submit" class="btn btn-primary px-4" type="submit">Subscribe</button>
                         </div>
                     </div>
                 </form>
+                <div id="index-subscriber-alert" class="mt-3"></div>
             </div>
         </div>
     </div>

@@ -363,6 +363,37 @@ $(document).ready(function () {
         });
     });
 
+    // Update subscriber status
+
+    $(document).on("click", '.updateSubscriberStatus', function () {
+        var status = $(this).find("i").data("status");
+        var subscriber_id = $(this).data("subscriber-id");
+        $.ajax({
+            headers: { 'X-CSRF-TOKEN': $('meta[name ="csrf-token"]').attr('content') },
+            type: 'post',
+            url: '/admin/update-subscriber-status',
+            data: { status: status, subscriber_id: subscriber_id },
+            success: function (resp) {
+                if (resp['status'] == 0) {
+                    // Add closing > and update data-status
+                    $("a[data-subscriber-id='" + subscriber_id + "']").html("<i class='fas fa-toggle-off' style='color:grey' data-status='Inactive'></i>");
+
+                    // Also update the anchor's data-status attribute for future clicks
+                    $("a[data-subscriber-id='" + subscriber_id + "']").data('status', 'Inactive');
+
+                } else if (resp['status'] == 1) {
+                    // Fix typo: 'Aactive' should be 'Active'
+                    $("a[data-subscriber-id='" + subscriber_id + "']").html("<i class='fas fa-toggle-on' style='color:#3f6ed3' data-status='Active'></i>");
+
+                    // Update the anchor's data-status attribute
+                    $("a[data-subscriber-id='" + subscriber_id + "']").data('status', 'Active');
+                }
+            },
+            error: function () {
+                alert("Error");
+            }
+        });
+    });
 
 
     $(document).on('click', '#deleteCategoryImage', function () {
@@ -421,9 +452,9 @@ $(document).ready(function () {
         e.preventDefault();
         let button = $(this);
         let module = button.data("module");
-        let moduleid = button.data("id");
+        let moduleId = button.data("id");
         let form = button.closest("form");
-        let redirectUrl = "/admin/delete-" + module + "/" + moduleid;
+        let redirectUrl = "/admin/delete-" + module + "/" + moduleId;
         Swal.fire({
             title: 'Are you sure?',
             text: "You won't be able to revert this!",
@@ -553,3 +584,4 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleShippedFields();
     statusSelect.addEventListener('change', toggleShippedFields);
 });
+
