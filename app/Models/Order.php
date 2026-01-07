@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\PaymentTransaction;
 use App\Models\OrderItem;
 use App\Models\Address;
 use App\Models\User;
@@ -84,4 +85,35 @@ class Order extends Model
     {
         return $this->hasOne(OrderLog::class)->latestOfMany();
     }
+
+    // ShortCut to get last successful payment transaction
+    public function latestTransaction()
+    {
+        return $this->hasOne(PaymentTransaction::class)->latestOfMany();
+    }
+
+    // All payment transactions for this order
+    public function paymentTransactions()
+    {
+        return $this->hasMany(PaymentTransaction::class, 'order_id');
+    }
+
+    // Currency resolver accessor: $order->currency_code
+    public function getCurrencyCodeAttribute()
+    {
+        //1. If currency table has a currency column
+        if(!empty($this->currency)){
+            return strtoupper($this->currency);
+        }
+        
+        //2. Otherwise use latest payment transaction currency
+        $txnCurrency = $this->paymentTransactions()->latest()->value('currency');
+        if(!empty($txnCurrency)){
+            return strtoupper($txnCurrency);
+        }
+
+        //3. Fallback to app currency
+        return strtoupper(config('app.currency', 'USD'));
+    }
+
 }

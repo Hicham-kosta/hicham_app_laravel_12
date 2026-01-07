@@ -38,11 +38,11 @@ class OrderController extends Controller
     public function show($orderId): View // Add return type
     {
         $user = Auth::user();
-        $order = $this->orderService->getOrderDetails($user, $orderId);
+        $orders = $this->orderService->getOrderDetails($user, $orderId);
 
-        if(!$order) {
+        if(!$orders) {
             abort(Response::HTTP_NOT_FOUND);
         }
-        return view('front.orders.show', compact('order'));
+        return view('front.orders.show', compact('orders'));
     }
 }

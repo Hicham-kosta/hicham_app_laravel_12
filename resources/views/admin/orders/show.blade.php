@@ -49,8 +49,16 @@
                                     ({{optional($item->product)->sku ?? $item->sku}})
                                 </td>
                                 <td>{{ $item->qty }}</td>
-                                <td>{{ formatCurrency($item->price, 2) }}</td>
-                                <td>{{ formatCurrency($item->subtotal, 2) }}</td>
+                                @if($order->payment_method === 'paypal')
+                                <td>{{ formatCurrency($item->price, 'USD') }}</td>
+                                @else
+                                <td>{{ formatCurrency($item->price) }}</td>
+                                @endif
+                                @if($order->payment_method === 'paypal')
+                                <td>{{ formatCurrency($item->qty * $item->price, 'USD') }}</td>
+                                @else
+                                <td>{{ formatCurrency($item->qty * $item->price) }}</td>
+                                @endif
                             </tr>
                             @endforeach
                         </tbody>
@@ -153,17 +161,44 @@
                     <p>No shipping address available</p>
                     @endif
                     <hr>
-                    <p><strong>Subtotal:</strong> {{ formatCurrency($order->subtotal, 2) }}</p>
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Subtotal:</strong> {{ formatCurrency($order->subtotal, 'USD') }}</p>
+                    @else
+                    <p><strong>Subtotal:</strong> {{ formatCurrency($order->subtotal) }}</p>
+                    @endif
                     @if($order->discount > 0)
-                    <p><strong>Discount:</strong> {{ formatCurrency($order->discount, 2) }}</p>
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Discount:</strong> {{ formatCurrency($order->discount, 'USD') }}</p>
+                    @else
+                    <p><strong>Discount:</strong> {{ formatCurrency($order->discount) }}</p>
+                    @endif
                     @endif
                     @if($order->wallet > 0)
-                    <p><strong>Wallet:</strong> {{ formatCurrency($order->wallet, 2) }}</p>
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Wallet:</strong> {{ formatCurrency($order->wallet, 'USD') }}</p>
+                    @else
+                    <p><strong>Wallet:</strong> {{ formatCurrency($order->wallet) }}</p>
+                    @endif
                     @endif
                     @if($order->shipping > 0)
-                    <p><strong>Shipping:</strong> {{ formatCurrency($order->shipping, 2) }}</p>
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Shipping:</strong> {{ formatCurrency($order->shipping, 'USD') }}</p>
+                    @else
+                    <p><strong>Shipping:</strong> {{ formatCurrency($order->shipping) }}</p>
                     @endif
-                    <p><strong>Total:</strong> {{ formatCurrency($order->total, 2) }}</p>
+                    @endif
+                    @if($order->tax > 0)
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Tax:</strong> {{ formatCurrency($order->tax, 'USD') }}</p>
+                    @else
+                    <p><strong>Tax:</strong> {{ formatCurrency($order->tax) }}</p>
+                    @endif  
+                    @endif
+                    @if($order->payment_method === 'paypal')
+                    <p><strong>Total:</strong> {{ formatCurrency($order->total, 'USD') }}</p>
+                    @else
+                    <p><strong>Total:</strong> {{ formatCurrency($order->total) }}</p>
+                    @endif
                 </div>
             </div>
         </div>

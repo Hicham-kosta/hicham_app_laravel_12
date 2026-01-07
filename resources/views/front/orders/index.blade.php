@@ -48,8 +48,7 @@
                                                             <i class="fas fa-shopping-bag"></i>
                                                         </div>
                                                         <div>
-                                                            <h6 class="mb-1 text-dark">Order #{{ $order->order_number ?? $order->id }}</h6>
-                                                            <p class="text-muted mb-0 small">
+                                                            <h6 class="mb-1 text-dark">Order #{{ $order->order_number ?? $order->id }}</h6>                                                            <p class="text-muted mb-0 small">
                                                                 <i class="fas fa-calendar me-1"></i>
                                                                 {{ $order->created_at->format('M d, Y') }}
                                                             </p>
@@ -67,8 +66,13 @@
                                                 </td>
                                                 <td class="text-center py-4">
                                                     <h6 class="text-dark mb-0">
-                                                        {{ formatCurrency($order->total) }}
-                                                    </h6>
+        @if($order->payment_method === 'paypal')
+            {{-- Force USD display for PayPal orders --}}
+            {!! formatCurrency($order->total ?? 0, 'USD') !!}
+        @else
+            {!! formatCurrency($order->total ?? 0) !!}
+        @endif
+    </h6>
                                                 </td>
                                                 <td class="text-center py-4">
                                                     @php

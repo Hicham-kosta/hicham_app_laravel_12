@@ -12,7 +12,7 @@
                 <p class="m-0 px-2 text-white">-</p>
                 <p class="m-0"><a href="{{ route('user.orders.index') }}" class="text-white">My Orders</a></p>
                 <p class="m-0 px-2 text-white">-</p>
-                <p class="m-0 text-white">Order #{{ $order->order_number ?? $order->id }}</p>
+                <p class="m-0 text-white">Order #{{ $orders->order_number ?? $orders->id }}</p>
             </div>
         </div>
     </div>
@@ -32,10 +32,10 @@
                                             <i class="fas fa-receipt fa-lg"></i>
                                         </div>
                                         <div>
-                                            <h4 class="text-dark mb-1">Order #{{ $order->order_number ?? $order->id }}</h4>
+                                            <h4 class="text-dark mb-1">Order #{{ $orders->order_number ?? $orders->id }}</h4>
                                             <p class="text-muted mb-0">
                                                 <i class="fas fa-calendar me-1"></i>
-                                                Placed on {{ $order->created_at->format('F d, Y \a\t h:i A') }}
+                                                Placed on {{ $orders->created_at->format('F d, Y \a\t h:i A') }}
                                             </p>
                                         </div>
                                     </div>
@@ -49,14 +49,22 @@
                                             'cancelled' => ['class' => 'bg-danger', 'icon' => 'times'],
                                             'shipped' => ['class' => 'bg-primary', 'icon' => 'shipping-fast']
                                         ];
-                                        $status = strtolower($order->status);
+                                        $status = strtolower($orders->status);
                                         $config = $statusConfig[$status] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
                                     @endphp
                                     <span class="badge {{ $config['class'] }} rounded-pill px-4 py-2 fs-6">
                                         <i class="fas fa-{{ $config['icon'] }} me-2"></i>
-                                        {{ ucfirst($order->status) }}
+                                        {{ ucfirst($orders->status) }}
                                     </span>
-                                    <h3 class="text-primary mt-2">{{ formatCurrency($order->total ?? 0, 2) }}</h3>
+                                    @if($orders->payment_method === 'paypal')
+                                    <h3 class="text-primary mt-2">
+                                        {{ formatCurrency($orders->total ?? 0, 'USD') }}
+                                    </h3>
+                                    @else
+                                    <h3 class="text-primary mt-2">
+                                        {{ formatCurrency($orders->total ?? 0) }}
+                                    </h3>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -70,7 +78,7 @@
                     <div class="card shadow-sm border-0 rounded-lg h-100">
                         <div class="card-header bg-light py-3 border-bottom">
                             <h5 class="mb-0 text-dark">
-                                <i class="fas fa-shopping-cart me-2"></i>Order Items ({{ $order->orderItems->count() }})
+                                <i class="fas fa-shopping-cart me-2"></i>Order Items ({{ $orders->orderItems->count() }})
                             </h5>
                         </div>
                         <div class="card-body p-0">
@@ -85,7 +93,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($order->orderItems as $item)
+                                        @foreach($orders->orderItems as $item)
                                         <tr class="border-bottom">
                                             <td class="ps-4 py-4">
                                                 <div class="d-flex align-items-center">
@@ -112,16 +120,27 @@
                                                     </div>
                                                 </div>
                                             </td>
+                                            
                                             <td class="text-center py-4">
+                                                @if($orders->payment_method === 'paypal')
+                                                <span class="text-dark">
+                                                    {{ formatCurrency($item->price, 'USD') }}</span>
+                                                @else
                                                 <span class="text-dark">
                                                     {{ formatCurrency($item->price) }}</span>
+                                                @endif
                                             </td>
                                             <td class="text-center py-4">
                                                 <span class="badge bg-light text-dark border px-3 py-2">{{ $item->qty }}</span>
                                             </td>
                                             <td class="text-end pe-4 py-4">
+                                                @if($orders->payment_method === 'paypal')
+                                                <h6 class="text-dark mb-0">
+                                                    {{ formatCurrency($item->qty * $item->price, 'USD') }}</h6>
+                                                @else
                                                 <h6 class="text-dark mb-0">
                                                     {{ formatCurrency($item->qty * $item->price) }}</h6>
+                                                @endif
                                             </td>
                                         </tr>
                                         @endforeach
@@ -135,7 +154,7 @@
                   <div class="card-shadow-sm border-0 rounded-lg mt-4">
                    <div class="card-body">
                     <h5 class="mb-4">Order Tracking</h5>
-                    @if($order->logs && $order->logs->count())
+                    @if($orders->logs && $orders->logs->count())
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead class="table-light">
@@ -149,11 +168,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($order->logs as $log)
+                                @foreach($orders->logs as $log)
                                 @php
                                 $isShipped = strtolower($log->status->name ?? '') === 'shipped';
-                                $trackLink = $log->tracking_link ?? $order->tracking_link ?? null;
-                                $trackNumber = $log->tracking_number ?? $order->tracking_number ?? null; 
+                                $trackLink = $log->tracking_link ?? $orders->tracking_link ?? null;
+                                $trackNumber = $log->tracking_number ?? $orders->tracking_number ?? null; 
                                 @endphp
                                 <tr>
                                     <td>{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
@@ -200,37 +219,62 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Subtotal</span>
+                                @if($orders->payment_method === 'paypal')
                                 <span class="text-dark">
-                                    {{ formatCurrency($order->subtotal) }}</span>
+                                    {{ formatCurrency($orders->subtotal, 'USD') }}</span>
+                                @else
+                                <span class="text-dark">
+                                    {{ formatCurrency($orders->subtotal) }}</span>
+                                @endif
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Shipping</span>
+                                @if($orders->payment_method === 'paypal')
                                 <span class="text-dark">
-                                    {{ formatCurrency($order->shipping) }}</span>
+                                    {{ formatCurrency($orders->shipping, 'USD') }}</span>
+                                @else
+                                <span class="text-dark">
+                                    {{ formatCurrency($orders->shipping) }}</span>
+                                @endif
                             </div>
                             
-                            @if(!empty($order->discount) && $order->discount > 0)
+                            @if(!empty($orders->discount) && $orders->discount > 0)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Discount</span>
+                                @if($orders->payment_method === 'paypal')
                                 <span class="text-success">-
-                                    {{ formatCurrency($order->discount) }}</span>
+                                    {{ formatCurrency($orders->discount, 'USD') }}</span>
+                                @else
+                                <span class="text-success">-
+                                    {{ formatCurrency($orders->discount) }}</span>
+                                @endif
                             </div>
                             @endif
                             
-                            @if(!empty($order->wallet) && $order->wallet > 0)
+                            @if(!empty($orders->wallet) && $orders->wallet > 0)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="text-muted">Wallet Credit</span>
+                                @if($orders->payment_method === 'paypal')
                                 <span class="text-success">-
-                                    {{ formatCurrency($order->wallet) }}</span>
+                                    {{ formatCurrency($orders->wallet, 'USD') }}</span>
+                                @else
+                                <span class="text-success">-
+                                    {{ formatCurrency($orders->wallet) }}</span>
+                                @endif
                             </div>
                             @endif
                             
                             <hr>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <strong class="text-dark">Grand Total</strong>
+                                @if($orders->payment_method === 'paypal')
                                 <strong class="text-primary fs-5">
-                                    {{formatCurrency($order->total) }}</strong>
+                                    {{formatCurrency($orders->total, 'USD') }}</strong>
+                                @else
+                                <strong class="text-primary fs-5">
+                                    {{formatCurrency($orders->total) }}</strong>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -243,26 +287,26 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            @if($order->address)
+                            @if($orders->address)
                             <div class="d-flex align-items-start">
                                 <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
                                     <i class="fas fa-map-marker-alt"></i>
                                 </div>
                                 <div>
-                                    <h6 class="text-dark mb-1">{{ $order->address->name ?? 'N/A' }}</h6>
-                                    <p class="text-muted mb-1 small">{{ optional($order->address)->address_line1 ?? '' }}</p>
-                                    @if(optional($order->address)->address_line2)
-                                    <p class="text-muted mb-1 small">{{ $order->address->address_line2 }}</p>
+                                    <h6 class="text-dark mb-1">{{ $orders->address->name ?? 'N/A' }}</h6>
+                                    <p class="text-muted mb-1 small">{{ optional($orders->address)->address_line1 ?? '' }}</p>
+                                    @if(optional($orders->address)->address_line2)
+                                    <p class="text-muted mb-1 small">{{ $orders->address->address_line2 }}</p>
                                     @endif
                                     <p class="text-muted mb-1 small">
-                                        {{ optional($order->address)->city ?? '' }}, 
-                                        {{ optional($order->address)->state ?? '' }} 
-                                        {{ optional($order->address)->postcode ?? '' }}
+                                        {{ optional($orders->address)->city ?? '' }}, 
+                                        {{ optional($orders->address)->state ?? '' }} 
+                                        {{ optional($orders->address)->postcode ?? '' }}
                                     </p>
-                                    <p class="text-muted mb-0 small">{{ optional($order->address)->country ?? '' }}</p>
-                                    @if(optional($order->address)->phone)
+                                    <p class="text-muted mb-0 small">{{ optional($orders->address)->country ?? '' }}</p>
+                                    @if(optional($orders->address)->phone)
                                     <p class="text-muted mb-0 small mt-2">
-                                        <i class="fas fa-phone me-1"></i>{{ $order->address->phone }}
+                                        <i class="fas fa-phone me-1"></i>{{ $orders->address->phone }}
                                     </p>
                                     @endif
                                 </div>
@@ -287,7 +331,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-muted">Method</span>
-                                <span class="text-dark text-capitalize">{{ $order->payment_method ?? 'N/A' }}</span>
+                                <span class="text-dark text-capitalize">{{ $orders->payment_method ?? 'N/A' }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Status</span>
@@ -299,12 +343,12 @@
                                             'cancelled' => ['class' => 'bg-danger', 'icon' => 'times'],
                                             'shipped' => ['class' => 'bg-primary', 'icon' => 'shipping-fast']
                                         ];
-                                        $status = strtolower($order->status);
+                                        $status = strtolower($orders->status);
                                         $config = $statusConfig[$status] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
                                     @endphp
                                     <span class="badge {{ $config['class'] }} rounded-pill px-4 py-2 fs-6">
                                         <i class="fas fa-{{ $config['icon'] }} me-2"></i>
-                                        {{ ucfirst($order->status) }}
+                                        {{ ucfirst($orders->status) }}
                                     </span>
                             </div>
                         </div>
@@ -320,7 +364,7 @@
                             <i class="fas fa-arrow-left me-2"></i>Back to Orders
                         </a>
                         <div>
-                            @if($order->status === 'pending')
+                            @if($orders->status === 'pending')
                             <button class="btn btn-danger btn-lg px-4 me-2">
                                 <i class="fas fa-times me-2"></i>Cancel Order
                             </button>

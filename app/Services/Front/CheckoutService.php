@@ -62,28 +62,25 @@ class CheckoutService
      */
     public function createOrderFromCart($user, array $payload)
 {
+    // Get cart data
     $cart = $this->getCartForCheckout($user);
     
-    // DEBUG: Log cart structure
-    Log::debug('=== CREATE ORDER DEBUG START ===');
-    Log::debug('User ID: ' . ($user?->id ?? 'null'));
-    Log::debug('Cart keys: ' . json_encode(array_keys($cart)));
-    Log::debug('Cart items count: ' . count($cart['cartItems'] ?? []));
-    Log::debug('Cart subtotal_numeric: ' . ($cart['subtotal_numeric'] ?? 'NOT FOUND'));
-    Log::debug('Cart total_numeric: ' . ($cart['total_numeric'] ?? 'NOT FOUND'));
-    Log::debug('Payload address_id: ' . ($payload['address_id'] ?? 'NOT FOUND'));
-
-    // validate cart items
+    Log::info('Creating order from cart - Start', [
+        'user_id' => $user->id,
+        'cart_items_count' => count($cart['cartItems'] ?? []),
+        'payload' => $payload
+    ]);
+    
+    // Validate cart items
     if(empty($cart['cartItems']) || count($cart['cartItems']) === 0){
-        Log::debug('CART VALIDATION FAILED: Cart is empty');
+        Log::error('Cart is empty', ['user_id' => $user->id]);
         return ['success' => false, 'message' => 'Cart is empty'];
     }
 
     DB::beginTransaction();
     
     try {
-        Log::debug('Starting order creation...');
-        
+        // Prepare order data
         $orderData = [
             'user_id' => $user?->id,
             'address_id' => $payload['address_id'] ?? null,
@@ -93,16 +90,161 @@ class CheckoutService
             'shipping' => $cart['shipping'] ?? 0,
             'total' => $cart['total_numeric'] ?? 0,
             'payment_method' => $payload['payment_method'] ?? null,
-            'status' => 'pending',
-            'payment_status' => 'pending'
+            'transaction_id' => $payload['transaction_id'] ?? null,
+            'paypal_order_id' => $payload['paypal_order_id'] ?? null,
+            'status' => $payload['status'] ?? 'pending',
+            'payment_status' => $payload['payment_status'] ?? 'pending'
         ];
 
-        Log::debug('Order data to create:', $orderData);
-
+        Log::info('Creating order with data:', $orderData);
+        
+        // Create order
         $order = Order::create($orderData);
-        Log::debug('Order created with ID: ' . $order->id);
+        
+        Log::info('Order created', ['order_id' => $order->id]);
+
+        // Generate order number
+        try {
+            $orderNumber = 'SM' . now()->format('YmdHis') . str_pad($order->id, 6, '0', STR_PAD_LEFT);
+            $order->order_number = $orderNumber;
+            $order->save();
+            
+            Log::info('Order number generated', [
+                'order_id' => $order->id,
+                'order_number' => $orderNumber
+            ]);
+        } catch(\Throwable $e) {
+            Log::warning("Failed to set order_number for order {$order->id}: " . $e->getMessage());
+        }
 
         // Insert order items
+        $productIds = array_unique(array_filter(array_column($cart['cartItems'], 'product_id')));
+        
+        Log::info('Processing cart items', [
+            'product_ids' => $productIds,
+            'cart_items' => $cart['cartItems']
+        ]);
+
+        // Collect sizes
+        $sizes = [];
+        foreach($cart['cartItems'] as $ci){
+            $s = $ci['size'] ?? $ci['product_size'] ?? null;
+            if($s !== null && $s !== ''){
+                $sizes[] = trim((string)$s);
+            }
+        }
+
+        $sizes = array_unique($sizes);
+        $products = collect();
+        $productAttributes = collect();
+
+        if(!empty($productIds)){
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        }
+
+        // Load Attributes matching product_id and size
+        if(!empty($productIds) && !empty($sizes)){
+            $attrs = ProductsAttribute::whereIn('product_id', $productIds)
+                ->whereIn('size', $sizes)
+                ->get();
+            
+            $productAttributes = $attrs->keyBy(function($item){
+                return $item->product_id . '-' . strtolower(trim((string)$item->size));
+            });
+        }
+        
+        // Helper to build lookup key
+        $makeAttrKey = function($productId, $size){
+            return $productId . '-' . strtolower(trim((string)$size));
+        };
+
+        foreach($cart['cartItems'] as $ci){
+            $productId = $ci['product_id'] ?? null;
+            $qty = $ci['qty'] ?? $ci['product_qty'] ?? 1;
+            $unitPrice = $ci['unit_price'] ?? ($ci['price'] ?? 0);
+            $lineTotal = $ci['line_total'] ?? ($unitPrice * $qty);
+
+            // Load Product
+            $product = $products->get($productId);
+            
+            $sizeFromCart = $ci['size'] ?? $ci['product_size'] ?? null;
+            $sizeFromCart = $sizeFromCart !== null ? trim((string)$sizeFromCart) : null;
+
+            // Lookup product attribute by (product_id, size)
+            $pa = null;
+            if($productId && $sizeFromCart){
+                $key = $makeAttrKey($productId, $sizeFromCart);
+                $pa = $productAttributes->get($key); 
+            }
+            if(!$pa && !empty($ci['product_attribute_id'])){
+                $pa = ProductsAttribute::find($ci['product_attribute_id']);
+            }
+            
+            $sizeFromAttr = $pa?->size ?? $pa?->product_size ?? null;
+            $size = $sizeFromCart ?? $sizeFromAttr;
+            $size = $size !== null ? trim((string)$size) : null;
+
+            $colorFromCart = $ci['color'] ?? $ci['ciolor'] ?? null; // Note: typo 'ciolor' in your code
+            $colorFromProduct = $product?->product_color ?? $product?->color ?? null;
+            $color = $colorFromCart ?? $colorFromProduct;
+
+            $sku = $pa?->sku ?? $ci['sku'] ?? $product?->sku ?? 'N/A';
+
+            // Create order item
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $productId,
+                'product_name' => $ci['product_name'] ?? ($ci['name'] ?? 'Unnamed Product'),
+                'qty' => $qty,
+                'price' => $unitPrice,
+                'subtotal' => $lineTotal,
+                'size' => $size,
+                'color' => $color,
+                'sku' => $sku
+            ]);
+            
+            Log::info('Order item created', [
+                'order_id' => $order->id,
+                'product_id' => $productId,
+                'product_name' => $ci['product_name'] ?? 'Unnamed',
+                'qty' => $qty
+            ]);
+        }
+
+        DB::commit();
+        
+        Log::info('Order creation completed successfully', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'total' => $order->total,
+            'items_count' => count($cart['cartItems'])
+        ]);
+
+        // Send email for COD orders
+        if(strtolower($order->payment_method ?? '') === 'cod' && $order->user){
+            try {
+                Mail::to($order->user->email)->queue(new OrderPlaced($order));
+            } catch(\Throwable $e) {
+                Log::error("Failed to send order placed email for order {$order->id}: " . $e->getMessage());
+            }   
+        }
+        
+        return ['success' => true, 'order' => $order];
+        
+    } catch(\Throwable $e) {
+        DB::rollBack();
+        
+        Log::error('Order creation failed', [
+            'user_id' => $user->id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return ['success' => false, 'message' => 'Order creation failed: ' . $e->getMessage()];
+    }
+}
+
+        /* Insert order items
         $itemCount = 0;
         
         // Pre-fetch all product attributes for the cart items to minimize queries
@@ -113,10 +255,7 @@ class CheckoutService
             ->get()
             ->groupBy(['product_id', 'size']); // Group by product_id and size
         
-        Log::debug('Loaded product attributes count: ' . $productAttributes->count());
-
         foreach($cart['cartItems'] as $ci){
-            Log::debug('Processing cart item:', $ci);
             
             $sku = null;
             $size = $ci['size'] ?? null;
@@ -126,7 +265,6 @@ class CheckoutService
             // Method 1: Check if SKU is directly in cart item
             if (!empty($ci['sku'])) {
                 $sku = $ci['sku'];
-                Log::debug('Found SKU in cart item: ' . $sku);
             }
             // Method 2: Try to find SKU from product attributes based on size and color
             elseif ($productId && $size && isset($productAttributes[$productId][$size])) {
@@ -157,11 +295,8 @@ class CheckoutService
                 
                 if ($firstAttribute) {
                     $sku = $firstAttribute->sku;
-                    Log::debug('Found first available SKU for product: ' . $sku);
                 }
             }
-            
-            Log::debug('Final SKU for order item: ' . ($sku ?? 'NULL'));
             
             $orderItemData = [
                 'order_id' => $order->id,
@@ -175,8 +310,6 @@ class CheckoutService
                 'sku' => $sku,
             ];
 
-            Log::debug('Order item data:', $orderItemData);
-            
             OrderItem::create($orderItemData);
             $itemCount++;
             
@@ -199,17 +332,14 @@ class CheckoutService
                     // Reduce stock
                     $newStock = max(0, $attributeToUpdate->stock - ($ci['qty'] ?? 1));
                     $attributeToUpdate->update(['stock' => $newStock]);
-                    Log::debug("Updated stock for attribute ID {$attributeToUpdate->id}: {$newStock}");
                     
                     // Also update total product stock
                     $totalStock = ProductsAttribute::where('product_id', $productId)->sum('stock');
                     Product::where('id', $productId)->update(['stock' => $totalStock]);
-                    Log::debug("Updated total stock for product {$productId}: {$totalStock}");
                 }
             }
         }
 
-        Log::debug("Created $itemCount order items");
         
         // Clear the user's cart after successful order
         if ($user) {
@@ -235,10 +365,10 @@ class CheckoutService
         return ['success' => false, 'message' => $e->getMessage()];
     }
 }
+        */
     /**
      * Clear cart delegate to session or CartService
      */
-
     public function clearCart($user = null)
     {
         // If your CartService provides a clear() use it, else clear session keys

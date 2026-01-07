@@ -41,6 +41,7 @@ use App\Http\Controllers\Front\checkoutController;
 use App\Http\Controllers\Front\OrderController as OrderFrontController;
 use App\Http\Controllers\Front\PageController as PageFrontController;
 use App\Http\Controllers\Front\SubscriberController as SubscriberFrontController;
+use App\Http\Controllers\Front\PayPalRedirectController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -286,6 +287,11 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     //Subscribe (footrer)
     Route::post('/subscriber', [SubscriberFrontController::class, 'store'])->name('front.subscribers.store');
+
+    // PayPal Routes
+Route::post('/paypal/redirect', [PayPalRedirectController::class, 'redirectToPayPal'])->name('paypal.redirect');
+Route::get('/paypal/return', [PayPalRedirectController::class, 'handleReturn'])->name('paypal.return');
+Route::get('/paypal/cancel', [PayPalRedirectController::class, 'handleCancel'])->name('paypal.cancel');
     
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     // In your web.php routes file
@@ -362,6 +368,8 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     ]);
 });
 });
+
+
 
 
 

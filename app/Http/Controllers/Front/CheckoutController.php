@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Front\PayPalRedirectController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Requests\Front\AddAddressRequest;
@@ -11,6 +12,7 @@ use App\Models\Country;
 use App\Models\Order;
 use App\Services\Front\CheckoutService;
 use Illuminate\Support\Facades\Log;
+
 
 class CheckoutController extends Controller
 {
@@ -32,59 +34,87 @@ class CheckoutController extends Controller
     $cart = $this->checkoutService->getCartForCheckout($user);
     $addresses = $this->checkoutService->getUserAddresses($user);
     
-    // Add these debug lines temporarily
-    Log::debug('Cart data:', ['cart' => $cart]);
-    Log::debug('Addresses data:', ['addresses' => $addresses]);
-    
-    // Or dd() to see immediately
-    // dd(['cart' => $cart, 'addresses' => $addresses]);
-    
     $countries = Country::where('is_active', true)->orderBy('name')->get();
     $uk = Country::where('name', 'United Kingdom')->first();
     $ukStates = $uk ? $uk->states()->orderBy('name')->get() : collect();
 
-    return view('front.checkout.index', compact('cart', 'addresses', 'countries', 'ukStates'));
+    // Paypal Previews: Compute USD converted amount and conversion rate
+    $paypalPreview = null;
+    
+    try{
+        $currentCurrency = getCurrentCurrency();
+        $originalCurrencyCode = $currentCurrency->code ?? 'USD';
+
+        $originalAmount = $cart['total_numeric'] ?? ($cart['total'] ?? 0);
+        $originalAmount = is_numeric($originalAmount) ? (float)$originalAmount : (float)normalizeAmount($originalAmount);
+
+        if($originalAmount > 0){
+            // Simple fallback 1:1 conversion
+            $paypalPreview = [
+                'original_amount' => round($originalAmount, 2),
+                'original_currency' => $originalCurrencyCode,
+                'converted_amount' => round($originalAmount, 2),
+                'conversion_rate' => 1.0,
+            ];
+        }
+    }catch(\Throwable $e){
+        Log::error('Paypal preview conversion error: ' . $e->getMessage());
+        $paypalPreview = null;
+    }
+
+    return view('front.checkout.index', compact('cart', 'addresses', 'countries', 'ukStates', 'paypalPreview'));
 }
 
     
 public function placeOrder(CheckoutRequest $request)
 {
     $user = Auth::user();
-    
-    Log::debug('=== PLACE ORDER CONTROLLER START ===');
-    Log::debug('User: ' . ($user ? $user->id : 'null'));
 
-    // FIX: Use Address model with correct table reference
-    $addressCount = \App\Models\Address::where('user_id', $user->id)->count();
-    Log::debug('User address count: ' . $addressCount);
-    
-    if(!$user || $addressCount === 0){
-        Log::debug('NO ADDRESS FOUND - redirecting to checkout');
+    if (!$user || Address::where('user_id', $user->id)->count() === 0) {
         return redirect()->route('checkout.index')->with('error', 'Please add a delivery address first');
     }
-    
+
     $payload = $request->validated();
-    Log::debug('Validated payload:', $payload);
-    
+
     if(empty($payload['address_id'])){
-        Log::debug('NO ADDRESS SELECTED - returning back');
+        if($request->ajax()){
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a delivery address before place an order!',
+            ], 422);
+        }
         return back()->with('error', 'Please select a delivery address before place an order!');
     }
-    
-    Log::debug('Calling checkoutService->createOrderFromCart...');
-    $result = $this->checkoutService->createOrderFromCart($user, $payload);
-    Log::debug('Order creation result:', $result);
 
-    if ($result['success']) {
-        Log::debug('ORDER SUCCESS - clearing cart and redirecting to thanks page');
-        $this->checkoutService->clearCart($user);
+    if(isset($payload['payment_method']) && strtolower($payload['payment_method']) === 'paypal'){
 
-        return redirect()->route('checkout.thanks', ['orderId' => $result['order']])
-            ->with('success', 'Order placed successfully. Order ID: '.$result['order']);
+        $msg = 'Please complete payment using the paypal button on the checkout page.';
+        if($request->ajax()){
+            return response()->json([
+                'success' => false,
+                'message' => $msg,
+            ], 422);
+        }
+        return back()->with('error', $msg);
     }
-    
-    Log::debug('ORDER FAILED - returning back with error');
-    return back()->with('error', $result['message'] ?? 'Order could not be placed');
+    $result = $this->checkoutService->createOrderFromCart($user, $payload);
+    if($result['success']){
+        $this->checkoutService->clearCart($user);
+        if($request->ajax()){
+            return response()->json([
+                'success' => true,
+                'order_id' => $result['order']->id,
+            ]);
+        }
+        return redirect()->route('user.checkout.thanks', ['orderId' => $result['order']->id]);
+    }
+
+    if($request->ajax()){
+        return response()->json([
+            'success' => false,
+            'message' => $result['message'] ?? 'Order could not be placed',
+        ], 500);
+    }
 }
 
     public function thanks($orderId){
@@ -101,6 +131,7 @@ public function placeOrder(CheckoutRequest $request)
     /**
      * Add new address
      */
+
     public function addAddress(AddAddressRequest $request)
     {
         $user = Auth::user();

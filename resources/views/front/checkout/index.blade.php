@@ -238,6 +238,31 @@
                                     <input type="radio" class="custom-control-input" 
                                         name="payment_method" id="paypal" value="paypal" checked>
                                     <label class="custom-control-label" for="paypal">Paypal</label>
+                                    {{-- Paypal USD Conversion Box --}}
+                                    @if(isset($paypalPreview) && is_array($paypalPreview))
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa fa-paypal fa-2x mr-3" style="color: #003087;"></i>
+                                            <div>
+                                                <div style="font-size:14px; color:#333;">
+                                                    Pypal will change in (<strong>USD</strong>)
+                                                </div>
+                                                <div style="font-size:16px; font-weight:600;">
+                                                    {{formatCurrency($paypalPreview['converted_amount'], 'USD')}}
+                                                    <small class="text-muted">USD</small>
+                                                    <span class="ml-2 text-muted" style="font-size:13px;">
+                                                        (1 {{$paypalPreview['original_currency']}} = 
+                                                        {{number_format($paypalPreview['conversion_rate'], 6)}} USD)</span>
+                                                </div>
+                                                <div style="font-size:12px;" class="text-muted">
+                                                    Original: {{formatCurrency($paypalPreview['original_amount'], 
+                                                        $paypalPreview['original_currency'])}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+                                    
                                 </div>
                             </div>
                             <div class="form-group">

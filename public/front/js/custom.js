@@ -1562,7 +1562,7 @@ document.getElementById('checkoutAddAddressForm')?.addEventListener('submit', fu
     });
 });
 
-document.addEventListener('DOMContentLoaded', function () {
+/*-document.addEventListener('DOMContentLoaded', function () {
 
   // Set hidden input when selecting an address
   document.querySelectorAll('input[name="selected_address"]').forEach(function (rad) {
@@ -1599,7 +1599,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-});
+});*/
 
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('footer-subscribe-form');
@@ -1721,4 +1721,103 @@ document.addEventListener('DOMContentLoaded', function () {
       btn2.textContent = 'Subscribe Now';
     }
   });
+});
+
+/*document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('placeOrderForm');
+  if (!form) return;
+
+  const placeBtn = document.getElementById('placeOrderBtn') || document.querySelector('button[type="submit"]');
+  const paypalRadio = document.getElementById('paypal');
+  const addressInput = document.getElementById('selected_address_input');
+
+  // Full route to your paypal redirect
+  const PAYPAL_REDIRECT_URL = "/paypal/redirect";
+
+  form.addEventListener('submit', function (e) {
+    const selected = document.querySelector('input[name="payment_method"]:checked');
+    const method = selected ? selected.value : null;
+
+    if (method === 'paypal') {
+      if (!addressInput || !addressInput.value || addressInput.value.trim() === '') {
+        e.preventDefault();
+        alert('Please select a delivery address or add one before placing the order');
+        return false;
+      }
+
+      // Switch action to paypal redirect
+      form.action = PAYPAL_REDIRECT_URL;
+      return true;
+    }
+    return true;
+  });
+});*/
+
+// Unified checkout address + PayPal redirect when paypal selected
+document.addEventListener('DOMContentLoaded', function () {
+  //Guard: only init once if custom.js is loaded multiple times
+  try {
+    const form = document.getElementById('placeOrderForm');
+    const hiddenInput = document.getElementById('selected_address_input');
+    const addAddressCollapse = document.getElementById('add-address-form');
+
+    //Keep address hidden field synced with selected radios
+    function syncSelectedAddress() {
+      const checked =
+        document.querySelector('input[name="selected_address"]:checked');
+      if (hiddenInput) {
+        hiddenInput.value = checked ? checked.value : (hiddenInput.value || '');
+      }
+    }
+    //Set up radio listeners
+    document.querySelectorAll('input[name="selected_address"]').forEach(function (rad) {
+      rad.addEventListener('change', function () {
+        if (hiddenInput) hiddenInput.value = this.value;
+      });
+      // If some radio is checked, sync hidden field
+      if (rad.checked && hiddenInput && hiddenInput.value) {
+        hiddenInput.value = rad.value;
+      }
+    });
+    // Keep in sync incase other code modify selection
+    setTimeout(syncSelectedAddress, 20);
+
+    if (!form) return;
+    //Avoid double init if this script accidentally run again
+    if (form.dataset.paypalInit === '1') return;
+    form.dataset.paypalInit = '1';
+
+    const PAYPAL_REDIRECT_URL = "/paypal/redirect";
+    form.addEventListener('submit', function (e) {
+      // get the currently checked payment method
+      const selectedPayment =
+        document.querySelector('input[name="payment_method"]:checked');
+      const method = selectedPayment ? selectedPayment.value : null;
+      // if paypal chosen
+      if (method === 'paypal') {
+        const addVal = (hiddenInput && hiddenInput.value) ? hiddenInput.value.trim() : '';
+
+        if (!addVal) {
+          e.preventDefault();
+          if (addAddressCollapse && addAddressCollapse.classList) {
+            addAddressCollapse.classList.add('show');
+            setTimeout(() => {
+              addAddressCollapse.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+            }, 50);
+          }
+          // single alert(backend will validate too)
+          alert('Please select a delivery address or add one before placing the order');
+          return false;
+        }
+        form.action = PAYPAL_REDIRECT_URL;
+        return true;
+      }
+      return true;
+    });
+  } catch (err) {
+    console && console.error && console.error('Checkout init error', err);
+  }
 });

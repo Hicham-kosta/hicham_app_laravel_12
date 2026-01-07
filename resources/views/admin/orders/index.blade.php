@@ -42,7 +42,11 @@
                             <tr>
                                 <td>{{ $order->id }}</td>
                                 <td>{{ optional($order->user)->name ?? 'Guest User' }}</td>
-                                <td>{{ formatCurrency($order->total, 2) }}</td>
+                                @if($order->payment_method === 'paypal')
+                                <td>{{ formatCurrency($order->total, 'USD') }}</td>
+                                @else
+                                <td>{{ formatCurrency($order->total) }}</td>
+                                @endif
                                 <td>{{ ucfirst($order->payment_method ?? 'N/A') }}</td>
                                 <td>{{ ucfirst($order->status) }}</td>
                                 <td>{{ $order->created_at->format('Y-m-d H:i:s') }}</td>

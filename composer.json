@@ -13,7 +13,8 @@
         "laravel/framework": "^12.0",
         "laravel/scout": "^10.19",
         "laravel/tinker": "^2.10.1",
-        "picqer/php-barcode-generator": "*"
+        "picqer/php-barcode-generator": "*",
+        "srmklive/paypal": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
