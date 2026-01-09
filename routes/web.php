@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\WalletCreditController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\SubscriberController;
+use App\Http\Controllers\Admin\ShippingChargeController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 
 // Front Controllers
@@ -202,6 +203,11 @@ Route::prefix('admin')->group(function () {
       // Subscribers
       Route::resource('subscribers', SubscriberController::class);
       Route::post('update-subscriber-status', [SubscriberController::class, 'updateSubscriberStatus']);
+
+      // Shipping Charges
+      Route::resource('shipping-charges', ShippingChargeController::class);
+      Route::post('update-shipping-charge-status', [ShippingChargeController::class, 'updateStatus'])
+      ->name('admin.shipping_charges.updateStatus');
 
     
       //Route logout

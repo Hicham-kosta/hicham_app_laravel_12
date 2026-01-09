@@ -197,6 +197,35 @@ $(document).ready(function () {
         });
     });
 
+    // Update Shipping Charge Status
+    $(document).on("click", '.updateShippingChargeStatus', function () {
+        var el = $(this);
+        var status = el.find("i").attr("data-status");
+        var shippingChargeId = el.data("shipping-charge-id");
+        $.ajax({
+            type: 'post',
+            url: '/admin/update-shipping-charge-status',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                status: status, shipping_charge_id: shippingChargeId
+            },
+            success: function (resp) {
+                if (resp.status === 'success') {
+                    if (resp.status_value == 1) {
+                        el.html('<i class="fas fa-toggle-on" data-status="Active"></i>');
+                        el.css('color, #3f6ed3');
+                    } else {
+                        el.html('<i class="fas fa-toggle-off" data-status="Inactive"></i>');
+                        el.css('color, grey');
+                    }
+                }
+            },
+            error: function () {
+                alert("Error updating status");
+            }
+        });
+    });
+
     // Update Product Status
 
     $(document).on("click", '.updateProductStatus', function () {
