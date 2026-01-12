@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use App\Services\Front\CartService;
 use App\Models\Address;
+use App\Models\Country;
+use App\Models\ShippingCharge;
 use Illuminate\Support\Facades\Log;
 use App\Mail\OrderPlaced;
 use Illuminate\Support\Facades\Mail;
@@ -30,10 +32,36 @@ class CheckoutService
      * items(array), subtotal_numeric, subtotal (formatted), discount (numeric), Wallet (numeric), total (numeric), total (formatted)
      */
 
-    public function getCartForCheckout($user = null)
+    /**
+     * Return cart +shipping based on address
+     */
+
+    public function getCartForCheckout($user = null, $addressId = null)
     {
-        // If your CartService requires a user, pass it here
-        return $this->cartService->getCart();
+        $cart = $this->cartService->getCart();
+        // Normalize
+        $cart['subtotal_numeric'] = $cart['subtotal_numeric'] ?? (float)($cart['subtotal'] ?? 0);
+        $cart['discount'] = $cart['discount'] ?? 0;
+        $cart['wallet'] = $cart['wallet'] ?? 0;
+        $cart['shipping'] = $cart['shipping'] ?? 0;
+        // Calculate shipping if Address is provided
+        if($user && $addressId){
+            $address = Address::where('id', $addressId)
+            ->where('user_id', $user->id)
+            ->first();
+            if($address){
+                $result = $this->calculateShipping($cart, $address);
+                $cart['shipping'] = $result['amount'];
+                $cart['shipping_rule'] = $result['rule'];
+            } 
+        }
+        // Recalculate total
+        $cart['total_numeric'] = max(
+            0,
+            ($cart['subtotal_numeric'] + ($cart['shipping'] ?? 0) 
+            - $cart['discount'] - $cart['wallet']),
+        );
+        return $cart;
     }
     
     /**
@@ -63,7 +91,7 @@ class CheckoutService
     public function createOrderFromCart($user, array $payload)
 {
     // Get cart data
-    $cart = $this->getCartForCheckout($user);
+    $cart = $this->getCartForCheckout($user, $payload['address_id'] ?? null);
     
     Log::info('Creating order from cart - Start', [
         'user_id' => $user->id,
@@ -243,129 +271,6 @@ class CheckoutService
         return ['success' => false, 'message' => 'Order creation failed: ' . $e->getMessage()];
     }
 }
-
-        /* Insert order items
-        $itemCount = 0;
-        
-        // Pre-fetch all product attributes for the cart items to minimize queries
-        $productIds = collect($cart['cartItems'])->pluck('product_id')->filter()->unique();
-        
-        // Get all product attributes for these products
-        $productAttributes = ProductsAttribute::whereIn('product_id', $productIds)
-            ->get()
-            ->groupBy(['product_id', 'size']); // Group by product_id and size
-        
-        foreach($cart['cartItems'] as $ci){
-            
-            $sku = null;
-            $size = $ci['size'] ?? null;
-            $color = $ci['color'] ?? null;
-            $productId = $ci['product_id'] ?? null;
-            
-            // Method 1: Check if SKU is directly in cart item
-            if (!empty($ci['sku'])) {
-                $sku = $ci['sku'];
-            }
-            // Method 2: Try to find SKU from product attributes based on size and color
-            elseif ($productId && $size && isset($productAttributes[$productId][$size])) {
-                // If there are multiple attributes with same size, find by color if available
-                $attributes = $productAttributes[$productId][$size];
-                
-                if ($color) {
-                    // Try to match by color
-                    $matchingAttribute = $attributes->firstWhere('color', $color);
-                    if ($matchingAttribute) {
-                        $sku = $matchingAttribute->sku;
-                        Log::debug('Found SKU by product_id, size, and color: ' . $sku);
-                    }
-                }
-                
-                // If no color match or no color specified, take the first one
-                if (!$sku && $attributes->isNotEmpty()) {
-                    $sku = $attributes->first()->sku;
-                    Log::debug('Found SKU by product_id and size (first match): ' . $sku);
-                }
-            }
-            // Method 3: Try to get any SKU for this product (first available)
-            elseif ($productId && !empty($productAttributes[$productId])) {
-                // Flatten the grouped attributes and take the first one
-                $firstAttribute = collect($productAttributes[$productId])
-                    ->flatten()
-                    ->first();
-                
-                if ($firstAttribute) {
-                    $sku = $firstAttribute->sku;
-                }
-            }
-            
-            $orderItemData = [
-                'order_id' => $order->id,
-                'product_id' => $productId,
-                'product_name' => $ci['product_name'] ?? ($ci['name'] ?? 'Unnamed'),
-                'qty' => $ci['qty'] ?? 1,
-                'size' => $size,
-                'color' => $color,
-                'price' => $ci['unit_price'] ?? 0,
-                'subtotal' => $ci['line_total'] ?? (($ci['qty'] ?? 1) * ($ci['unit_price'] ?? 0)),
-                'sku' => $sku,
-            ];
-
-            OrderItem::create($orderItemData);
-            $itemCount++;
-            
-            // Update stock in products_attributes table if needed
-            if ($productId && $size && isset($productAttributes[$productId][$size])) {
-                $attributes = $productAttributes[$productId][$size];
-                $attributeToUpdate = null;
-                
-                // Find the exact attribute to update
-                if ($color) {
-                    $attributeToUpdate = $attributes->firstWhere('color', $color);
-                }
-                
-                // If no color match or no color specified, take the first one
-                if (!$attributeToUpdate && $attributes->isNotEmpty()) {
-                    $attributeToUpdate = $attributes->first();
-                }
-                
-                if ($attributeToUpdate) {
-                    // Reduce stock
-                    $newStock = max(0, $attributeToUpdate->stock - ($ci['qty'] ?? 1));
-                    $attributeToUpdate->update(['stock' => $newStock]);
-                    
-                    // Also update total product stock
-                    $totalStock = ProductsAttribute::where('product_id', $productId)->sum('stock');
-                    Product::where('id', $productId)->update(['stock' => $totalStock]);
-                }
-            }
-        }
-
-        
-        // Clear the user's cart after successful order
-        if ($user) {
-            $this->clearCart($user);
-        }
-        
-        DB::commit();
-
-        if (strtolower($order->payment_method ?? '') === 'cod' && $order->user) {
-            try {
-                Mail::to($order->user->email)->queue(new OrderPlaced($order));
-            } catch (\Throwable $e) {
-                \Log::error('Failed to queue OrderPlaced email for order ' . $order->id . ': ' . $e->getMessage());
-            }
-        }
-
-        return ['success' => true, 'order' => $order];
-        
-    } catch(\Throwable $e) {
-        DB::rollBack();
-        Log::error('ORDER CREATION FAILED: ' . $e->getMessage());
-        Log::error('Exception trace: ' . $e->getTraceAsString());
-        return ['success' => false, 'message' => $e->getMessage()];
-    }
-}
-        */
     /**
      * Clear cart delegate to session or CartService
      */
@@ -475,4 +380,72 @@ class CheckoutService
       }
    }
 
+   /** 
+    * Determine shipping charge for cart + delivery address
+    */
+   public function calculateShipping(array $cart, Address $address): array
+   {
+    $amount = 0.0;
+    $rule = null;
+    // Find country
+    $country = Country::where('name', $address->country)->first();
+    if(!$country){
+        return ['amount' => 0.0, 'rule' => null];
+    }
+
+    // All shipping rules
+    $rules = ShippingCharge::where('country_id', $country->id)
+    ->where('status', true)
+    ->orderBy('sort_order')
+    ->get();
+
+    if($rules->isEmpty()){
+        return ['amount' => 0.0, 'rule' => null];
+    }
+    //Total cart weight in grams
+    $items = $cart['cartItems'];
+    $productIds = array_unique(array_filter(array_column($items, 'product_id')));
+    $products = !empty($productIds)
+        ? Product::whereIn('id', $productIds)->get()->keyBy('id')
+        : collect();
+        $totalWeight = 0.0;
+        foreach($items as $ci){
+            $pid = $ci['product_id'] ?? null;
+            $qty = max(1, (int)($ci['qty'] ?? $ci['product_qty'] ?? 1));
+            $product = $products->get($pid);
+            $weight = $product ? (float) $product->product_weight : 0.0;
+            $totalWeight += $weight * $qty;
+        }
+        
+        // Subtotal
+        $subtotal = (float)($cart['subtotal_numeric'] ?? 0);
+
+        // Filter rules
+        $matching = $rules->filter(function(ShippingCharge $r) use ($subtotal, $totalWeight){
+            if(!is_null($r->min_weight_g) && $totalWeight < (float)$r->min_weight_g){
+                return false;
+            }
+            if(!is_null($r->max_weight_g) && $totalWeight > (float)$r->max_weight_g){
+                return false;
+            }
+            if(!is_null($r->min_subtotal) && $subtotal < (float)$r->min_subtotal){
+                return false;
+            }
+            if(!is_null($r->max_subtotal) && $subtotal > (float)$r->max_subtotal){
+                return false;
+            }
+            return true;
+        });
+
+        // Choose the best rule
+        if($matching->count() > 0){
+            $rule = $matching->firstWhere('is_default', true)
+            ?? $matching->sortBy('sort_order')->first();
+        }else{
+            $rule = $rules->firstWhere('is_default', true);
+        }
+        $amount = $rule ? (float)$rule->rate : 0.0;
+
+        return ['amount' => $amount, 'rule' => $rule];
+    }
 }

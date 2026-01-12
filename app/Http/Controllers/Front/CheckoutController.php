@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Front\AddAddressRequest;
 use App\Http\Requests\Front\CheckoutRequest;
 use App\Models\Country;
+use App\Models\Address;
 use App\Models\Order;
 use App\Services\Front\CheckoutService;
 use Illuminate\Support\Facades\Log;
@@ -30,20 +31,31 @@ class CheckoutController extends Controller
 {
     $user = Auth::user();
     
-    // Debug: Check which variables are null
-    $cart = $this->checkoutService->getCartForCheckout($user);
     $addresses = $this->checkoutService->getUserAddresses($user);
-    
+    //Pick selected address->old value-> first address
+    $selectedAddressId = $request->old('address_id');
+
+    if(!$selectedAddressId && $addresses->count() > 0){
+        $selectedAddressId = $addresses->first()->id;
+    }
+
+    //Cart with shipping
+    $cart = $this->checkoutService->getCartForCheckout($user, $selectedAddressId);
+
     $countries = Country::where('is_active', true)->orderBy('name')->get();
-    $uk = Country::where('name', 'United Kingdom')->first();
-    $ukStates = $uk ? $uk->states()->orderBy('name')->get() : collect();
+    // Get United States for states
+    $us = Country::where('name', 'United States')->first();
+    $usStates = $us ? $us->states()->orderBy('name')->get() : collect();
+
+    // Get current currency for display
+    $currentCurrency = getCurrentCurrency();
+    $currCode = $currentCurrency->code ?? 'USD';
 
     // Paypal Previews: Compute USD converted amount and conversion rate
     $paypalPreview = null;
     
     try{
-        $currentCurrency = getCurrentCurrency();
-        $originalCurrencyCode = $currentCurrency->code ?? 'USD';
+        $originalCurrencyCode = $currCode;
 
         $originalAmount = $cart['total_numeric'] ?? ($cart['total'] ?? 0);
         $originalAmount = is_numeric($originalAmount) ? (float)$originalAmount : (float)normalizeAmount($originalAmount);
@@ -62,7 +74,7 @@ class CheckoutController extends Controller
         $paypalPreview = null;
     }
 
-    return view('front.checkout.index', compact('cart', 'addresses', 'countries', 'ukStates', 'paypalPreview'));
+    return view('front.checkout.index', compact('cart', 'addresses', 'countries', 'usStates', 'paypalPreview', 'currCode'));
 }
 
     
@@ -106,7 +118,7 @@ public function placeOrder(CheckoutRequest $request)
                 'order_id' => $result['order']->id,
             ]);
         }
-        return redirect()->route('user.checkout.thanks', ['orderId' => $result['order']->id]);
+        return redirect()->route('checkout.thanks', ['orderId' => $result['order']->id]);
     }
 
     if($request->ajax()){
@@ -212,5 +224,26 @@ public function placeOrder(CheckoutRequest $request)
             return response()->json(['success' => true, 'message' => 'Address deleted successfully']);
         }
         return response()->json(['success' => false, 'message' => 'Address could not be deleted'], 500);
+    }
+
+    public function calculateShipping(Request $request){
+    $user = Auth::user();
+    if(!$user){  // Fixed typo: was `if(!user)`
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found'
+        ], 401);
+    }
+        $cart = $this->checkoutService->getCartForCheckout($user, $addressId);
+        $curr = getCurrentCurrency();
+        $currCode = $curr->code ?? 'USD';
+        return response()->json([
+            'success' => true,
+            'shipping' => $cart['shipping'],
+            'total' => $cart['total_numeric'],
+            'shipping_formatted' => formatCurrency($cart['shipping'], $currCode),
+            'total_formatted' => formatCurrency($cart['total_numeric'], $currCode),
+        ]);
+
     }
 }

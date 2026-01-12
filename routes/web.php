@@ -329,6 +329,10 @@ Route::get('/paypal/cancel', [PayPalRedirectController::class, 'handleCancel'])-
     // Show checkout page
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 
+    // Displaying shipping charges at checkout page
+    Route::post('/checkout/calculate-shipping', [CheckoutController::class, 'calculateShipping'])
+    ->name('checkout.calculateShipping');
+
     // Place order (form submit)
     Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('checkout.placeOrder');
 

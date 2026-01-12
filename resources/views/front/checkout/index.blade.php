@@ -33,7 +33,7 @@
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" class="custom-control-input" 
                                 id="address{{$address->id}}" name="selected_address" value="{{$address->id}}"
-                                @if(old('address_id') == $address->id) checked @endif>
+                                @if(old('address_id', $selectedAddressId ?? null) == $address->id) checked @endif>
                             <label class="custom-control-label d-block" for="address{{$address->id}}">
                                 <strong>{{$address->full_name ?? ($address->first_name . ' ' . ($address->last_name ?? ''))}}</strong><br>
                                 Address : {{$address->address_line1 ?? ''}}<br>{{$address->address_line2 ?? ''}}<br>Mobile: {{$address->mobile ?? ''}}
@@ -136,26 +136,26 @@
             @error('city')<p class="text-danger small">{{ $message }}</p>@enderror
         </div>
 
-        <!-- COUNTY SELECT (UK only) -->
-        <div class="col-md-6 form-group" id="county_select_wrapper">
-            <label>County</label>
-            <select id="county_select" name="county" class="custom-select">
-                <option value="">-- Select County --</option>
-                @foreach($ukStates as $s)
-                    <option value="{{ $s->name }}" {{ old('county') === $s->name ? 'selected' : '' }}>
-                        {{ $s->name }}
-                    </option>
-                @endforeach
-                <option value="other" {{ old('county') === 'other' ? 'selected' : '' }}>Other</option>
-            </select>
-        </div>
+        <!-- STATE SELECT (US only) -->
+<div class="col-md-6 form-group" id="state_select_wrapper">
+    <label>State</label>
+    <select id="state_select" name="state" class="custom-select">
+        <option value="">-- Select State --</option>
+        @foreach($usStates as $s)
+            <option value="{{ $s->name }}" {{ old('state') === $s->name ? 'selected' : '' }}>
+                {{ $s->name }}
+            </option>
+        @endforeach
+        <option value="other" {{ old('state') === 'other' ? 'selected' : '' }}>Other</option>
+    </select>
+</div>
 
-        <!-- COUNTY TEXT (non-UK or “other”) -->
-        <div class="col-md-6 form-group" id="county_text_wrapper" style="display:none;">
-            <label>County / State</label>
-            <input id="county_text" name="county_text" class="form-control"
-                   value="{{ old('county_text') }}">
-        </div>
+<!-- STATE TEXT (non-US or “other”) -->
+<div class="col-md-6 form-group" id="state_text_wrapper" style="display:none;">
+    <label>State / Province</label>
+    <input id="state_text" name="state_text" class="form-control"
+           value="{{ old('state_text') }}">
+</div>
 
         <div class="col-md-6 form-group">
             <label>Postcode</label>
@@ -213,14 +213,16 @@
                         @if(isset($cart['shipping']))
                         <div class="d-flex justify-content-between">
                             <h6 class="font-weight-medium">Shipping</h6>
-                            <h6 class="font-weight-medium">{{formatCurrency($cart['shipping'] ?? 0)}}</h6>
+                            <h6 class="font-weight-medium" id="shippingAmount">
+                                {{formatCurrency($cart['shipping'], $currCode)}}</h6>
                         </div>
                         @endif
                     </div>
                     <div class="card-footer border-secondary bg-transparent">
                         <div class="d-flex justify-content-between mt-2">
                             <h5 class="font-weight-bold">Total</h5>
-                            <h5 class="font-weight-bold">{{$cart['total'] ?? formatCurrency($cart['total_numeric'] ?? 0)}}</h5>
+                            <h5 class="font-weight-bold" id="orderTotalAmount">
+                                {{formatCurrency($cart['total_numeric'], $currCode)}}</h5>
                         </div>
                     </div>
                 </div>
@@ -239,29 +241,29 @@
                                         name="payment_method" id="paypal" value="paypal" checked>
                                     <label class="custom-control-label" for="paypal">Paypal</label>
                                     {{-- Paypal USD Conversion Box --}}
-                                    @if(isset($paypalPreview) && is_array($paypalPreview))
-                                    <div class="mt-2 p-2 bg-light rounded">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa fa-paypal fa-2x mr-3" style="color: #003087;"></i>
-                                            <div>
-                                                <div style="font-size:14px; color:#333;">
-                                                    Pypal will change in (<strong>USD</strong>)
-                                                </div>
-                                                <div style="font-size:16px; font-weight:600;">
-                                                    {{formatCurrency($paypalPreview['converted_amount'], 'USD')}}
-                                                    <small class="text-muted">USD</small>
-                                                    <span class="ml-2 text-muted" style="font-size:13px;">
-                                                        (1 {{$paypalPreview['original_currency']}} = 
-                                                        {{number_format($paypalPreview['conversion_rate'], 6)}} USD)</span>
-                                                </div>
-                                                <div style="font-size:12px;" class="text-muted">
-                                                    Original: {{formatCurrency($paypalPreview['original_amount'], 
-                                                        $paypalPreview['original_currency'])}}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
+@if(isset($paypalPreview) && is_array($paypalPreview))
+<div class="mt-2 p-2 bg-light rounded paypal-conversion-box">
+    <div class="d-flex align-items-center">
+        <i class="fa fa-paypal fa-2x mr-3" style="color: #003087;"></i>
+        <div>
+            <div style="font-size:14px; color:#333;">
+                PayPal will charge in (<strong>USD</strong>)
+            </div>
+            <div style="font-size:16px; font-weight:600;">
+                <span class="converted-amount">{{formatCurrency($paypalPreview['converted_amount'], 'USD')}}</span>
+                <small class="text-muted">USD</small>
+                <span class="ml-2 text-muted" style="font-size:13px;">
+                    (1 {{$paypalPreview['original_currency']}} = 
+                    {{number_format($paypalPreview['conversion_rate'], 6)}} USD)</span>
+            </div>
+            <div style="font-size:12px;" class="text-muted">
+                Original: {{formatCurrency($paypalPreview['original_amount'], 
+                    $paypalPreview['original_currency'])}}
+            </div>
+        </div>
+    </div>
+</div>
+@endif
                                     
                                 </div>
                             </div>
@@ -287,7 +289,8 @@
                                 </div>
                             </div>
                             {{-- Hidden input to carry selected address id to backend --}}
-                            <input type="hidden" name="address_id" id="selected_address_input" value="{{old('address_id')}}">
+                            <input type="hidden" name="address_id" id="selected_address_input" 
+                            value="{{old('address_id', $selectedAddressId ?? null)}}">
                         </div>
                         <div class="card-footer border-secondary bg-transparent">
                             <button type="submit" class="btn btn-lg btn-block btn-primary font-weight-bold my-3 py-3">Place Order</button>

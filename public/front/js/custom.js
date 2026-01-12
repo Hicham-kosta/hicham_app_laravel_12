@@ -1821,3 +1821,114 @@ document.addEventListener('DOMContentLoaded', function () {
     console && console.error && console.error('Checkout init error', err);
   }
 });
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  let radios = document.querySelectorAll('input[name="selected_address"]');
+  let hidden = document.getElementById('selected_address_input');
+
+  // Function to update shipping and total via AJAX
+  function updateShipping() {
+    if (!hidden.value) {
+      return;
+    }
+    fetch("{{ route('checkout.calculateShipping') }}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ address_id: hidden.value })
+    })
+      .then(res => res.json())
+      .then(resp => {
+        if (resp.success) {
+          document.getElementById('shippingAmount').innerHTML = resp.shipping_formatted;
+          document.getElementById('orderTotalAmount').innerHTML = resp.total_formatted;
+          // Update the PayPal conversion box if it exists
+          updatePaypalConversion(resp.total);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+
+  // Function to update the PayPal conversion box
+  function updatePaypalConversion(total) {
+    let paypalBox = document.querySelector('.paypal-conversion-box');
+    if (!paypalBox) {
+      return;
+    }
+    // We assume the conversion rate is fixed at 1.0 for now, but you can adjust
+    let conversionRate = 1.0;
+    let convertedAmount = (total * conversionRate).toFixed(2);
+    // Update the converted amount in the PayPal box
+    let convertedElement = paypalBox.querySelector('.converted-amount');
+    if (convertedElement) {
+      convertedElement.textContent = formatCurrency(convertedAmount, 'USD');
+    }
+  }
+
+  // Helper function to format currency (if not available globally)
+  function formatCurrency(amount, currency) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+      minimumFractionDigits: 2
+    }).format(amount);
+  }
+
+  // Event listeners for address radio buttons
+  radios.forEach(r => {
+    r.addEventListener('change', function () {
+      let id = this.value;
+      hidden.value = id;
+      updateShipping();
+    });
+  });
+
+  // If an address is selected on page load, update the shipping
+  if (hidden.value) {
+    updateShipping();
+  }
+
+  // Handle country change for state field
+  let countrySelect = document.getElementById('country');
+  let stateSelectWrapper = document.getElementById('state_select_wrapper');
+  let stateTextWrapper = document.getElementById('state_text_wrapper');
+  let stateSelect = document.getElementById('state_select');
+  let stateText = document.getElementById('state_text');
+
+  if (countrySelect) {
+    countrySelect.addEventListener('change', function () {
+      if (this.value === 'United States') {
+        stateSelectWrapper.style.display = 'block';
+        stateTextWrapper.style.display = 'none';
+        stateSelect.required = true;
+        stateText.required = false;
+      } else {
+        stateSelectWrapper.style.display = 'none';
+        stateTextWrapper.style.display = 'block';
+        stateSelect.required = false;
+        stateText.required = true;
+      }
+    });
+
+    // Trigger change on page load to set the initial state
+    countrySelect.dispatchEvent(new Event('change'));
+  }
+
+  // Handle state select change for "other" option
+  if (stateSelect) {
+    stateSelect.addEventListener('change', function () {
+      if (this.value === 'other') {
+        stateSelectWrapper.style.display = 'none';
+        stateTextWrapper.style.display = 'block';
+        stateText.required = true;
+        stateText.focus();
+      }
+    });
+  }
+});
