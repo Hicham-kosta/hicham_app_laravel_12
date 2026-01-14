@@ -167,4 +167,5 @@ if (!function_exists('formatCurrency')) {
         
         return $formatted;
     }
+    
 }

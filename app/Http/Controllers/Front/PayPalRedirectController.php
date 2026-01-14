@@ -61,22 +61,34 @@ class PayPalRedirectController extends Controller
         try {
             $provider = $this->getPayPalProvider();
             
-            $response = $provider->createOrder([
-                "intent" => "CAPTURE",
-                "purchase_units" => [
-                    [
-                        "amount" => [
-                            "currency_code" => $currency,
-                            "value" => $total,
-                        ],
-                    ]
+           $response = $provider->createOrder([
+    "intent" => "CAPTURE",
+    "purchase_units" => [
+        [
+            "amount" => [
+                "currency_code" => $currency,
+                "value" => number_format($cart['total_numeric'], 2, '.', ''),
+                "breakdown" => [
+                    "item_total" => [
+                        "currency_code" => $currency,
+                        "value" => number_format($cart['subtotal'], 2, '.', ''),
+                    ],
+                    "shipping" => [
+                        "currency_code" => $currency,
+                        "value" => number_format($cart['shipping'], 2, '.', ''),
+                    ],
                 ],
-                "application_context" => [
-                    "return_url" => route('paypal.return'),
-                    "cancel_url" => route('paypal.cancel'),
-                    "user_action" => "PAY_NOW",
-                ],
-            ]);
+            ],
+            "description" => "Order from " . config('app.name'),
+        ]
+    ],
+    "application_context" => [
+        "return_url" => route('paypal.return'),
+        "cancel_url" => route('paypal.cancel'),
+        "user_action" => "PAY_NOW",
+    ],
+]);
+
             
             return $response;
         } catch (\Exception $e) {
@@ -100,7 +112,7 @@ class PayPalRedirectController extends Controller
         }
 
         // Get cart totals
-        $cart = $this->checkoutService->getCartForCheckout($user);
+        $cart = $this->checkoutService->getCartForCheckout($user, $addressId);
         if(empty($cart['cartItems'])){
             return redirect()->back()->with('error', 'Your cart is empty.');
         }
@@ -186,12 +198,15 @@ class PayPalRedirectController extends Controller
             
             // Save session data
             session([
-                'checkout_address_id' => $addressId,
-                'paypal_order_id' => $response['id'],
-                'cart_total' => $total,
-                'cart_currency' => $currency,
-                'user_id' => $user->id, // Store user ID for verification
-            ]);
+    'checkout_address_id' => $addressId,
+    'paypal_order_id' => $response['id'],
+    'cart_total' => $cart['total_numeric'],
+    'cart_shipping' => $cart['shipping'],
+    'cart_subtotal' => $cart['subtotal'],
+    'cart_currency' => $currency,
+    'user_id' => $user->id,
+]);
+
             
             Log::info('Session data before redirect:', [
                 'checkout_address_id' => session('checkout_address_id'),

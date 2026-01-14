@@ -43,8 +43,7 @@ class CheckoutController extends Controller
     $cart = $this->checkoutService->getCartForCheckout($user, $selectedAddressId);
 
     $countries = Country::where('is_active', true)->orderBy('name')->get();
-    // Get United States for states
-    $us = Country::where('name', 'United States')->first();
+    $us = Country::where('name', 'United States')->first(); // Fixed variable name
     $usStates = $us ? $us->states()->orderBy('name')->get() : collect();
 
     // Get current currency for display
@@ -83,51 +82,64 @@ public function placeOrder(CheckoutRequest $request)
     $user = Auth::user();
 
     if (!$user || Address::where('user_id', $user->id)->count() === 0) {
-        return redirect()->route('checkout.index')->with('error', 'Please add a delivery address first');
+        return redirect()->route('checkout.index')
+            ->with('error', 'Please add a delivery address first');
     }
 
     $payload = $request->validated();
 
-    if(empty($payload['address_id'])){
-        if($request->ajax()){
-            return response()->json([
+    if (empty($payload['address_id'])) {
+        return $request->ajax()
+            ? response()->json([
                 'success' => false,
-                'message' => 'Please select a delivery address before place an order!',
-            ], 422);
-        }
-        return back()->with('error', 'Please select a delivery address before place an order!');
+                'message' => 'Please select a delivery address before placing an order!',
+            ], 422)
+            : back()->with('error', 'Please select a delivery address before placing an order!');
     }
 
-    if(isset($payload['payment_method']) && strtolower($payload['payment_method']) === 'paypal'){
-
-        $msg = 'Please complete payment using the paypal button on the checkout page.';
-        if($request->ajax()){
-            return response()->json([
-                'success' => false,
-                'message' => $msg,
-            ], 422);
-        }
-        return back()->with('error', $msg);
-    }
+    // ✅ ALWAYS CREATE ORDER FIRST (including PayPal)
     $result = $this->checkoutService->createOrderFromCart($user, $payload);
-    if($result['success']){
-        $this->checkoutService->clearCart($user);
-        if($request->ajax()){
-            return response()->json([
-                'success' => true,
-                'order_id' => $result['order']->id,
-            ]);
-        }
-        return redirect()->route('checkout.thanks', ['orderId' => $result['order']->id]);
+
+    if (!$result['success']) {
+        return $request->ajax()
+            ? response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Order could not be placed',
+            ], 500)
+            : back()->with('error', $result['message'] ?? 'Order could not be placed');
     }
 
-    if($request->ajax()){
+    $order = $result['order'];
+
+    // ✅ PayPal flow
+    if (strtolower($payload['payment_method']) === 'paypal') {
+
+        // Clear cart AFTER order is created
+        $this->checkoutService->clearCart($user);
+
         return response()->json([
-            'success' => false,
-            'message' => $result['message'] ?? 'Order could not be placed',
-        ], 500);
+            'success' => true,
+            'order_id' => $order->id,
+            'paypal_data' => [
+                'subtotal' => (float) $order->subtotal,
+                'shipping' => (float) $order->shipping,
+                'total' => (float) $order->total,
+                'currency' => getCurrentCurrency()->code ?? 'USD',
+            ],
+        ]);
     }
+
+    // Non-PayPal payments (COD, bank transfer, etc.)
+    $this->checkoutService->clearCart($user);
+
+    return $request->ajax()
+        ? response()->json([
+            'success' => true,
+            'order_id' => $order->id,
+        ])
+        : redirect()->route('checkout.thanks', ['orderId' => $order->id]);
 }
+
 
     public function thanks($orderId){
         $user = Auth::user();
@@ -226,24 +238,38 @@ public function placeOrder(CheckoutRequest $request)
         return response()->json(['success' => false, 'message' => 'Address could not be deleted'], 500);
     }
 
-    public function calculateShipping(Request $request){
+    public function calculateShipping(Request $request)
+{
     $user = Auth::user();
-    if(!$user){  // Fixed typo: was `if(!user)`
+
+    if (!$user) {
         return response()->json([
             'success' => false,
             'message' => 'User not found'
         ], 401);
     }
-        $cart = $this->checkoutService->getCartForCheckout($user, $addressId);
-        $curr = getCurrentCurrency();
-        $currCode = $curr->code ?? 'USD';
-        return response()->json([
-            'success' => true,
-            'shipping' => $cart['shipping'],
-            'total' => $cart['total_numeric'],
-            'shipping_formatted' => formatCurrency($cart['shipping'], $currCode),
-            'total_formatted' => formatCurrency($cart['total_numeric'], $currCode),
-        ]);
 
+    $addressId = $request->input('address_id'); // ✅ FIX
+
+    if (!$addressId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Address ID missing'
+        ], 422);
     }
+
+    $cart = $this->checkoutService->getCartForCheckout($user, $addressId);
+
+    $curr = getCurrentCurrency();
+    $currCode = $curr->code ?? 'USD';
+
+    return response()->json([
+        'success' => true,
+        'shipping' => $cart['shipping'],
+        'total' => $cart['total_numeric'],
+        'shipping_formatted' => formatCurrency($cart['shipping'], $currCode),
+        'total_formatted' => formatCurrency($cart['total_numeric'], $currCode),
+    ]);
+}
+
 }
