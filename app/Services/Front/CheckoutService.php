@@ -186,15 +186,73 @@ class CheckoutService
             return $productId . '-' . strtolower(trim((string)$size));
         };
 
+        // Helper: attempt to decrement stock atomically
+        $decrementStock = function($productId, $qty, $pa = null, $size = null){
+            $qty = (int)max(1, $qty);
+            $size = $size !== null ? trim((string)$size) : null;
+            
+            // 1) if we have an attribute model instance -- try id based decrement
+            if($pa && isset($pa->id)){
+                $updated = ProductsAttribute::where('id', $pa->id)
+                ->where('status', 1)
+                ->whereNotNull('stock')
+                ->where('stock', '>=', $qty)
+                ->decrement('stock', $qty);
+                if($updated){
+                    Log::info('Stock decremented successfully for attribute ID:', ['pa_id' => $pa->id, 
+                'product_id' => $productId, 'qty' => $qty]);
+                    return [true, null];
+                }
+                $current = ProductsAttribute::where('id', $pa->id)->value('stock');
+                Log::warning('Failed to decrement stock for attribute ID:', ['pa_id' => $pa->id, 'requested' => 
+                $qty, 'current_stock' => $current]);
+                return [false, 'Insufficient stock for attribute ID: (id:{($pa->id)})'];
+            }
+
+            //2) if size provided try product_id + size lookup
+            if($size){
+                $updated = ProductsAttribute::where('product_id', $productId)
+                ->where('size', $size)
+                ->where('status', 1)
+                ->whereNotNull('stock')
+                ->where('stock', '>=', $qty)
+                ->decrement('stock', $qty);
+                if($updated){
+                    Log::info('stock reduced by product and size', ['product_id' => $productId, 'size' => $size, 'qty' => $qty]);
+                    return [true, null];
+                }
+                $current = ProductsAttribute::where('product_id', $productId)
+                ->where('size', $size)->value('stock');
+                Log::warning('Failed to decrement stock for product and size', ['product_id' => $productId, 'size' => $size, 
+                'requested' => $qty, 'current_stock' => $current]);
+                return [false, 'Insufficient stock for product and size: (product_id:{($productId)}, size:{($size)})'];
+            }
+
+            //3) Optional fallback: product-level decrement (only if you want to allow)
+            $updated = Products::where('id', $productId)
+            ->whereNotNull('stock')
+            ->where('stock', '>=', $qty)
+            ->decrement('stock', $qty);
+            if($updated){
+                Log::info('stock reduced by product', ['product_id' => $productId, 'qty' => $qty]);
+                return [true, null];
+            }
+            $productStock = Products::where('id', $productId)->value('stock');
+            Log::warning('Failed to decrement stock for product', ['product_id' => $productId, 
+            'requested' => $qty, 'current_stock' => $productStock]);
+            return [false, 'Insufficient stock for product: (product_id:{($productId)})'];
+        };
+
         foreach($cart['cartItems'] as $ci){
             $productId = $ci['product_id'] ?? null;
-            $qty = $ci['qty'] ?? $ci['product_qty'] ?? 1;
+            $qty = (int) max(1, $ci['qty'] ?? ($ci['product_qty'] ?? 1));
             $unitPrice = $ci['unit_price'] ?? ($ci['price'] ?? 0);
             $lineTotal = $ci['line_total'] ?? ($unitPrice * $qty);
 
             // Load Product
             $product = $products->get($productId);
-            
+
+            // Determine size from cart(support size or product_size)
             $sizeFromCart = $ci['size'] ?? $ci['product_size'] ?? null;
             $sizeFromCart = $sizeFromCart !== null ? trim((string)$sizeFromCart) : null;
 
@@ -204,19 +262,38 @@ class CheckoutService
                 $key = $makeAttrKey($productId, $sizeFromCart);
                 $pa = $productAttributes->get($key); 
             }
+
+            // Fallback to product attribute ID
             if(!$pa && !empty($ci['product_attribute_id'])){
                 $pa = ProductsAttribute::find($ci['product_attribute_id']);
             }
-            
-            $sizeFromAttr = $pa?->size ?? $pa?->product_size ?? null;
+
+            // Derive size (prefer cart then attribute)
+            $sizeFromAttr = $pa?->size ?? $pa?->sizename ?? null;
             $size = $sizeFromCart ?? $sizeFromAttr;
             $size = $size !== null ? trim((string)$size) : null;
 
-            $colorFromCart = $ci['color'] ?? $ci['ciolor'] ?? null; // Note: typo 'ciolor' in your code
-            $colorFromProduct = $product?->product_color ?? $product?->color ?? null;
+            // ATTEMPT TO REDUCE STOCK BEFORE CREATING ORDER ITEM
+            list($ok, $errMsg) = $decrementStock($productId, $qty, $pa, $size);
+            if(!$ok){
+                Log::warning('Failed to decrement stock for product', [
+                    'product_id' => $productId, 
+                    'size' => $size, 
+                    'qty' => $qty, 
+                    'error' => $errMsg
+                ]);
+                DB::rollBack();
+                return ['success' => false, 'message' => $errMsg ?? 'Unable to reduce stock'];
+            }
+
+            // Derive remaining fields
+            $colorFromCart = $ci['color'] ?? null;
+            $colorFromProduct = $product?->product_color ?? ($product?->color ?? null);
             $color = $colorFromCart ?? $colorFromProduct;
 
-            $sku = $pa?->sku ?? $ci['sku'] ?? $product?->sku ?? 'N/A';
+            $sku = $pa?->sku 
+            ?? ($ci['sku'] ?? null) 
+            ?? $product?->sku ?? 'N/A';
 
             // Create order item
             OrderItem::create([

@@ -198,12 +198,12 @@ class PayPalRedirectController extends Controller
             
             // Save session data
             session([
-    'checkout_address_id' => $addressId,
-    'paypal_order_id' => $response['id'],
-    'cart_total' => $cart['total_numeric'],
-    'cart_shipping' => $cart['shipping'],
-    'cart_subtotal' => $cart['subtotal'],
-    'cart_currency' => $currency,
+                'checkout_address_id' => $addressId,
+                'paypal_order_id' => $response['id'],
+                'cart_total' => $cart['total_numeric'],
+                'cart_shipping' => $cart['shipping'],
+                'cart_subtotal' => $cart['subtotal'],
+                'cart_currency' => $currency,
     'user_id' => $user->id,
 ]);
 
