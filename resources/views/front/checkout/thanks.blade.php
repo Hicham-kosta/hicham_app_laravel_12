@@ -5,7 +5,7 @@
 @section('content')
     <!-- Page Header -->
     <div class="container-fluid bg-dark mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px;">
             <h1 class="font-weight-semi-bold text-uppercase mb-3 text-white">Order Confirmed</h1>
             <div class="d-inline-flex">
                 <p class="m-0"><a href="{{ url('/') }}" class="text-white">Home</a></p>
@@ -138,6 +138,59 @@
                                     </div>
                                 </div>
                             </div>
+                            {{-- BANK TRANSFER DETAILS --}}
+                            @if($order->payment_method == 'banktransfer')
+                            <div class="alert alert-info text-left mb-4">
+                                <h5 class="mb-2">Bank Transfer Details</h5>
+                                <p class="mb-1">
+                                    Please transfer the total amount to the following bank account: 
+                                </p>
+                                <ul class="mb-0">
+                                    <li><strong>Account Holder</strong>Your Company Name</li>
+                                    <li><strong>Bank Name</strong>Your Bank Name</li>
+                                    <li><strong>Account Number</strong>Your Account Number</li>
+                                    <li><strong>IBAN</strong>Your IBAN</li>
+                                    <li><strong>SWIFT/BIC</strong>Your SWIFT/BIC</li>
+                                    <li><strong>Amount</strong>{{ $order->total_amount }}</li>
+                                </ul>
+                                <p class="mt-3 mb-0">
+                                    Please include your <strong>order ID number</strong> in the transfer description: 
+                                    
+                                </p>
+                            </div>
+                            @endif
+
+                            {{-- DIRECT CHECK DETAILS --}}
+                            @if($order->payment_method == 'directcheck')
+                            <div class="alert alert-info text-left mb-4">
+                                <h5 class="mb-2">Direct Check Details</h5>
+                                <p class="mb-1">
+                                    Please send your check to the following address: 
+                                </p>
+                                <address class="mb-0">
+                                    <strong>Your Company Name</strong><br>
+                                    Your Street Address<br>
+                                    Your City, State, Zip Code<br>
+                                    Your Country
+                                </address>
+                                <p class="mt-3 mb-0">
+                                    Please include your <strong>order ID number</strong> in the check description: 
+                                </p>
+                            </div>
+                            @endif
+
+                            {{-- COD MESSAGE --}}
+                            @if($order->payment_method == 'cod')
+                            <div class="alert alert-info text-left mb-4">
+                                <h5 class="mb-1">Cash on Delivery</h5>
+                                <p class="mb-1">
+                                    Please pay the total amount to the delivery person when you receive your order: 
+                                </p>
+                                <p class="mt-3 mb-0">
+                                    Please include your <strong>order ID number</strong> in the payment description: 
+                                </p>
+                            </div>
+                            @endif
 
                             <!-- Action Buttons -->
                             <div class="text-center">
@@ -163,7 +216,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <!-- Additional Information -->
                             <div class="mt-5 pt-4 border-top">
                                 <div class="row">

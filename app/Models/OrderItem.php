@@ -16,6 +16,8 @@ class OrderItem extends Model
         'sku',
         'qty', 
         'price', 
+        'product_gst',
+        'product_gst_amount',
         'subtotal', 
         'size',
         'color',

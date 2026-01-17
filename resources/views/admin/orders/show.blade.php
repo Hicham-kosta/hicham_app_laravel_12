@@ -40,6 +40,8 @@
                                 <th>Quantity</th>
                                 <th>Price</th>
                                 <th>Subtotal</th>
+                                <th>GST (%)</th>
+                                <th>GST Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -58,6 +60,12 @@
                                 <td>{{ formatCurrency($item->qty * $item->price, 'USD') }}</td>
                                 @else
                                 <td>{{ formatCurrency($item->qty * $item->price) }}</td>
+                                @endif
+                                <td>{{ number_format($item->product_gst ?? 0, 2) }}%</td>
+                                @if($order->payment_method === 'paypal')
+                                <td>{{ formatCurrency($item->product_gst_amount ?? 0, 'USD') }}</td>
+                                @else
+                                <td>{{ formatCurrency($item->product_gst_amount ?? 0, 2) }}</td>
                                 @endif
                             </tr>
                             @endforeach
@@ -187,11 +195,11 @@
                     <p><strong>Shipping:</strong> {{ formatCurrency($order->shipping) }}</p>
                     @endif
                     @endif
-                    @if($order->tax > 0)
+                    @if($order->taxes > 0)
                     @if($order->payment_method === 'paypal')
-                    <p><strong>Tax:</strong> {{ formatCurrency($order->tax, 'USD') }}</p>
+                    <p><strong>Tax (GST):</strong> {{ formatCurrency($order->taxes, 'USD') }}</p>
                     @else
-                    <p><strong>Tax:</strong> {{ formatCurrency($order->tax) }}</p>
+                    <p><strong>Tax (GST):</strong> {{ formatCurrency($order->taxes) }}</p>
                     @endif  
                     @endif
                     @if($order->payment_method === 'paypal')

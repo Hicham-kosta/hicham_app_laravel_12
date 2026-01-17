@@ -209,6 +209,10 @@
                   </h6>
                </div>
                @endif
+               <div class="d-flex justify-content-between">
+                  <h6 class="font-weight-medium">Tax (GST)</h6>
+                  <h6 class="font-weight-medium">{{formatCurrency($cart['taxes_total'] ?? 0, $currCode)}}</h6>
+               </div>
             </div>
             <div class="card-footer border-secondary bg-transparent">
                <div class="d-flex justify-content-between mt-2">
@@ -258,19 +262,35 @@
                         @endif
                      </div>
                   </div>
+                  {{-- Direct Check --}}
                   <div class="form-group">
                      <div class="custom-control custom-radio">
-                        <input type="radio" class="custom-control-input" 
-                           name="payment_method" id="directcheck" value="directcheck">
+                        <input type="radio" 
+                        class="custom-control-input"  
+                        name="payment_method" 
+                        id="directcheck"
+                        value="directcheck">
                         <label class="custom-control-label" for="directcheck">Direct Check</label>
                      </div>
+                     <small class="text-muted d-block ml-4 mt-1">
+                        Please send your check to our official business address. 
+                        Your order will be processed after payment confirmation
+                     </small>
                   </div>
+                  {{-- Bank Transfer --}}
                   <div class="form-group">
                      <div class="custom-control custom-radio">
-                        <input type="radio" class="custom-control-input" 
-                           name="payment_method" id="banktransfer" value="banktransfer">
+                        <input type="radio" 
+                        class="custom-control-input"  
+                        name="payment_method" 
+                        id="banktransfer"
+                        value="banktransfer">
                         <label class="custom-control-label" for="banktransfer">Bank Transfer</label>
                      </div>
+                     <small class="text-muted d-block ml-4 mt-1">
+                        Please send your bank transfer to our official business account. 
+                        Your order will be processed after payment confirmation
+                     </small>
                   </div>
                   <div class="form-group mt-2">
                      <div class="custom-control custom-radio">

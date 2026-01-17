@@ -19,6 +19,7 @@ class Order extends Model
         'discount', 
         'wallet', 
         'shipping', 
+        'taxes', 
         'total',
         'payment_method',
         'payment_status',

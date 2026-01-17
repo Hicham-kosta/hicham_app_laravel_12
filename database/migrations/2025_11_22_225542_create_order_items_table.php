@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('sku')->nullable();
             $table->unsignedBigInteger('qty')->default(1);   ;
             $table->decimal('price', 10, 2)->default(0);
+            $table->float('product_gst')->default(0);
+            $table->decimal('product_gst_amount', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->string('size')->nullable();
             $table->string('color')->nullable();

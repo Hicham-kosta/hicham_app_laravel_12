@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('wallet', 10, 2)->default(0);
             $table->decimal('shipping', 10, 2)->default(0);
+            $table->decimal('taxes', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->string('payment_method', 20)->nullable();
             $table->string('payment_status', 20)->default('pending');

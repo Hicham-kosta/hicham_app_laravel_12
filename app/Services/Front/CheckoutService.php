@@ -55,10 +55,35 @@ class CheckoutService
                 $cart['shipping_rule'] = $result['rule'];
             } 
         }
+
+        // Start Tax calculation (GST per product and total)
+        $cart['taxes_total'] = 0.0;
+        // Preload products from items
+        $itemProductsId = array_unique(array_filter(array_column($cart['cartItems'] ?? [], 'product_id')));
+        $itemProducts = !empty($itemProductsId) ? Product::whereIn('id', $itemProductsId)->get()->keyBy('id') : collect();
+
+        // For each cart item compute product_gst_amount (based on product_gst percentage)
+        foreach($cart['cartItems'] as $k => $ci){
+            $pid = $ci['product_id'] ?? null;
+            $qty = max(1, (int) ($ci['qty'] ?? ($ci['product_qty'] ?? 1)));
+            $unitPrice = $ci['unit_price'] ?? ($ci['price'] ?? 0);
+            $lineTotal = $ci['line_total'] ?? ($unitPrice * $qty);
+            $product = $itemProducts->get($pid);
+            // product_gst percent stored in products.product_gst
+            $gstPercent = $product ? (float) ($product->product_gst ?? 0) : 0;
+            // GST Amount
+            $gstAmount = round(($lineTotal * $gstPercent) / 100, 2);
+            $cart['cartItems'][$k]['product_gst'] = $gstPercent;
+            $cart['cartItems'][$k]['product_gst_amount'] = $gstAmount;
+            $cart['taxes_total'] += $gstAmount;
+        }
+        // Ensure numeric formatting
+        $cart['taxes_total'] = round((float) ($cart['taxes_total'] ?? 0), 2);
+
         // Recalculate total
         $cart['total_numeric'] = max(
             0,
-            ($cart['subtotal_numeric'] + ($cart['shipping'] ?? 0) 
+            ($cart['subtotal_numeric'] + ($cart['shipping'] ?? 0) + ($cart['taxes_total'] ?? 0) 
             - $cart['discount'] - $cart['wallet']),
         );
         return $cart;
@@ -116,6 +141,7 @@ class CheckoutService
             'discount' => $cart['discount'] ?? 0,
             'wallet' => $cart['wallet'] ?? 0,
             'shipping' => $cart['shipping'] ?? 0,
+            'taxes' => $cart['taxes_total'] ?? 0,
             'total' => $cart['total_numeric'] ?? 0,
             'payment_method' => $payload['payment_method'] ?? null,
             'transaction_id' => $payload['transaction_id'] ?? null,
@@ -305,7 +331,9 @@ class CheckoutService
                 'subtotal' => $lineTotal,
                 'size' => $size,
                 'color' => $color,
-                'sku' => $sku
+                'sku' => $sku,
+                'product_gst' => $ci['product_gst'] ?? ($product?->product_gst ?? 0),
+                'product_gst_amount' => $ci['product_gst_amount'] ?? round(($lineTotal * ($product?->product_gst ?? 0)) / 100, 2),
             ]);
             
             Log::info('Order item created', [
