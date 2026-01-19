@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('role');
-            $table->string('mobile');
+            $table->string('role')->default('admin');
+            $table->string('mobile')->nullable();
             $table->string('email')->unique();
             $table->string('password');
             $table->string('image')->nullable();
-            $table->tinyInteger('status');
+            $table->tinyInteger('status')->default(0);
+            $table->string('confirm')->default('No');
             $table->timestamps();
         });
     }

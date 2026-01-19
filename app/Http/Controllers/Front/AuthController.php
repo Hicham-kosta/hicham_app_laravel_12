@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\CustomResetPassword;
 use App\Services\Front\CartService;
+use App\Models\Admin;
+use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -42,9 +44,12 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
+        if ($request->user_type === 'Vendor') {
+            return app(VendorController::class)->register($request);
+        }
         $data = $request->validated();
         // Capture guest session id BEFORE registration
-        $gustSessionId = Session::get('session_id') ?: $request->session()->getId();
+        $guestSessionId = Session::get('session_id') ?: $request->session()->getId();
 
         $user = $this->authService->registerUser($data);
 
@@ -57,7 +62,7 @@ class AuthController extends Controller
         Auth::login($user);
 
         // Merge guest cart to user cart
-        app(CartService::class)->migrateGuestCartToUser($gustSessionId, Auth::id());
+        app(CartService::class)->migrateGuestCartToUser($guestSessionId, Auth::id());
         
         return response()->json([
             'success' => true,
@@ -66,35 +71,82 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Handle user/vendor login request
+     */
+
     public function login(LoginRequest $request)
     {
         $data = $request->validated();
-        // Capture guest session cart before login
-        $gustSessionId = Session::get('session_id') ?: $request->session()->getId();
 
+        // Capture guest session id
+        $guestSessionId = Session::get('session_id') ?: $request->session()->getId();
+
+        /**
+         * Vendor Login
+         */
+        if($data['user_type'] === 'Vendor'){
+            $vendor = Admin::where('email', $data['email'])
+            ->where('role', 'vendor')
+            ->first();
+
+            if(!$vendor){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['email' => ['Vendor not found.']]
+                ], 422);
+            }
+            if(!$vendor->confirm){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['email' => ['Vendor not confirmed yet.']]
+                ], 422);
+            }
+            if((int)$vendor->status === 0){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['email' => ['Vendor not active.']]
+                ], 422);
+            }
+            if(!Hash::check($data['password'], $vendor->password)){
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['password' => ['Invalid password.']]
+                ], 422);
+            }
+
+            // Login vendor using admin guard
+            auth('admin')->login($vendor);
+            return response()->json([
+                'success' => true,
+                'message' => 'You are logged in successfully as Vendor.',
+                'redirect' => url('/admin/dashboard'),
+            ]);
+        }
+
+        /**
+         * Customer Login
+         */
         $credentials = ['email' => $data['email'], 'password' => $data['password']];
-        // Pre check if inactive return frendly error
-        $user = \App\Models\User::where('email', $data['email'])->first();
-        if($user && $user->status === 0){
+        $user = User::where('email', $data['email'])->first();
+        if($user && (int)$user->status === 0){
             return response()->json([
                 'success' => false,
-                'errors' => ['email' => ['Your account is inactive, please contact support.']],
-         ], 422);
-       }
-       if ($this->authService->attemptLogin($credentials, $request->boolean('remember'))) {
-              // Merge guest cart with user cart after login
-              app(CartService::class)->migrateGuestCartToUser($gustSessionId, Auth::id());
-           return response()->json([
-               'success' => true,
-               'message' => 'logged in successfully.',
-               'redirect' => url('/'),
-           ]);
-       }
-
-       return response()->json([
-           'success' => false,
-           'errors' => ['email' => ['The provided credentials do not match our records.']],
-       ]);
+                'errors' => ['email' => ['User not active, please contact support.']]
+            ], 422);
+        }
+        if($this->authService->attemptLogin($credentials, $request->boolean('remember'))){
+            app(CartService::class)->migrateGuestCartToUser($guestSessionId, auth()->id());
+            return response()->json([
+                'success' => true,
+                'message' => 'User logged in successfully.',
+                'redirect' => url('/'),
+            ]);
+        }
+        return response()->json([
+            'success' => false,
+            'errors' => ['email' => ['Invalid credentials.']]
+        ], 422);
     }
 
     /**

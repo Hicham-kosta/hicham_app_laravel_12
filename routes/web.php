@@ -43,6 +43,7 @@ use App\Http\Controllers\Front\OrderController as OrderFrontController;
 use App\Http\Controllers\Front\PageController as PageFrontController;
 use App\Http\Controllers\Front\SubscriberController as SubscriberFrontController;
 use App\Http\Controllers\Front\PayPalRedirectController;
+use App\Http\Controllers\Front\VendorController as VendorFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
@@ -295,10 +296,12 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
     Route::post('/subscriber', [SubscriberFrontController::class, 'store'])->name('front.subscribers.store');
 
     // PayPal Routes
-Route::post('/paypal/redirect', [PayPalRedirectController::class, 'redirectToPayPal'])->name('paypal.redirect');
-Route::get('/paypal/return', [PayPalRedirectController::class, 'handleReturn'])->name('paypal.return');
-Route::get('/paypal/cancel', [PayPalRedirectController::class, 'handleCancel'])->name('paypal.cancel');
-    
+    Route::post('/paypal/redirect', [PayPalRedirectController::class, 'redirectToPayPal'])->name('paypal.redirect');
+    Route::get('/paypal/return', [PayPalRedirectController::class, 'handleReturn'])->name('paypal.return');
+    Route::get('/paypal/cancel', [PayPalRedirectController::class, 'handleCancel'])->name('paypal.cancel');
+
+    Route::post('/vendor/register', [VendorFrontController::class, 'register'])->name('vendor.register');
+    Route::get('/vendor/confirm/{code}', [VendorFrontController::class, 'confirm'])->name('vendor.confirm');
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     // In your web.php routes file
 // User routes

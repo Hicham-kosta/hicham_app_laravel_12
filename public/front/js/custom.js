@@ -308,63 +308,57 @@ $(document).on('submit', '#loginForm', function (e) {
 
 $(document).on('submit', '#registerForm', function (e) {
   e.preventDefault();
+
   $('.help-block.text-danger').text('');
-  var $btn = $('#registerButton');
+  const $btn = $('#registerButton');
   $btn.prop('disabled', true).text('Please wait...');
 
-  // Use FormData instead of JSON for better compatibility
-  var formData = new FormData();
-  formData.append('name', $('#name').val());
-  formData.append('email', $('#email').val().trim().toLowerCase());
-  formData.append('password', $('#password').val());
-  formData.append('password_confirmation', $('#password_confirmation').val());
-  formData.append('user_type', $('input[name="user_type"]:checked').val());
-  formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+  const userType = $('input[name="user_type"]:checked').val();
+
+  const url = userType === 'Vendor'
+    ? '/vendor/register'
+    : '/user/register';
+
+  const formData = new FormData(this);
+  formData.set('email', $('#email').val().trim().toLowerCase());
 
   $.ajax({
-    url: window.routes && window.routes.userRegisterPost ? window.routes.userRegisterPost : '/user/register',
+    url: url,
     method: 'POST',
     processData: false,
     contentType: false,
     data: formData,
+
     success: function (resp) {
-      console.log('✅ SUCCESS:', resp);
       $btn.prop('disabled', false).text('Register');
+
       if (resp.success) {
-        $('#registerSuccess').html('<div class="alert alert-success">' + resp.message + '</div>');
-        setTimeout(() => {
-          window.location.href = resp.redirect || '/';
-        }, 1000);
+        $('#registerSuccess').html(
+          '<div class="alert alert-success">' + resp.message + '</div>'
+        );
       } else {
-        $('#registerSuccess').html('<div class="alert alert-danger">Registration Failed</div>');
+        $('#registerSuccess').html(
+          '<div class="alert alert-danger">Registration failed</div>'
+        );
       }
     },
-    error: function (xhr) {
-      console.group('❌ AJAX Error');
-      console.log('Status:', xhr.status);
-      console.log('Response:', xhr.responseJSON);
-      console.groupEnd();
 
+    error: function (xhr) {
       $btn.prop('disabled', false).text('Register');
 
-      if (xhr.responseJSON && xhr.responseJSON.errors) {
+      if (xhr.responseJSON?.errors) {
         $.each(xhr.responseJSON.errors, function (key, val) {
-          const $errorElement = $('[data-error-for="' + key + '"]');
-          if ($errorElement.length) {
-            $errorElement.text(val[0]);
-          } else {
-            // Fallback - show in success area
-            $('#registerSuccess').html('<div class="alert alert-danger">' + val[0] + '</div>');
-          }
+          $('[data-error-for="' + key + '"]').text(val[0]);
         });
-      } else if (xhr.responseJSON && xhr.responseJSON.message) {
-        $('#registerSuccess').html('<div class="alert alert-danger">' + xhr.responseJSON.message + '</div>');
       } else {
-        $('#registerSuccess').html('<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>');
+        $('#registerSuccess').html(
+          '<div class="alert alert-danger">Unexpected error occurred</div>'
+        );
       }
     }
   });
 });
+
 
 // Currency Switcher
 (function () {

@@ -11,6 +11,12 @@
           <p class="text-muted text-center mb-4">Sign in to your account to continue</p>
 
           {{-- Success/Error Messages --}}
+          @if(Session('success_message'))
+          <div class="alert alert-success">{{ Session('success_message') }}</div>
+          @endif
+          @if(Session('error_message'))
+          <div class="alert alert-danger">{{ Session('error_message') }}</div>
+          @endif
           <div id="loginSuccess"></div>
 
           <form id="loginForm" novalidate>
