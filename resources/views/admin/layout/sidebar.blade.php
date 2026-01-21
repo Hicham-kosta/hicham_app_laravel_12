@@ -14,16 +14,16 @@ $isVendor = $admin && $admin->role == 'vendor';
      <div class="sidebar-wrapper">
      <!-- User Panel -->
       <div class="sidebar-user">
-        <img class="avatar" 
-        src="{{!empty($admin->image) ? asset('admin/images/photos/'.$admin->image) 
+        <img style="width: 50px;" class="avatar" 
+        src="{{!empty($admin->image) ? asset('admin/images/profiles/'.$admin->image) 
         : asset('admin/images/no-image.png')}}">
        <div>
-        <div class="name">{{$admin->name}}</div>
-        <div class="role">{{ucfirst($admin->role)}}</div>
+        <div class="name" style="color: white;">{{$admin->name}}</div>
+        <div class="role" style="color: white;">{{ucfirst($admin->role)}}</div>
       </div>
      </div>
      <nav class="mt-2">
-        <div class="sidebar-heading">Management</div>
+        <div class="sidebar-heading " style="color: white;">Management</div>
         <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
 
         {{-- ==========================
@@ -53,23 +53,23 @@ $isVendor = $admin && $admin->role == 'vendor';
                         <p>Update Password</p>
                     </a>
                 </li>
-                {{-- Update Details (Admin Only) --}}
-                @if($isAdmin)
+                {{-- Update Details (Admin + Vendor) --}}
+                
                 <li class="nav-item">
                     <a href="{{url('admin/update-details')}}" class="nav-link 
                     {{Session::get('page') == 'update-details' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-person-gear"></i>
-                        <p>Admin Details</p>
+                        <p>{{$isVendor ? 'Vendor Details' : 'Admin Details'}}</p>
                     </a>
                 </li>
-                @endif
+                
                 {{-- Vendor KYC / Business Details (Vendor only) --}}
                 @if($isVendor)
                 <li class="nav-item">
                     <a href="{{route('admin.vendor.update-details')}}" class="nav-link 
                     {{Session::get('page') == 'vendor-details' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-shop"></i>
-                        <p>Vendor Details</p>
+                        <p>Shop Details</p>
                     </a>
                 </li>
                 @endif
@@ -170,7 +170,7 @@ $isVendor = $admin && $admin->role == 'vendor';
                         </a>
                      </li>
                      @endif
-                    @if($isAdmin)
+                    <!--@if($isAdmin)
                     <li class="nav-item">
                         <a href="{{url('admin/attributes')}}" class="nav-link 
                         {{Session::get('page') == 'attributes' ? 'active' : ''}}">
@@ -178,7 +178,7 @@ $isVendor = $admin && $admin->role == 'vendor';
                             <p>Attributes</p>
                         </a>
                     </li>
-                    @endif
+                    @endif-->
                     {{-- Filters (Admin Only) --}}
                     @if($isAdmin)
                     <li class="nav-item">

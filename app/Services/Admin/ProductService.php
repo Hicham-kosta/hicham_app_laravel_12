@@ -15,42 +15,22 @@ class ProductService
 {
     public function products(){
 
-        /* $products = Product::with('category')->get();
-
-        // Set Admin/Subadmin Permissions for Products
-        $productsModuleCount = AdminsRole::where(['subadmin_id' => Auth::guard('admin')->user()->id,
-            'module' => 'products'])
-            ->count();
-            $status = "success";
-            $message = "";
-            $productsModule = [];
-
-            if(Auth::guard('admin')->user()->role == 'admin'){
-                $productsModule = [
-                    'view_access' => 1,
-                    'edit_access' => 1,
-                    'full_access' => 1,
-                ];
-            }elseif($productsModuleCount == 0){
-                $status = "error";
-                $message = "You don't have access to this module.";
-            }else{
-                $productsModule = AdminsRole::where(['subadmin_id' => Auth::guard('admin')->user()->id,
-                    'module' => 'products'])
-                    ->first()->toArray();
-            }
-            return [
-                'status' => $status,
-                'message' => $message,
-                'productsModule' => $productsModule,
-                'products' => $products
-            ]; */
-
             $admin = Auth::guard('admin')->user();
             /*-----------------------
             FETCH PRODUCTS BASED ON ADMIN ROLE
             -----------------------*/
             if($admin->role === 'vendor'){
+
+                // Vendor KYC not approved
+                if(!$admin->vendorDetails || (int)$admin->vendorDetails->is_verified === 0){
+                    return [
+                        'products' => collect(),
+                        'productsModule' => [],
+                        'status' => 'error',
+                        'message' => 'Your vendor account is not approved yet. 
+                        You can not add or manage products.',
+                    ];
+                }
                 // Vendor ca see only his own products
                 $products = Product::with('category')
                 ->where('admin_id', $admin->id)
