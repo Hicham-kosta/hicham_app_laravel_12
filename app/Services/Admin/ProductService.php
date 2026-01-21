@@ -15,7 +15,7 @@ class ProductService
 {
     public function products(){
 
-        $products = Product::with('category')->get();
+        /* $products = Product::with('category')->get();
 
         // Set Admin/Subadmin Permissions for Products
         $productsModuleCount = AdminsRole::where(['subadmin_id' => Auth::guard('admin')->user()->id,
@@ -44,6 +44,73 @@ class ProductService
                 'message' => $message,
                 'productsModule' => $productsModule,
                 'products' => $products
+            ]; */
+
+            $admin = Auth::guard('admin')->user();
+            /*-----------------------
+            FETCH PRODUCTS BASED ON ADMIN ROLE
+            -----------------------*/
+            if($admin->role === 'vendor'){
+                // Vendor ca see only his own products
+                $products = Product::with('category')
+                ->where('admin_id', $admin->id)
+                ->where('admin_role', 'vendor')
+                ->get();
+
+                // Vendor has full access to his own products
+                $productsModule = [
+                    'view_access' => 1,
+                    'edit_access' => 1,
+                    'full_access' => 1,
+                ];
+
+                return [
+                    'products' => $products,
+                    'productsModule' => $productsModule,
+                    'status' => 'success',
+                    'message' => '',
+                ];
+            }
+
+            /* ------------------------
+            ADMIN & SUBADMIN FLOW
+            ------------------------ */
+            //Admin & Subadmin can see all products
+            $products = Product::with('category')->get();
+
+            //Check Subadmin permissions for Products module
+            $productsModuleCount = AdminsRole::where([
+                'subadmin_id' => $admin->id,
+                'module' => 'products'
+                ])->count();
+            
+            $status = 'success';
+            $message = '';
+            $productsModule = [];
+
+            if($admin->role === 'admin'){
+                // Super Admin has full access to Products module
+                $productsModule = [
+                    'view_access' => 1,
+                    'edit_access' => 1,
+                    'full_access' => 1,
+                ];
+            }elseif($productsModuleCount == 0){
+                // Subadmin doesn't have access to Products module
+                $status = "error";
+                $message = "You don't have access to this module.";
+            }else{
+                // Subadmin with specific permission
+                $productsModule = AdminsRole::where([
+                    'subadmin_id' => $admin->id,
+                    'module' => 'products'
+                    ])->first()->toArray();
+            }
+            return [
+                'products' => $products,
+                'productsModule' => $productsModule,
+                'status' => $status,
+                'message' => $message,
             ];
    }
 

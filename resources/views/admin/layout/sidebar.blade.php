@@ -1,183 +1,205 @@
-<!--begin::Sidebar-->
+@php
+$admin = Auth::guard('admin')->user();
+$isAdmin = $admin && $admin->role == 'admin';
+$isVendor = $admin && $admin->role == 'vendor';
+@endphp
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
-                <!--begin::Sidebar Brand-->
-                <div class="sidebar-brand">
-                    <!--begin::Brand Link-->
-                    <a href="./index.html" class="brand-link">
-                        <!--begin::Brand Image-->
-                        <img
-                            src="{{asset('admin/images/AdminLTELogo.png')}}"
-                            alt="AdminLTE Logo"
-                            class="brand-image opacity-75 shadow"
-                            />
-                        <!--end::Brand Image-->
-                        <!--begin::Brand Text-->
-                        <span class="brand-text fw-light">AdminLTE 4</span>
-                        <!--end::Brand Text-->
+    <!-- Brand -->
+     <div class="sidebar-brand">
+        <a href="{{url('admin/dashboard')}}" class="brand-link d-flex align-items-center gap-2">
+            <img src="{{asset('admin/images/AdminLTELogo.png')}}" class="brand-image opacity-75 shadow">
+            <span class="brand-text">Admin Panel</span>
+        </a>
+     </div>
+     <div class="sidebar-wrapper">
+     <!-- User Panel -->
+      <div class="sidebar-user">
+        <img class="avatar" 
+        src="{{!empty($admin->image) ? asset('admin/images/photos/'.$admin->image) 
+        : asset('admin/images/no-image.png')}}">
+       <div>
+        <div class="name">{{$admin->name}}</div>
+        <div class="role">{{ucfirst($admin->role)}}</div>
+      </div>
+     </div>
+     <nav class="mt-2">
+        <div class="sidebar-heading">Management</div>
+        <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+
+        {{-- ==========================
+             ADMIN / VENDOR Management
+             ========================== --}}
+            <li class="nav-item {{in_array(Session::get('page'), ['dashboard','update-password',
+            'update-details','vendor-details']) ? 'menu-open' : ''}}">
+            <a href="#" class="nav-link {{in_array(Session::get('page'),['dashboard','update-password',
+            'update-details','vendor-details']) ? 'active' : ''}}">
+            <i class="nav-icon bi bi-speedometer2"></i>
+            <p>Account Management <i class="nav-arrow bi bi-chevron-right"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+                {{-- Dashboard (Admin + Vendor) --}}
+                <li class="nav-item">
+                    <a href="{{url('admin/dashboard')}}" class="nav-link 
+                    {{Session::get('page') == 'dashboard' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-circle"></i>
+                        <p>Dashboard</p>
                     </a>
-                    <!--end::Brand Link-->
-                </div>
-                <!--end::Sidebar Brand-->
-                <!--begin::Sidebar Wrapper-->
-                <div class="sidebar-wrapper">
-                    <nav class="mt-2">
-                        <!--begin::Sidebar Menu-->
-                        <ul
-                            class="nav sidebar-menu flex-column"
-                            data-lte-toggle="treeview"
-                            role="menu"
-                            data-accordion="false"
-                            >
-                            <li class="nav-item menu-open">
-                                <a href="#" class="nav-link active">
-                                    <i class="nav-icon bi bi-speedometer"></i>
-                                    <p>
-                                        Admin Management
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/dashboard')}}" class="nav-link {{(Session::get('page')== 'dashboard'
-                                        ? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Dashboard</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/update-password')}}" class="nav-link {{(Session::get('page')== 
-                                        'update-password'? 'active' : '')}}">
-                                        
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Update Password</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/update-details')}}" class="nav-link {{(Session::get('page')== 
-                                        'update-details'? 'active' : '')}}">
-                                        
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Update Details</p>
-                                        </a>
-                                    </li>
-                                    @if(Auth::guard('admin')->user()->role=="admin")
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/subadmins')}}" class="nav-link {{(Session::get('page')== 
-                                        'subadmins'? 'active' : '')}}">
-                                        
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Subadmins</p>
-                                        </a>
-                                    </li>
-                                    @endif
-                                </ul>
-                            </li>
-                            <li class="nav-item" {{in_array(Session::get('page'), ['categories', 'brands', 
-                                'products', 'filters', 'banners', 'coupons']) ? 'menu-open' : ''}}>
-                                <a href="#" class="nav-link {{in_array(Session::get('page'), ['categories', 'brands', 
-                                'products', 'filters', 'banners']) ? 'active' : ''}}">
-                                <i class="nav-icon bi bi-clipboard-fill"></i>
-                                    <p>
-                                        Catalogue Management
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/categories')}}" class="nav-link {{(Session::get('page')== 'categories'
-                                        ? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Categories</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/brands')}}" class="nav-link {{(Session::get('page')== 
-                                        'brands'? 'active' : '')}}">
-                                        
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Brands</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/products')}}" class="nav-link {{(Session::get('page')== 
-                                        'products'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Products</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/filters')}}" class="nav-link {{(Session::get('page')== 
-                                        'filters'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Filters</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/banners')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Banners</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/coupons')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Coupons</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/users')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Users</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/currencies')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Currencies</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/reviews')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>reviews</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/wallet-credits')}}" class="nav-link {{(Session::get('page')== 
-                                        'banners'? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Wallet Credits/Debits</p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="nav-item" {{in_array(Session::get('page'), ['orders']) ? 'menu-open' : ''}}>
-                                <a href="#" class="nav-link {{in_array(Session::get('page'), ['orders']) ? 'active' : ''}}">
-                                    <i class="nav-icon bi bi-clipboard-fill"></i>
-                                    <p>
-                                        Orders Management
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{{url('admin/orders')}}" class="nav-link {{(Session::get('page')== 'orders'
-                                        ? 'active' : '')}}">
-                                            <i class="nav-icon bi bi-circle"></i>
-                                            <p>Orders</p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>    
-                        </ul>
-                        <!--end::Sidebar Menu-->
-                    </nav>
-                </div>
-                <!--end::Sidebar Wrapper-->
-            </aside>
-            <!--end::Sidebar-->
+                </li>
+                {{-- Update Password (Admin + Vendor) --}}
+                <li class="nav-item">
+                    <a href="{{url('admin/update-password')}}" class="nav-link 
+                    {{Session::get('page') == 'update-password' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-shield-lock"></i>
+                        <p>Update Password</p>
+                    </a>
+                </li>
+                {{-- Update Details (Admin Only) --}}
+                @if($isAdmin)
+                <li class="nav-item">
+                    <a href="{{url('admin/update-details')}}" class="nav-link 
+                    {{Session::get('page') == 'update-details' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-person-gear"></i>
+                        <p>Admin Details</p>
+                    </a>
+                </li>
+                @endif
+                {{-- Vendor KYC / Business Details (Vendor only) --}}
+                @if($isVendor)
+                <li class="nav-item">
+                    <a href="{{route('admin.vendor.update-details')}}" class="nav-link 
+                    {{Session::get('page') == 'vendor-details' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-shop"></i>
+                        <p>Vendor Details</p>
+                    </a>
+                </li>
+                @endif
+                {{-- Subadmins (Admin only) --}}
+                @if($isAdmin)
+                <li class="nav-item">
+                    <a href="{{url('admin/subadmins')}}" class="nav-link 
+                    {{Session::get('page') == 'subadmins' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-people"></i>
+                        <p>Subadmins</p>
+                    </a>
+                </li>
+                @endif
+            </ul>
+        </li>
+        {{-- ==========================
+             CATALOGUE MANAGEMENT
+             ========================== --}}
+             <li class="nav-item {{Session::get('page')=='products' ? 'menu-open' : ''}}">
+                <a href="#" class="nav-link {{Session::get('page') == 'products' ? 'active' : ''}}">
+                    <i class="nav-icon bi bi-box-seam"></i>
+                    <p>Products <i class="nav-arrow bi bi-chevron-right"></i></p>
+                </a>
+                <ul class="nav nav-treeview">
+                    {{-- Categories & Brands (Admin Only) --}}
+                    @if($isAdmin)
+                    <li class="nav-item">
+                        <a href="{{url('admin/categories')}}" class="nav-link 
+                        {{Session::get('page') == 'categories' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-tags"></i>
+                            <p>Categories</p>
+                        </a>
+                    </li>
+                    {{-- Brands (Admin) --}}
+                    <li class="nav-item">
+                        <a href="{{url('admin/brands')}}" class="nav-link 
+                        {{Session::get('page') == 'brands' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-bookmark"></i>
+                            <p>Brands</p>
+                        </a>
+                    </li>
+                    @endif
+                    {{-- Products (Admin + Vendor) --}}
+                    <li class="nav-item">
+                        <a href="{{url('admin/products')}}" class="nav-link 
+                        {{Session::get('page') == 'products' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-box"></i>
+                            <p>Products</p>
+                        </a>
+                    </li>
+                  </ul>
+                </li>
+                {{-- ==========================
+                     ORDERS (Admin + Vendor)
+                     ========================== --}}
+                     <li class="nav-item {{Session::get('page')=='orders' ? 'menu-open' : ''}}">
+                        <a href="{{url('admin/orders')}}" class="nav-link 
+                        {{Session::get('page') == 'orders' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-receipt"></i>
+                            <p>Orders</p>
+                        </a>
+                    </li>
+
+                    {{-- ==========================
+                     ADMIN ONLY MODULES
+                     ========================== --}}
+                     @if($isAdmin)
+                     {{-- Users --}}
+                     <li class="nav-item">
+                        <a href="{{url('admin/users')}}" class="nav-link
+                        {{Session::get('page') == 'users' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-people-fill"></i>
+                            <p>Users</p>
+                        </a>
+                     </li>
+                     {{-- Coupons --}}
+                     <li class="nav-item">
+                        <a href="{{url('admin/coupons')}}" class="nav-link
+                        {{Session::get('page') == 'coupons' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-ticket-perforated"></i>
+                            <p>Coupons</p>
+                        </a>
+                     </li>
+                     {{-- CMS Pages --}}
+                     <li class="nav-item">
+                        <a href="{{url('admin/pages')}}" class="nav-link
+                        {{Session::get('page') == 'pages' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-file-earmark-text"></i>
+                            <p>CMS Pages</p>
+                        </a>
+                     </li>
+                     {{-- Wallet --}}
+                     <li class="nav-item">
+                        <a href="{{route('wallet-credits.index')}}" class="nav-link
+                        {{Session::get('page') == 'wallet-credits' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-wallet"></i>
+                            <p>Wallet / Credits</p>
+                        </a>
+                     </li>
+                     @endif
+                    @if($isAdmin)
+                    <li class="nav-item">
+                        <a href="{{url('admin/attributes')}}" class="nav-link 
+                        {{Session::get('page') == 'attributes' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-sliders"></i>
+                            <p>Attributes</p>
+                        </a>
+                    </li>
+                    @endif
+                    {{-- Filters (Admin Only) --}}
+                    @if($isAdmin)
+                    <li class="nav-item">
+                        <a href="{{url('admin/filters')}}" class="nav-link 
+                        {{Session::get('page') == 'filters' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-funnel"></i>
+                            <p>Filters</p>
+                        </a>
+                    </li>
+                    @endif
+                    <!--{{-- Units (Admin Only) --}}
+                    @if($isAdmin)
+                    <li class="nav-item">
+                        <a href="{{url('admin/units')}}" class="nav-link 
+                        {{Session::get('page') == 'units' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-ruler"></i>
+                            <p>Units</p>
+                        </a>
+                    </li>
+                    @endif-->
+            </ul>
+        </nav>
+    </div>
+</aside>

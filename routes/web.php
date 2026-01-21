@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\ShippingChargeController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
+use App\Http\Controllers\Admin\VendorController;
 
 // Front Controllers
 use App\Http\Controllers\Front\IndexController;
@@ -152,8 +153,6 @@ Route::prefix('admin')->group(function () {
           Route::resource('filter-values', FilterValueController::class)->parameters(['filter-values' => 'value']);
       });
       
-                                
-
       // Product Attributes
       Route::post('update-attribute-status', [ProductController::class, 'updateAttributeStatus']);
       Route::get('delete-product-attribute/{id}', [ProductController::class, 'deleteProductAttribute']);
@@ -210,6 +209,10 @@ Route::prefix('admin')->group(function () {
       Route::post('update-shipping-charge-status', [ShippingChargeController::class, 'updateStatus'])
       ->name('admin.shipping_charges.updateStatus');
 
+      // Vendor KYC / Business / Bank Details / (vendor-only access)
+      Route::get('vendor/update-details', [VendorController::class, 'edit'])->name('admin.vendor.update-details');
+      // Submit Vendor KYC / Business / Bank Details
+      Route::post('vendor/update-details', [VendorController::class, 'update'])->name('admin.vendor.update-details.request');
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');

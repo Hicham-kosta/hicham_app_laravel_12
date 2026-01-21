@@ -32,7 +32,7 @@ class OrderService
             ];
         }else{
             $module = AdminsRole::where([
-                'subadmin_id', $subadmin->id,
+                'subadmin_id' => $admin->id,
                 'module' => 'orders',
             ])->first();
 

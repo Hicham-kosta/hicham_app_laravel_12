@@ -19,4 +19,9 @@ class Admin extends Authenticatable
         'status',
         'confirm',
     ];
+
+    public function vendorDetails()
+    {
+        return $this->hasOne(VendorDetail::class, 'admin_id');
+    }
 }
