@@ -14,6 +14,8 @@ use App\Services\Admin\AdminService;
 use App\Models\AdminsRole;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use App\Models\VendorDetail;
+use App\Http\Controllers\Admin\VendorController;
 
 class AdminController extends Controller
 {
@@ -234,5 +236,24 @@ class AdminController extends Controller
         return response()->json(['status' => 'success']);
     }
 
+    public function vendors()
+    {
+        Session::put('page', 'vendors');
+        $vendors = Admin::with('vendorDetails')
+        ->where('role', 'vendor')
+        ->orderBy('id', 'desc')
+        ->get();
 
+        return view('admin.vendors.index', compact('vendors'));
+    }
+
+    public function showVendor($id)
+    {
+        Session::put('page', 'vendors');
+        $vendor = Admin::with('vendorDetails')
+        ->where('role', 'vendor')
+        ->findOrFail($id);
+
+        return view('admin.vendors.show', compact('vendor'));
+    }
 }

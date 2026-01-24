@@ -213,6 +213,11 @@ Route::prefix('admin')->group(function () {
       Route::get('vendor/update-details', [VendorController::class, 'edit'])->name('admin.vendor.update-details');
       // Submit Vendor KYC / Business / Bank Details
       Route::post('vendor/update-details', [VendorController::class, 'update'])->name('admin.vendor.update-details.request');
+      Route::post('vendor/delete-address-proof', [VendorController::class, 'deleteAddressProof'])
+      ->name('admin.vendor.delete-address-proof');
+      // Vendors
+      Route::get('vendors', [AdminController::class, 'vendors'])->name('admin.vendors.index');
+      Route::get('vendors/{id}', [AdminController::class, 'showVendor'])->name('admin.vendors.show');
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');

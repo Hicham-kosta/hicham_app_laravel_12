@@ -33,7 +33,7 @@ $vendorDetails = $admin->vendorDetails ?? null;
                 </ul>
             </div>
             @endif
-            <form method="POST" action="{{route('admin.update-details.request')}}" enctype="multipart/form-data">
+            <form method="POST" action="{{route('admin.vendor.update-details.request')}}" enctype="multipart/form-data">
                 @csrf
             <!-- =================Business Details================ -->
              <div class="card-mb-4">
@@ -141,6 +141,18 @@ $vendorDetails = $admin->vendorDetails ?? null;
                         <input type="file" 
                         name="address_proof_image" 
                         class="form-control">
+                        @if(!empty($vendorDetails?->address_proof_image))
+                        <div class="mt-2">
+                            <a target="_blank" href="{{asset('front/images/vendor-docs/'
+                            .$vendorDetails->address_proof_image)}}">
+                            View Uploaded Document
+                            </a>
+                            &nbsp;&nbsp;
+                            <a href="javascript:void(0)" class="text-danger deleteAdrressProof">
+                                Delete
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
              </div>

@@ -614,3 +614,20 @@ document.addEventListener('DOMContentLoaded', function () {
     statusSelect.addEventListener('change', toggleShippedFields);
 });
 
+$(document).on('click', '.deleteAdrressProof', function () {
+    if (!confirm("Are you sure you want to delete this record?")) return false;
+    $.ajax({
+        url: '/admin/vendor/delete-address-proof',
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.status === true) {
+                location.reload();
+            }
+        }
+    });
+
+});
+
