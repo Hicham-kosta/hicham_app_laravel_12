@@ -256,4 +256,18 @@ class AdminController extends Controller
 
         return view('admin.vendors.show', compact('vendor'));
     }
+
+    public function approveVendor(Request $request)
+    {
+        $vendor = Admin::with('vendorDetails')
+        ->where('id', $request->vendor_id)
+        ->where('role', 'vendor')
+        ->firstOrFail();
+        $vendor->vendorDetails->update([
+            'is_verified' => 1
+        ]);
+        return response()->json([
+            'status' => true,
+        ]);
+    }
 }

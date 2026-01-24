@@ -218,6 +218,7 @@ Route::prefix('admin')->group(function () {
       // Vendors
       Route::get('vendors', [AdminController::class, 'vendors'])->name('admin.vendors.index');
       Route::get('vendors/{id}', [AdminController::class, 'showVendor'])->name('admin.vendors.show');
+      Route::post('vendors/approve', [AdminController::class, 'approveVendor'])->name('admin.vendors.approve');
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');

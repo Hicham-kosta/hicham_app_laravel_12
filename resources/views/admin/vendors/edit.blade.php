@@ -66,6 +66,42 @@ $vendorDetails = $admin->vendorDetails ?? null;
                         <textarea name="shop_address" 
                         class="form-control">{{old('shop_address', $vendorDetails->shop_address ?? '')}}</textarea>
                     </div>
+                    <div class="col-md-4 mb-3">
+                        <label>City</label>
+                        <input type="text" name="shop_city" 
+                        value="{{old('shop_city', $vendorDetails->shop_city ?? '')}}"
+                        class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>State</label>
+                        <input type="text" name="shop_state" 
+                        value="{{old('shop_state', $vendorDetails->shop_state ?? '')}}"
+                        class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>Pincode</label>
+                        <input type="text" name="shop_pincode" 
+                        value="{{old('shop_pincode', $vendorDetails->shop_pincode ?? '')}}"
+                        class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Country</label>
+                        <input type="text" name="shop_country" 
+                        value="{{old('shop_country', $vendorDetails->shop_country ?? '')}}"
+                        class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Email</label>
+                        <input type="text" name="shop_email" 
+                        value="{{old('shop_email', $vendorDetails->shop_email ?? '')}}"
+                        class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Website</label>
+                        <input type="text" name="shop_website" 
+                        value="{{old('shop_website', $vendorDetails->shop_website ?? '')}}"
+                        class="form-control">
+                    </div>
                 </div>
              </div>
              <!-- =================Bank Details================ -->
@@ -135,6 +171,21 @@ $vendorDetails = $admin->vendorDetails ?? null;
                         name="pan_number" 
                         value="{{old('pan_number', $vendorDetails->pan_number ?? '')}}"
                         class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Business License Number</label>
+                        <input type ="text" 
+                        name="business_license_number" 
+                        value="{{old('business_license_number', $vendorDetails->business_license_number ?? '')}}" 
+                        class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Address Proof Type</label>
+                        <input type ="text" 
+                        name="address_proof" 
+                        value="{{old('address_proof', $vendorDetails->address_proof ?? '')}}" 
+                        class="form-control" 
+                        placeholder="Voter ID / Passport">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label>Address Proof Image</label>

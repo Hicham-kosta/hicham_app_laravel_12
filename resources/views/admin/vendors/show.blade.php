@@ -43,7 +43,8 @@ $detail = $vendor->vendordetails ?? null;
                         <div class="card-body box-profile">
                             <div class="text-center">
                                 <img class="profile-user-img img-fluid img-circle" 
-                                src="{{ !empty($vendor->image) ? asset('admin/images/profiles/'.$vendor->image) : asset('admin/images/profiles/no-image.png') }}" 
+                                src="{{ !empty($vendor->image) ? asset('admin/images/profiles/'.$vendor->image) 
+                                : asset('admin/images/profiles/no-image.png') }}" 
                                 alt="Vendor profile picture">
                             </div>
                             <h3 class="profile-username text-center mb-1">{{ $vendor->name }}</h3>
@@ -70,7 +71,10 @@ $detail = $vendor->vendordetails ?? null;
                                         @if(($detail->is_verified ?? 0) == 1)
                                         <span class="badge bg-success">Approved</span>
                                         @else
-                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        @if(($vendor->vendorDetails->is_verified ?? 0) == 0)
+                                        <button class="btn btn-success mt-3 approveVendor" 
+                                        data-id="{{ $vendor->id }}">Approve Vendor</button>
+                                        @endif
                                         @endif
                                     </span>
                                 </li>
@@ -201,7 +205,8 @@ $detail = $vendor->vendordetails ?? null;
                                             <label class="form-label">Address Proof Image</label>
                                             <div class="form-control bg-light">
                                                 @if(!empty($detail->address_proof_image))
-                                                <a href="{{ asset('front/images/vendor-docs/'.$detail->address_proof_image) }}" target="_blank">
+                                                <a href="{{ asset('front/images/vendor-docs/'.$detail->address_proof_image) }}" 
+                                                target="_blank">
                                                     View Document
                                                 </a>
                                                 @else

@@ -30,9 +30,9 @@ $isVendor = $admin && $admin->role == 'vendor';
              ADMIN / VENDOR Management
              ========================== --}}
             <li class="nav-item {{in_array(Session::get('page'), ['dashboard','update-password',
-            'update-details','vendor-details']) ? 'menu-open' : ''}}">
+            'update-details','vendor-details', 'subadmins', 'vendors']) ? 'menu-open' : ''}}">
             <a href="#" class="nav-link {{in_array(Session::get('page'),['dashboard','update-password',
-            'update-details','vendor-details']) ? 'active' : ''}}">
+            'update-details','vendor-details', 'subadmins', 'vendors']) ? 'active' : ''}}">
             <i class="nav-icon bi bi-speedometer2"></i>
             <p>Account Management <i class="nav-arrow bi bi-chevron-right"></i></p>
             </a>
@@ -80,6 +80,15 @@ $isVendor = $admin && $admin->role == 'vendor';
                     {{Session::get('page') == 'subadmins' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-people"></i>
                         <p>Subadmins</p>
+                    </a>
+                </li>
+                @endif
+                @if($isAdmin)
+                <li class="nav-item">
+                    <a href="{{url('admin/vendors')}}" class="nav-link 
+                    {{Session::get('page') == 'vendors' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-people"></i>
+                        <p>Vendors</p>
                     </a>
                 </li>
                 @endif
@@ -189,16 +198,16 @@ $isVendor = $admin && $admin->role == 'vendor';
                         </a>
                     </li>
                     @endif
-                    <!--{{-- Units (Admin Only) --}}
+                    {{-- Banners (Admin Only) --}}
                     @if($isAdmin)
                     <li class="nav-item">
-                        <a href="{{url('admin/units')}}" class="nav-link 
-                        {{Session::get('page') == 'units' ? 'active' : ''}}">
-                            <i class="nav-icon bi bi-ruler"></i>
-                            <p>Units</p>
+                        <a href="{{url('admin/banners')}}" class="nav-link 
+                        {{Session::get('page') == 'banners' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-sliders"></i>
+                            <p>Banners</p>
                         </a>
                     </li>
-                    @endif-->
+                    @endif
             </ul>
         </nav>
     </div>

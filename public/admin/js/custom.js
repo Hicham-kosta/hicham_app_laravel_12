@@ -631,3 +631,22 @@ $(document).on('click', '.deleteAdrressProof', function () {
 
 });
 
+$(document).on('click', '.approveVendor', function () {
+    if (!confirm("Are you sure you want to approve this vendor?")) return false;
+    let vendorId = $(this).data('id');
+    $.ajax({
+        url: '/admin/vendors/approve',
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        data: { vendor_id: vendorId },
+        success: function (response) {
+            if (response.status === true) {
+                location.reload();
+            }
+        }
+    });
+});
+
+

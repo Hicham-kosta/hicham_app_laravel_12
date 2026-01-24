@@ -26,7 +26,13 @@ class VendorDetailRequest extends FormRequest
             // Business
             'shop_name' => 'required|string|max:255',
             'shop_mobile' => 'required|digits:10',
-            'shop_address' =>'nullable|string',
+            'shop_email' => 'required|email|max:255',
+            'shop_website' => 'nullable|string|max:255',
+            'shop_address' => 'nullable|string|max:255',
+            'shop_city' => 'nullable|string|max:255',
+            'shop_state' => 'nullable|string|max:255',
+            'shop_country' => 'nullable|string|max:255',
+            'shop_pincode' => 'nullable|string|max:20',
 
             // Bank
             'account_holder_name' => 'required|string|max:255',
@@ -37,6 +43,8 @@ class VendorDetailRequest extends FormRequest
             // KYC
             'gst_number' => 'nullable|string|max:50',
             'pan_number' => 'nullable|string|max:20',
+            'business_license_number' => 'nullable|string|max:255',
+            'address_proof' => 'nullable|string|max:255',
             'address_proof_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
