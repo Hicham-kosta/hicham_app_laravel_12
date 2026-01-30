@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\ShippingChargeController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 use App\Http\Controllers\Admin\VendorController;
+use App\Http\Controllers\Admin\VendorApprovalController;
 
 // Front Controllers
 use App\Http\Controllers\Front\IndexController;
@@ -48,6 +49,8 @@ use App\Http\Controllers\Front\VendorController as VendorFrontController;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Schema;
+
+use Illuminate\Support\Facades\Mail;
 
 
 Route::get('/', function () {
@@ -76,6 +79,16 @@ Route::get('product-image/{size}/{filename}', function ($size, $filename) {
   return Response::make($binary)->header('Content-Type', 'image/jpeg');
 });
     
+
+/*Route::get('/test-mail', function () {
+    Mail::raw('Vendor approval email test', function ($message) {
+        $message->to('test@mailtrap.io')
+                ->subject('Mailtrap Test');
+    });
+
+    return 'Mail sent';
+});*/
+
 
 Route::prefix('admin')->group(function () {
 
@@ -218,7 +231,10 @@ Route::prefix('admin')->group(function () {
       // Vendors
       Route::get('vendors', [AdminController::class, 'vendors'])->name('admin.vendors.index');
       Route::get('vendors/{id}', [AdminController::class, 'showVendor'])->name('admin.vendors.show');
-      Route::post('vendors/approve', [AdminController::class, 'approveVendor'])->name('admin.vendors.approve');
+
+      // Vendor approval routes - use the new controller
+      Route::post('vendors/{id}/approve', [VendorApprovalController::class, 'approve'])->name('admin.vendors.approve');
+      Route::post('vendors/{id}/reject', [VendorApprovalController::class, 'reject'])->name('admin.vendors.reject');    
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
@@ -311,6 +327,7 @@ Route::namespace('App\Http\Controllers\Front')->group(function () {
 
     Route::post('/vendor/register', [VendorFrontController::class, 'register'])->name('vendor.register');
     Route::get('/vendor/confirm/{code}', [VendorFrontController::class, 'confirm'])->name('vendor.confirm');
+    Route::post('/vendor/approve', [VendorApprovalController::class, 'approve'])->name('vendor.approve');
     // User auth pages (login/register) only for guests, and logout / user pages only for auth users
     // In your web.php routes file
 // User routes

@@ -66,7 +66,7 @@ $isVendor = $admin && $admin->role == 'vendor';
                 {{-- Vendor KYC / Business Details (Vendor only) --}}
                 @if($isVendor)
                 <li class="nav-item">
-                    <a href="{{route('admin.vendor.update-details')}}" class="nav-link 
+                    <a href="{{url('admin/vendor/update-details')}}" class="nav-link 
                     {{Session::get('page') == 'vendor-details' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-shop"></i>
                         <p>Shop Details</p>

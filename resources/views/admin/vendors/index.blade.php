@@ -76,6 +76,8 @@
         <td>
             @if(($detail->is_verified ?? 0) == 1)
                 <span class="badge bg-success">Approved</span>
+            @elseif(($detail->is_verified ?? 0) == 2)
+                <span class="badge bg-danger">Rejected</span>
             @else
                 <span class="badge bg-warning text-dark">Pending</span>
             @endif

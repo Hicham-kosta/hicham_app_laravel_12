@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class VendorDetail extends Model
 {
+    protected $table = 'vendor_details';
     protected $fillable = [
         'admin_id',
         'shop_name',
@@ -28,4 +29,12 @@ class VendorDetail extends Model
         'ifsc_code',
         'is_verified'
     ];
+
+    /**
+     * Get the admin/vendor that owns the details
+     */
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
+    }
 }

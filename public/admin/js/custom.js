@@ -631,7 +631,7 @@ $(document).on('click', '.deleteAdrressProof', function () {
 
 });
 
-$(document).on('click', '.approveVendor', function () {
+/*$(document).on('click', '.approveVendor', function () {
     if (!confirm("Are you sure you want to approve this vendor?")) return false;
     let vendorId = $(this).data('id');
     $.ajax({
@@ -645,6 +645,81 @@ $(document).on('click', '.approveVendor', function () {
             if (response.status === true) {
                 location.reload();
             }
+        }
+    });
+});*/
+
+// Approve Vendor
+$(document).on('click', '.approveVendor', function () {
+    if (!confirm("Are you sure you want to approve this vendor?")) return false;
+
+    let vendorId = $(this).data('id');
+    let url = `/admin/vendors/${vendorId}/approve`;
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        data: {},
+        success: function (response) {
+            console.log('Response:', response);
+            if (response.status === true) {
+                alert(response.message || 'Vendor approved successfully');
+                location.reload();
+            } else {
+                alert(response.message || 'Failed to approve vendor');
+            }
+        },
+        error: function (xhr) {
+            console.error('Error:', xhr);
+            alert('Error: ' + (xhr.responseJSON?.message || 'Something went wrong'));
+        }
+    });
+});
+
+// Reject Vendor
+$(document).on('click', '.rejectVendor', function () {
+    let vendorId = $(this).data('id');
+    let vendorName = $(this).data('name') || 'Vendor';
+    let url = `/admin/vendors/${vendorId}/reject`;
+
+    // Ask for reason
+    let rejectionReason = prompt(`Please enter reason for rejecting ${vendorName}:`);
+
+    if (rejectionReason === null) {
+        return false; // User cancelled
+    }
+
+    if (!rejectionReason.trim()) {
+        alert('Rejection reason is required');
+        return false;
+    }
+
+    if (!confirm(`Are you sure you want to reject ${vendorName}?`)) return false;
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        data: {
+            rejection_reason: rejectionReason
+        },
+        success: function (response) {
+            console.log('Response:', response);
+            if (response.status === true) {
+                alert(response.message || 'Vendor rejected successfully');
+                location.reload();
+            } else {
+                alert(response.message || 'Failed to reject vendor');
+            }
+        },
+        error: function (xhr) {
+            console.error('Error:', xhr);
+            alert('Error: ' + (xhr.responseJSON?.message || 'Something went wrong'));
         }
     });
 });
