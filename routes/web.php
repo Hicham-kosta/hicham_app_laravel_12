@@ -234,7 +234,17 @@ Route::prefix('admin')->group(function () {
 
       // Vendor approval routes - use the new controller
       Route::post('vendors/{id}/approve', [VendorApprovalController::class, 'approve'])->name('admin.vendors.approve');
-      Route::post('vendors/{id}/reject', [VendorApprovalController::class, 'reject'])->name('admin.vendors.reject');    
+      Route::post('vendors/{id}/reject', [VendorApprovalController::class, 'reject'])->name('admin.vendors.reject');
+      
+      // Vendor Commissions
+      Route::get('/vendor-commissions', [AdminController::class, 'vendorCommissions'])
+        ->name('admin.vendor.commissions');
+        
+      Route::post('/vendors/{id}/update-commission', [AdminController::class, 'updateVendorCommission'])
+    ->name('admin.vendors.update-commission');
+        
+      Route::post('/vendors/bulk-update-commissions', [AdminController::class, 'bulkUpdateVendorCommissions'])
+        ->name('admin.vendors.bulk-update-commissions');
     
       //Route logout
       Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');

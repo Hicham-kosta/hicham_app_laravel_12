@@ -27,7 +27,8 @@ class VendorDetail extends Model
         'bank_name',
         'account_number',
         'ifsc_code',
-        'is_verified'
+        'is_verified',
+        'commission_percent' // ✅ Add this line
     ];
 
     /**
@@ -36,5 +37,13 @@ class VendorDetail extends Model
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'admin_id');
+    }
+
+    /**
+     * Get commission percentage with default value
+     */
+    public function getCommissionPercentAttribute($value)
+    {
+        return $value ?? 0.00;
     }
 }

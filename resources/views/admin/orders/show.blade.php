@@ -73,6 +73,90 @@
                     </table>
                 </div>
             </div>
+            <!-- In resources/views/admin/orders/show.blade.php, add this section: -->
+
+@php
+use App\Services\Admin\VendorCommissionService;
+$commissionService = new VendorCommissionService();
+$commissionData = $commissionService->calculateOrderCommissions($order->id);
+@endphp
+
+<!-- After order items table, add: -->
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-percentage me-2"></i>Commission Breakdown
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product</th>
+                        <th>Vendor</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Subtotal</th>
+                        <th>Commission %</th>
+                        <th>Commission Amount</th>
+                        <th>Vendor Receives</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($commissionData['commission_data'] as $item)
+                    <tr>
+                        <td>{{ $item['product_name'] }}</td>
+                        <td>
+                            {{ $item['vendor_name'] }}
+                            <small class="text-muted d-block">ID: {{ $item['vendor_id'] }}</small>
+                        </td>
+                        <td>₹{{ number_format($item['price'], 2) }}</td>
+                        <td>{{ $item['quantity'] }}</td>
+                        <td>₹{{ number_format($item['subtotal'], 2) }}</td>
+                        <td>{{ number_format($item['commission_percent'], 2) }}%</td>
+                        <td class="text-danger">₹{{ number_format($item['commission_amount'], 2) }}</td>
+                        <td class="text-success">₹{{ number_format($item['vendor_payable'], 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="4" class="text-end">Totals:</th>
+                        <th>₹{{ number_format($commissionData['summary']['total_order_amount'], 2) }}</th>
+                        <th></th>
+                        <th class="text-danger">₹{{ number_format($commissionData['summary']['total_commission'], 2) }}</th>
+                        <th class="text-success">₹{{ number_format($commissionData['summary']['total_vendor_payable'], 2) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Commission Summary</h6>
+                    <ul class="mb-0">
+                        <li>Order Total: ₹{{ number_format($commissionData['summary']['total_order_amount'], 2) }}</li>
+                        <li>Total Commission: ₹{{ number_format($commissionData['summary']['total_commission'], 2) }}</li>
+                        <li>Total Vendor Payout: ₹{{ number_format($commissionData['summary']['total_vendor_payable'], 2) }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Notes</h6>
+                    <small>
+                        • Commission is calculated per product based on vendor's commission rate<br>
+                        • GST and other charges are included in subtotal before commission calculation<br>
+                        • Vendor receives: Subtotal - Commission<br>
+                        • This is for informational purposes only
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
             <div class="card mb-4">
                 <div class="card-body">
                     <h5><strong>Update Order Status</strong></h5>

@@ -16,15 +16,18 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use App\Models\VendorDetail;
 use App\Http\Controllers\Admin\VendorController;
+use App\Services\Admin\VendorCommissionService;
 
 class AdminController extends Controller
 {
     protected $adminService;
+    protected $commissionService;
     // Injecting the AdminService into the controller
 
-    public function __construct(AdminService $adminService)
+    public function __construct(AdminService $adminService, VendorCommissionService $commissionService)
     {
         $this->adminService = $adminService;
+        $this->commissionService = $commissionService;
     }
     /**
      * Display a listing of the resource.
@@ -270,4 +273,75 @@ class AdminController extends Controller
             'status' => true,
         ]);
     }
+
+    /**
+     * Update vendor commission
+     */
+    public function updateVendorCommission(Request $request, $id)
+{
+    $request->validate([
+        'commission_percent' => 'required|numeric|min:0|max:100'
+    ]);
+
+    try {
+        $vendor = Admin::where('role', 'vendor')->findOrFail($id);
+        
+        $this->commissionService->updateVendorCommission(
+            $vendor->id,
+            $request->commission_percent
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Commission updated successfully',
+            'commission' => $request->commission_percent
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+    /**
+     * Bulk update vendor commissions
+     */
+    public function bulkUpdateVendorCommissions(Request $request)
+    {
+        $request->validate([
+            'commissions' => 'required|array',
+            'commissions.*' => 'numeric|min:0|max:100'
+        ]);
+
+        try {
+            $updated = $this->commissionService->bulkUpdateCommissions($request->commissions);
+
+            return response()->json([
+                'status' => true,
+                'message' => count($updated) . ' vendor commissions updated',
+                'updated_vendors' => $updated
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show vendor commissions management page
+     */
+    public function vendorCommissions()
+    {
+        Session::put('page', 'vendor-commissions');
+        
+        $vendors = $this->commissionService->getAllVendorsWithCommission();
+        
+        return view('admin.vendors.commissions', compact('vendors'));
+    }
+
 }

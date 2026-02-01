@@ -156,12 +156,74 @@ $detail = $vendor->vendorDetails ?? null;
                                         @endif
                                     </span>
                                 </li>
-                                <li class="list-group-item">
-                                    <b>Commission</b>
-                                    <span class="float-end">
-                                        {{ isset($detail->commission_percent) ? number_format($detail->commission_percent, 2) : '0.00' }}%
-                                    </span>
-                                </li>
+                                <!-- Inside the list-group, add this: -->
+<li class="list-group-item">
+    <b>Commission Rate</b>
+    <span class="float-end">
+        <span id="commissionDisplay">
+            {{ isset($detail->commission_percent) ? number_format($detail->commission_percent, 2) : '0.00' }}%
+        </span>
+        
+        @if(auth()->guard('admin')->user()->role == 'admin')
+        <button class="btn btn-sm btn-outline-primary ms-2" 
+                data-bs-toggle="modal" 
+                data-bs-target="#commissionModal">
+            <i class="fas fa-edit"></i> Edit
+        </button>
+        @endif
+    </span>
+</li>
+
+<!-- Add this modal at the bottom of the page (before </main>): -->
+<div class="modal fade" id="commissionModal" tabindex="-1" aria-labelledby="commissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="commissionModalLabel">
+                    <i class="fas fa-percentage me-2"></i>Update Commission for {{ $vendor->name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="updateCommissionForm" data-vendor-id="{{ $vendor->id }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="commission_percent" class="form-label">Commission Percentage</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="commission_percent" 
+                                   name="commission_percent"
+                                   min="0" 
+                                   max="100" 
+                                   step="0.01"
+                                   value="{{ isset($detail->commission_percent) ? number_format($detail->commission_percent, 2) : '0.00' }}"
+                                   required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">
+                            Enter commission percentage (0-100). Example: 15.5 for 15.5%
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Commission Calculation</h6>
+                        <p class="mb-0 small">
+                            Commission = (Order Subtotal × Commission %) / 100<br>
+                            Vendor Receives = Order Subtotal - Commission
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="updateCommissionBtn">
+                        Update Commission
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
                                 <li class="list-group-item">
                                     <b>Last Updated</b>
                                     <span class="float-end">

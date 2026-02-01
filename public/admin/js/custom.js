@@ -724,4 +724,61 @@ $(document).on('click', '.rejectVendor', function () {
     });
 });
 
+// Commission Update
+$(document).on('submit', '#updateCommissionForm', function (e) {
+    e.preventDefault();
 
+    let vendorId = $(this).data('vendor-id');
+    let commissionPercent = $('#commission_percent').val();
+    let $submitBtn = $('#updateCommissionBtn');
+    let originalText = $submitBtn.html();
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    // Validate
+    if (commissionPercent < 0 || commissionPercent > 100) {
+        alert('Commission must be between 0 and 100%');
+        return false;
+    }
+
+    // Show loading
+    $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Updating...');
+
+    $.ajax({
+        url: '/admin/vendors/' + vendorId + '/update-commission',
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        data: {
+            commission_percent: commissionPercent
+        },
+        success: function (response) {
+            if (response.status === true) {
+                // Update display if exists
+                if ($('#commissionDisplay').length) {
+                    $('#commissionDisplay').text(response.commission + '%');
+                }
+
+                // Update table row if exists
+                $(`input[data-vendor-id="${vendorId}"]`).val(response.commission);
+
+                // Close modal
+                $('#commissionModal').modal('hide');
+
+                showMessage('success', response.message);
+            } else {
+                showMessage('danger', response.message);
+                $submitBtn.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function (xhr) {
+            showMessage('danger', xhr.responseJSON?.message || 'An error occurred');
+            $submitBtn.prop('disabled', false).html(originalText);
+        }
+    });
+});
+
+// Reset form when modal is closed
+$('#commissionModal').on('hidden.bs.modal', function () {
+    $('#updateCommissionBtn').prop('disabled', false).html('Update Commission');
+});
