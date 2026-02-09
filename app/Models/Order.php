@@ -29,6 +29,9 @@ class Order extends Model
         'shipping_partner',
         'transaction_id',
         'order_number',
+        'total_commission',
+        'vendor_payable',
+        'admin_earnings',
     ];
 
     /**

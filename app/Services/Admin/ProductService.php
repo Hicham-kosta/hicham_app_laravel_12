@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\ProductsCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Models\Admin;
 
 class ProductService
 {
@@ -108,6 +109,26 @@ class ProductService
 
    public function addEditProduct($request){
 
+$data = $request->validated();
+    $admin = auth('admin')->user();
+    
+    // If user is vendor, auto-set their vendor_id
+    if ($admin->role == 'vendor') {
+        $data['vendor_id'] = $admin->id;
+    }
+    
+    // Check if vendor is approved (for admin adding products)
+    if (isset($data['vendor_id']) && $admin->role == 'admin') {
+        $vendor = Admin::with('vendorDetails')
+            ->where('id', $data['vendor_id'])
+            ->where('role', 'vendor')
+            ->first();
+            
+        if (!$vendor || !$vendor->vendorDetails || $vendor->vendorDetails->is_verified != 1) {
+            throw new \Exception('Selected vendor is not approved');
+        }
+    }
+
     $data = $request->all();
 
     if(isset($data['id']) && $data['id'] != ""){
@@ -136,6 +157,7 @@ class ProductService
     $product->product_discount = $data['product_discount'] ?? 0;
     $product->is_featured = $data['is_featured'] ?? 'No';
     $product->sort = $data['sort'] ?? 0;
+    $product->vendor_id = $data['vendor_id'];
 
     // Calculate Discount && Final Price
     if(!empty($data['product_discount']) && $data['product_discount'] > 0){
@@ -191,6 +213,7 @@ class ProductService
     $product->main_image = $request->main_image ?? $product->main_image;
     $product->product_video = $request->product_video ?? $product->product_video;
     $product->product_url = $product->product_url ?? null;
+
 
     $product->save();
 
@@ -337,7 +360,8 @@ class ProductService
    }
    
 
-   public function handleImageUpload($file){
+   public function handleImageUpload($file)
+   {
     $imageName = time() . '.' . rand(1111,9999) . '.' . $file->getClientOriginalExtension();
     $file->move(public_path('front/images/products'), $imageName);
     return $imageName;

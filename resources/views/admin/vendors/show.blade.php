@@ -224,6 +224,7 @@ $detail = $vendor->vendorDetails ?? null;
         </div>
     </div>
 </div>
+
                                 <li class="list-group-item">
                                     <b>Last Updated</b>
                                     <span class="float-end">

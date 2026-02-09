@@ -15,6 +15,7 @@ use App\Models\AdminsRole;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use App\Models\VendorDetail;
+use App\Models\CommissionHistory;
 use App\Http\Controllers\Admin\VendorController;
 use App\Services\Admin\VendorCommissionService;
 
@@ -343,5 +344,87 @@ class AdminController extends Controller
         
         return view('admin.vendors.commissions', compact('vendors'));
     }
+
+    public function commissionDashboard(Request $request)
+{
+    Session::put('page', 'commissions');
+    
+    // Period filter
+    $period = $request->input('period', 'month');
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+    
+    // Get dashboard data
+    $dashboard = $this->commissionService->getAdminCommissionDashboard($period);
+    
+    // Additional statistics
+    $totalVendors = Admin::where('role', 'vendor')->count();
+    $activeVendors = Admin::where('role', 'vendor')
+        ->whereHas('vendorDetails', function($q) {
+            $q->where('is_verified', 1);
+        })
+        ->count();
+    
+    // Get pending payments
+    $pendingPayments = CommissionHistory::where('status', 'pending')
+        ->selectRaw('SUM(vendor_amount) as total_pending, COUNT(DISTINCT vendor_id) as vendors_count')
+        ->first();
+    
+    return view('admin.commissions.dashboard', compact(
+        'dashboard', 
+        'totalVendors',
+        'activeVendors',
+        'pendingPayments',
+        'period'
+    ));
+}
+
+public function commissionReport(Request $request)
+{
+    $query = CommissionHistory::with(['vendor', 'order', 'product']);
+    
+    // Apply filters
+    if ($request->vendor_id) {
+        $query->where('vendor_id', $request->vendor_id);
+    }
+    
+    if ($request->status) {
+        $query->where('status', $request->status);
+    }
+    
+    if ($request->start_date && $request->end_date) {
+        $query->whereBetween('commission_date', [
+            $request->start_date, 
+            $request->end_date
+        ]);
+    }
+    
+    $commissions = $query->orderBy('created_at', 'desc')->paginate(50);
+    
+    // Summary totals
+    $summary = [
+        'total_sales' => $commissions->sum('subtotal'),
+        'total_commission' => $commissions->sum('commission_amount'),
+        'total_payable' => $commissions->sum('vendor_amount'),
+    ];
+    
+    $vendors = Admin::where('role', 'vendor')->get();
+    
+    return view('admin.commissions.report', compact(
+        'commissions', 
+        'summary', 
+        'vendors'
+    ));
+}
+
+public function vendorCommissionHistory($id)
+{
+    $vendor = Admin::with('vendorDetails')->findOrFail($id);
+    $commissionService = new VendorCommissionService();
+    
+    $summary = $commissionService->getVendorCommissionSummary($id);
+    
+    return view('admin.commissions.vendor-history', compact('vendor', 'summary'));
+}
 
 }

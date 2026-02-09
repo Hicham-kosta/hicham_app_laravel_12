@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\ShippingChargeController;
 use App\Http\Controllers\Admin\CartController as CartAdmin;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\VendorApprovalController;
+use App\Http\Controllers\Vendor\ProductController as VendorProductController;
 
 // Front Controllers
 use App\Http\Controllers\Front\IndexController;
@@ -237,21 +238,83 @@ Route::prefix('admin')->group(function () {
       Route::post('vendors/{id}/reject', [VendorApprovalController::class, 'reject'])->name('admin.vendors.reject');
       
       // Vendor Commissions
-      Route::get('/vendor-commissions', [AdminController::class, 'vendorCommissions'])
-        ->name('admin.vendor.commissions');
+      Route::get('/vendor/commissions', [AdminController::class, 'vendorCommissions'])
+      ->name('admin.vendor.commissions');
+
+      Route::get('/vendor/commissions', [VendorController::class, 'commissions'])
+        ->name('vendor.commissions');
+    
+      Route::get('/vendor/commission-history', [VendorController::class, 'commissionHistory'])
+        ->name('vendor.commission-history');
         
       Route::post('/vendors/{id}/update-commission', [AdminController::class, 'updateVendorCommission'])
-    ->name('admin.vendors.update-commission');
+      ->name('admin.vendors.update-commission');
         
       Route::post('/vendors/bulk-update-commissions', [AdminController::class, 'bulkUpdateVendorCommissions'])
-        ->name('admin.vendors.bulk-update-commissions');
+      ->name('admin.vendors.bulk-update-commissions');
+
+
+      Route::get('/commissions/dashboard', [AdminController::class, 'commissionDashboard'])->name('admin.commissions.dashboard');
+      Route::get('/commissions/report', [AdminController::class, 'commissionReport'])->name('admin.commissions.report');
+      Route::get('/vendors/{id}/commission-history', [AdminController::class, 'vendorCommissionHistory'])->name('admin.vendors.commission-history');
+      Route::post('/commissions/process-payment', [AdminController::class, 'processCommissionPayment'])->name('admin.commissions.process-payment');
+      Route::get('/commissions/export', [AdminController::class, 'exportCommissions'])->name('admin.commissions.export');
+
+      Route::post('/vendors/{vendor}/calculate-commissions', [VendorController::class, 'calculateCommissions'])
+      ->name('admin.calculate.vendor.commissions');
+
+      // Admin routes for managing vendor products
+      Route::get('/vendor-products', [\App\Http\Controllers\Admin\ProductController::class, 'vendorProducts'])
+        ->name('admin.vendor.products');
+    
+      Route::post('/products/assign-vendor', [\App\Http\Controllers\Admin\ProductController::class, 'assignVendor'])
+        ->name('admin.products.assign.vendor');
+      
     
       //Route logout
-      Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');
-
-      
+      Route::get('logout', [AdminController::class, 'destroy'])->name('admin.logout');   
   });
 
+});
+
+// Vendor-specific routes
+
+    
+    Route::middleware(['auth:admin'])->prefix('vendor')->name('vendor.')->group(function () {
+        
+        // Product Routes
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/', [VendorProductController::class, 'index'])->name('index');
+            Route::get('/create', [VendorProductController::class, 'create'])->name('create');
+            Route::post('/', [VendorProductController::class, 'store'])->name('store');
+            Route::get('/{product}/edit', [VendorProductController::class, 'edit'])->name('edit');
+            Route::put('/{product}', [VendorProductController::class, 'update'])->name('update');
+            Route::delete('/{product}', [VendorProductController::class, 'destroy'])->name('destroy');
+            
+            // Additional routes
+            Route::post('/update-status', [VendorProductController::class, 'updateProductStatus'])->name('update-status');
+            Route::post('/update-attribute-status', [VendorProductController::class, 'updateAttributeStatus'])->name('update-attribute-status');
+            Route::delete('/delete-attribute/{id}', [VendorProductController::class, 'deleteProductAttribute'])->name('delete-attribute');
+            Route::delete('/delete-main-image/{id}', [VendorProductController::class, 'deleteProductMainImage'])->name('delete-main-image');
+            Route::delete('/delete-image/{id}', [VendorProductController::class, 'deleteProductImage'])->name('delete-image');
+            Route::delete('/delete-video/{id}', [VendorProductController::class, 'deleteProductVideo'])->name('delete-video');
+            
+            // Upload routes
+            Route::post('/products/upload-image', [VendorProductController::class, 'uploadImage'])->name('upload-image');
+            Route::post('/products/upload-images', [VendorProductController::class, 'uploadImages'])->name('upload-images');
+            Route::post('/products/upload-video', [VendorProductController::class, 'uploadVideo'])->name('upload-video');
+            Route::post('/products/delete-temp-image', [VendorProductController::class, 'deleteTempProductImage'])->name('delete-temp-image');
+            Route::post('/products/delete-temp-video', [VendorProductController::class, 'deleteTempProductVideo'])->name('delete-temp-video');
+            Route::post('/products/update-image-sorting', [VendorProductController::class, 'updateImageSorting'])->name('update-image-sorting');        });
+    });
+
+
+    Route::prefix('vendor')->name('vendor.')->middleware(['auth:admin', \App\Http\Middleware\VendorApproved::class])->group(function () {
+    Route::get('/dashboard', [VendorController::class, 'dashboard'])->name('dashboard');
+    
+    Route::get('/commissions', [VendorController::class, 'commissions'])->name('commissions');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 });
 
 Route::namespace('App\Http\Controllers\Front')->group(function () {

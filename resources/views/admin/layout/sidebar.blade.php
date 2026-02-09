@@ -72,6 +72,13 @@ $isVendor = $admin && $admin->role == 'vendor';
                         <p>Shop Details</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{url('vendor/dashboard')}}" class="nav-link 
+                    {{Session::get('page') == 'dashboard' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-shop"></i>
+                        <p>Vendor Dashboard</p>
+                    </a>
+                </li>
                 @endif
                 {{-- Subadmins (Admin only) --}}
                 @if($isAdmin)
@@ -89,6 +96,15 @@ $isVendor = $admin && $admin->role == 'vendor';
                     {{Session::get('page') == 'vendors' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-people"></i>
                         <p>Vendors</p>
+                    </a>
+                </li>
+                @endif
+                @if($isAdmin)
+                <li class="nav-item">
+                    <a href="{{url('admin/commissions/dashboard')}}" class="nav-link 
+                    {{Session::get('page') == 'commissions' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-people"></i>
+                        <p>Commissions</p>
                     </a>
                 </li>
                 @endif
@@ -120,8 +136,8 @@ $isVendor = $admin && $admin->role == 'vendor';
                             <p>Brands</p>
                         </a>
                     </li>
-                    @endif
-                    {{-- Products (Admin + Vendor) --}}
+                    
+                    {{-- Products (Admin) --}}
                     <li class="nav-item">
                         <a href="{{url('admin/products')}}" class="nav-link 
                         {{Session::get('page') == 'products' ? 'active' : ''}}">
@@ -129,6 +145,24 @@ $isVendor = $admin && $admin->role == 'vendor';
                             <p>Products</p>
                         </a>
                     </li>
+                    @endif
+                    @if(auth('admin')->user()->role == 'vendor')
+    <li class="nav-item">
+        <a href="{{ route('vendor.products.index') }}" class="nav-link {{ request()->routeIs('vendor.products.*') ? 'active' : '' }}">
+            <i class="nav-icon fas fa-box"></i>
+            <p>My Products</p>
+        </a>
+    </li>
+@endif
+@if($isVendor)
+                <li class="nav-item">
+                    <a href="{{url('/vendor/commissions')}}" class="nav-link 
+                    {{Session::get('page') == 'vendor.commissions' ? 'active' : ''}}">
+                        <i class="nav-icon bi bi-shop"></i>
+                        <p>commissions</p>
+                    </a>
+                </li>
+                @endif
                   </ul>
                 </li>
                 {{-- ==========================

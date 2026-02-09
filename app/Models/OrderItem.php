@@ -10,19 +10,22 @@ use App\Models\Product;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 
-        'product_id', 
+        'order_id',
+        'product_id',
         'product_name',
         'sku',
-        'qty', 
-        'price', 
+        'qty',
+        'price',
         'product_gst',
         'product_gst_amount',
-        'subtotal', 
+        'subtotal',
         'size',
         'color',
+        'commission_percent',
+        'commission_amount',
+        'vendor_amount',
+        'vendor_id'
     ];
-
     /**
      * The table associated with the model.
      * Explicitly set since we're using singular model name
@@ -70,5 +73,13 @@ class OrderItem extends Model
                 $orderItem->subtotal = $orderItem->calculateSubtotal();
             }
         });
+    }
+
+    /**
+     * Relationship with vendor
+     */
+    public function vendor()
+    {
+        return $this->belongsTo(Admin::class, 'vendor_id')->where('role', 'vendor');
     }
 }

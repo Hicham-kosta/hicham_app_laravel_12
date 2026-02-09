@@ -7,6 +7,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Models\Product;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class ProductRequest extends FormRequest
 {
@@ -25,6 +26,7 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
+        $admin = Auth::guard('admin')->user();
         $rules = [
             'category_id' => 'required',
             'brand_id' => 'required',
@@ -33,6 +35,7 @@ class ProductRequest extends FormRequest
             'product_price' => 'required|numeric|gt:0',
             'product_color' => 'required|max:200',
             'family_color' => 'required|max:200',
+            'vendor_id' => $admin->role == 'admin' ? 'required|exists:admins,id,role,vendor' : 'nullable',
         ];
 
         $productId = $this->route('product');
@@ -64,6 +67,8 @@ class ProductRequest extends FormRequest
             'family_color.required' => 'Family color is required',
             'product_url.required' => 'Product URL is required when updating',
             'product_url.unique' => 'Product URL must be unique',
+            'vendor_id.required' => 'Please select a vendor',
+            'vendor_id.exists' => 'Selected vendor does not exist or is not approved',
         ];
     }
 }

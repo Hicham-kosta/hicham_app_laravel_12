@@ -36,6 +36,8 @@ class DatabaseSeeder extends Seeder
         $this->call(CountrySeeder::class);
         $this->call(StateSeeder::class);
         $this->call(OrderStatusesTableSeeder::class);
+        $this->call(UpdateExistingProductsApprovalStatusSeeder::class);
+
         
     }
 }

@@ -112,7 +112,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
                             <small class="text-muted d-block">ID: {{ $item['vendor_id'] }}</small>
                         </td>
                         <td>₹{{ number_format($item['price'], 2) }}</td>
-                        <td>{{ $item['quantity'] }}</td>
+                        <td>{{ $item['quantity'] }}</td> <!-- CHANGED: qty → quantity -->
                         <td>₹{{ number_format($item['subtotal'], 2) }}</td>
                         <td>{{ number_format($item['commission_percent'], 2) }}%</td>
                         <td class="text-danger">₹{{ number_format($item['commission_amount'], 2) }}</td>
@@ -156,8 +156,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
             </div>
         </div>
     </div>
-</div>
-            <div class="card mb-4">
+</div>            <div class="card mb-4">
                 <div class="card-body">
                     <h5><strong>Update Order Status</strong></h5>
                     @if(Session('success_message'))

@@ -10,15 +10,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Picqer\Barcode\BarcodeGeneratorPNG;
+use App\Models\CommissionHistory;
+use App\Services\Admin;
 
 
 class OrderController extends Controller
 {
     protected $orderService;
+    protected $commissionService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderService $orderService, VendorCommissionService $commissionService)
     {
         $this->orderService = $orderService;
+        $this->commissionService = $commissionService;
     }
 
     public function index()
@@ -59,7 +63,99 @@ class OrderController extends Controller
             'statuses' => $statuses,
             'logs' => $logs,
         ]);
+        $order = Order::findOrFail($id);
+    
+    // Calculate commissions if not already calculated
+    if (!$order->total_commission) {
+        $commissionService = new VendorCommissionService();
+        $commissionService->calculateAndSaveOrderCommission($order->id);
     }
+    
+    // Get commission data for display
+    $commissionData = $commissionService->calculateOrderCommissions($order->id);
+    
+    return view('admin.orders.show', compact('order', 'commissionData'));
+
+    // Calculate commissions for this order
+    $commissionData = $this->commissionService->calculateOrderCommissions($id);
+    
+    // Get commission history for this order
+    $commissionHistory = CommissionHistory::where('order_id', $id)
+        ->with('vendor')
+        ->get();
+    
+    return view('admin.orders.show', [
+        'order' => $result['order'],
+        'ordersModule' => $result['ordersModule'],
+        'statuses' => $statuses,
+        'logs' => $logs,
+        'commissionData' => $commissionData,
+        'commissionHistory' => $commissionHistory
+    ]);
+    
+    }
+
+    public function processCommissionPayment(Request $request)
+{
+    $request->validate([
+        'vendor_id' => 'required|exists:admins,id',
+        'amount' => 'required|numeric|min:1',
+        'payment_method' => 'required|string',
+        'reference' => 'required|string',
+        'payment_date' => 'required|date',
+        'commission_ids' => 'array'
+    ]);
+    
+    try {
+        // If specific commission IDs are provided
+        if ($request->commission_ids) {
+            $commissions = CommissionHistory::whereIn('id', $request->commission_ids)
+                ->where('vendor_id', $request->vendor_id)
+                ->where('status', 'pending')
+                ->get();
+                
+            foreach ($commissions as $commission) {
+                $commission->markAsPaid(
+                    $request->payment_method,
+                    $request->reference,
+                    $request->notes,
+                    auth('admin')->id()
+                );
+            }
+        } else {
+            // Process payment for a specific amount
+            $this->commissionService->processVendorPayment(
+                $request->vendor_id,
+                $request->amount,
+                $request->payment_method,
+                $request->reference
+            );
+        }
+        
+        // Log payment transaction (create a PaymentTransaction model if needed)
+        PaymentTransaction::create([
+            'vendor_id' => $request->vendor_id,
+            'amount' => $request->amount,
+            'payment_method' => $request->payment_method,
+            'reference' => $request->reference,
+            'status' => 'completed',
+            'notes' => $request->notes,
+            'processed_by' => auth('admin')->id(),
+            'payment_date' => $request->payment_date
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment processed successfully'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
     public function updateStatus(Request $request, $id)
     {

@@ -14,6 +14,7 @@ use App\Models\ColumnPreference;
 use App\Http\Requests\Admin\ProductRequest;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Admin;
 
 class ProductController extends Controller
 {
@@ -55,14 +56,26 @@ class ProductController extends Controller
      * Show the form for creating a new resource.
      */
     public function create()
-    {
-        $title = "Add Product";
-        $getCategories = Category::getCategories('Admin');
-
-        // Get all Active Brands
-        $brands = Brand::where('status', 1)->get()->toArray();
-        return view('admin.products.add_edit_product', compact('title', 'getCategories', 'brands'));
+{
+    $title = "Add Product";
+    $getCategories = Category::getCategories('Admin');
+    $brands = Brand::where('status', 1)->get()->toArray();
+    
+    // Get approved vendors for admin
+    $vendors = [];
+    if (auth('admin')->user()->role == 'admin') {
+        $vendors = Admin::with('vendorDetails')
+            ->where('role', 'vendor')
+            ->whereHas('vendorDetails', function($q) {
+                $q->where('is_verified', 1);
+            })
+            ->where('status', 1)
+            ->get();
     }
+    
+    return view('admin.products.add_edit_product', 
+        compact('title', 'getCategories', 'brands', 'vendors'));
+}
 
     /**
      * Store a newly created resource in storage.
@@ -85,14 +98,27 @@ class ProductController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
-    {
-        $title = 'Edit Product';
-        $product = Product::with('product_images', 'attributes')->findOrFail($id);
-        $getCategories = Category::getCategories('Admin');
-        // Get all Active Brands
-        $brands = Brand::where('status', 1)->get()->toArray();
-        return view('admin.products.add_edit_product', compact('title',  'product', 'getCategories', 'brands'));
+{
+    $title = 'Edit Product';
+    $product = Product::with('product_images', 'attributes', 'vendor')->findOrFail($id);
+    $getCategories = Category::getCategories('Admin');
+    $brands = Brand::where('status', 1)->get()->toArray();
+    
+    // Get approved vendors for admin
+    $vendors = [];
+    if (auth('admin')->user()->role == 'admin') {
+        $vendors = Admin::with('vendorDetails')
+            ->where('role', 'vendor')
+            ->whereHas('vendorDetails', function($q) {
+                $q->where('is_verified', 1);
+            })
+            ->where('status', 1)
+            ->get();
     }
+    
+    return view('admin.products.add_edit_product', 
+        compact('title', 'product', 'getCategories', 'brands', 'vendors'));
+}
 
     /**
      * Update the specified resource in storage.

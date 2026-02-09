@@ -7,10 +7,138 @@ use App\Models\Category;
 use App\Models\ProductImage;
 use Laravel\Scout\Searchable;
 use App\Models\Brand;
+use App\Models\Admin;
 
 class Product extends Model
 {
     use Searchable;
+
+    protected $fillable = [
+        // Existing fields...
+        'admin_id',
+        'admin_role',
+        'category_id',
+        'brand_id',
+        'product_name',
+        'product_code',
+        'product_color',
+        'family_color',
+        'group_code',
+        'product_weight',
+        'product_price',
+        'product_gst',
+        'product_discount',
+        'final_price',
+        'product_discount_amount',
+        'discount_applied_on',
+        'is_featured',
+        'sort',
+        'vendor_id',
+        'description',
+        'wash_care',
+        'search_keywords',
+        'meta_title',
+        'meta_keywords',
+        'meta_description',
+        'main_image',
+        'product_video',
+        'product_url',
+        'stock',
+        'status',
+        
+        // New approval fields
+        'is_approved',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
+        'rejection_reason',
+        'is_vendor_product',
+        'vendor_product_status'
+    ];
+
+        /**
+     * Cast attributes to native types
+     */
+    protected $casts = [
+        'is_approved' => 'boolean',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'is_vendor_product' => 'boolean',
+    ];
+    
+    /**
+     * Get the admin who approved the product
+     */
+    public function approver()
+    {
+        return $this->belongsTo(Admin::class, 'approved_by');
+    }
+    
+    /**
+     * Get the admin who rejected the product
+     */
+    public function rejector()
+    {
+        return $this->belongsTo(Admin::class, 'rejected_by');
+    }
+    
+    /**
+     * Scope a query to only include approved products
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('is_approved', true);
+    }
+    
+    /**
+     * Scope a query to only include pending products
+     */
+    public function scopePending($query)
+    {
+        return $query->where('is_approved', false);
+    }
+    
+    /**
+     * Scope a query to only include vendor products
+     */
+    public function scopeVendorProducts($query)
+    {
+        return $query->where('is_vendor_product', true);
+    }
+    
+    /**
+     * Scope a query to only include admin products
+     */
+    public function scopeAdminProducts($query)
+    {
+        return $query->where('is_vendor_product', false);
+    }
+    
+    /**
+     * Check if product is approved
+     */
+    public function isApproved()
+    {
+        return $this->is_approved == true;
+    }
+    
+    /**
+     * Check if product is pending approval
+     */
+    public function isPending()
+    {
+        return $this->is_approved == false && empty($this->rejection_reason);
+    }
+    
+    /**
+     * Check if product is rejected
+     */
+    public function isRejected()
+    {
+        return !empty($this->rejection_reason);
+    }
+
 
     public function category(){
         return $this->belongsTo('App\Models\Category', 'category_id')->with('parentCategory');
@@ -129,6 +257,32 @@ class Product extends Model
     public function averageRating()
     {
         return (float)$this->reviews->where('status', 1)->avg('rating') ?? 0;
+    }
+
+    /**
+     * Relationship with vendor
+     */
+    public function vendor()
+    {
+        return $this->belongsTo(Admin::class, 'vendor_id')->where('role', 'vendor');
+    }
+
+    /**
+     * Scope for vendor's products
+     */
+    public function scopeForVendor($query, $vendorId)
+    {
+        return $query->where('vendor_id', $vendorId);
+    }
+
+    /**
+     * Scope for approved vendors only
+     */
+    public function scopeFromApprovedVendors($query)
+    {
+        return $query->whereHas('vendor.vendorDetails', function ($q) {
+            $q->where('is_verified', 1);
+        });
     }
 }
 

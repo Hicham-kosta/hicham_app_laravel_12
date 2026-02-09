@@ -18,151 +18,153 @@ class OrderService
      * Get all orders for Admin / Vendor listing
      */
     public function getAllOrders()
-    {
-        $admin = Auth::guard('admin')->user();
-        $status = 'success';
-        $message = '';
-        $ordersModule = [];
+{
+    $admin = Auth::guard('admin')->user();
+    $status = 'success';
+    $message = '';
+    $ordersModule = [];
 
-        /*-----------------------
-        VENDOR FLOW
-        -----------------------*/
-        if($admin->role === 'vendor'){
-            // Vendor KYC not approved
-            if(!$admin->vendorDetails || (int)$admin->vendorDetails->is_verified === 0){
-                return [
-                    'orders' => collect(),
-                        'ordersModule' => [],
-                        'status' => 'error',
-                        'message' => 'Your vendor account is not approved yet. 
-                        You can not access orders.',
-                    ];
-                }
-
-                // Approved Vendor -> only his orders
-                $orders = Order::with('user', 'address', 'paymentTransactions')
-                ->where('admin_id', $admin->id)
-                ->where('admin_role', 'vendor')
-                ->orderBy('id', 'desc')
-                ->get();
-
-                // Vendor permission only view
-                $ordersModule = [
-                    'view_access' => 1,
-                    'edit_access' => 0,
-                    'full_access' => 0,
-                ];
-
-                return [
-                    'orders' => $orders,
-                    'ordersModule' => $ordersModule,
-                    'status' => 'success',
-                    'message' => '',
-                ];
-            }
-
-            /*-----------------------
-            ADMIN / SUBADMIN FLOW
-            -----------------------*/
-
-        $orders = Order::with('user', 'address', 'paymentTransactions')
-        ->orderBy('id', 'desc')
-        ->get();
-
-        if($admin->role === 'admin'){
-            $ordersModule = [
-                'view_access' => 1,
-                'edit_access' => 1,
-                'full_access' => 1,
+    /*-----------------------
+    VENDOR FLOW
+    -----------------------*/
+    if($admin->role === 'vendor'){
+        // Vendor KYC not approved
+        if(!$admin->vendorDetails || (int)$admin->vendorDetails->is_verified === 0){
+            return [
+                'orders' => collect(),
+                'ordersModule' => [],
+                'status' => 'error',
+                'message' => 'Your vendor account is not approved yet. You can not access orders.',
             ];
-        }else{
-            $moduleData = AdminsRole::where([
-                'subadmin_id' => $admin->id,
-                'module' => 'orders',
-            ])->first();
-
-            if(!$moduleData){
-                $status = 'error';
-                $message = 'You do not have access to orders';
-            }else{
-                $ordersModule = $moduleData->toArray();
-            }
         }
+
+        // Debug: Check vendor's products and order items
+        $debugInfo = [
+            'vendor_id' => $admin->id,
+            'vendor_name' => $admin->name,
+            'products_count' => \App\Models\Product::where('vendor_id', $admin->id)->count(),
+            'order_items_assigned' => \App\Models\OrderItem::where('vendor_id', $admin->id)->count(),
+        ];
+
+        // Approved Vendor -> get orders that have his items
+        $orders = Order::with('user', 'address', 'paymentTransactions')
+            ->whereHas('orderItems', function($query) use ($admin) {
+                $query->where('vendor_id', $admin->id);
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        // If no orders, check if there are any orders with vendor's products
+        if($orders->count() === 0) {
+            $potentialOrders = Order::whereHas('orderItems.product', function($query) use ($admin) {
+                $query->where('vendor_id', $admin->id);
+            })->count();
+            
+            $debugInfo['potential_orders'] = $potentialOrders;
+            $debugInfo['message'] = $potentialOrders > 0 
+                ? "Found {$potentialOrders} orders with your products but commissions not calculated. Run commissions:calculate command." 
+                : "No orders found with your products.";
+        }
+
+        // Vendor permission only view
+        $ordersModule = [
+            'view_access' => 1,
+            'edit_access' => 0,
+            'full_access' => 0,
+        ];
 
         return [
             'orders' => $orders,
             'ordersModule' => $ordersModule,
-            'status' => $status,
-            'message' => $message,
+            'status' => 'success',
+            'message' => $orders->count() === 0 ? 'No orders found.' : '',
+            'debug_info' => $debugInfo, // Add debug info
         ];
     }
+}
+
+    // ... rest of the code remains the same
 
     /**
      * Get single order detail with items and address
      */
 
     public function getOrderDetail($id)
-    {
-        $admin = Auth::guard('admin')->user();
+{
+    $admin = Auth::guard('admin')->user();
 
-        $order = Order::with(['user', 'address', 'orderItems.product', 'paymentTransactions'])
-        ->find($id);
-        if(!$order){
-            return ['status' => 'error', 'message' => 'Order not found'];
+    /*-----------------------
+    VENDOR FLOW
+    -----------------------*/
+    if($admin->role === 'vendor'){
+        // Vendor KYC not approved
+        if(!$admin->vendorDetails || (int)$admin->vendorDetails->is_verified === 0){
+            return [
+                'status' => 'error',
+                'message' => 'Your vendor account is not approved yet. You can not access orders.',
+            ];
         }
 
-        /*-----------------------
-            VENDOR SECURITY CHECK
-            -----------------------*/
-            if($admin->role === 'vendor'){
-                // Vendor KYC not approved
-                if(!$admin->vendorDetails || (int)$admin->vendorDetails->is_verified === 0){
-                    return [
-                        'status' => 'error',
-                        'message' => 'Your vendor account is not approved yet. You can not access orders.',
-                    ];
-                }
+        // Get order with only this vendor's items
+        $order = Order::with([
+            'user', 
+            'address', 
+            'orderItems' => function($query) use ($admin) {
+                $query->where('vendor_id', $admin->id);
+            },
+            'orderItems.product',
+            'paymentTransactions'
+        ])
+        ->whereHas('orderItems', function($query) use ($admin) {
+            $query->where('vendor_id', $admin->id);
+        })
+        ->find($id);
 
-                // Vendor trying to access another vendor's order
-                if($order->admin_id !== $admin->id || $order->admin_role !== 'vendor'){
-                    return [
-                        'status' => 'error',
-                        'message' => 'You can not access this order.',
-                    ];
-                }
-
-                // Vendor permission only view
-                return[
-                    'status' => 'success', 
-                    'order' => $order,
-                $ordersModule = [
-                    'view_access' => 1,
-                    'edit_access' => 0,
-                    'full_access' => 0,
-                   ]
-                ];  
-            }
-
-            /*-----------------------
-            ADMIN / SUBADMIN
-            -----------------------*/
-            $ordersModule = [
-                'view_access' => 1,
-                'edit_access' => ($admin->role === 'admin') ? 1 : 0,
-                'full_access' => ($admin->role === 'admin') ? 1 : 0,
+        if(!$order){
+            return [
+                'status' => 'error',
+                'message' => 'Order not found or you do not have access to this order.',
             ];
+        }
 
+        // Filter to show only vendor's items in the order
+        // Note: We're already filtering in the query above
+
+        // Vendor permission only view
         return [
-            'status' => 'success',  
+            'status' => 'success', 
             'order' => $order,
-            'ordersModule' => $ordersModule,
-        ];
+            'ordersModule' => [
+                'view_access' => 1,
+                'edit_access' => 0,
+                'full_access' => 0,
+            ]
+        ];  
     }
 
-    public function getAllOrderStatuses()
-    {
-        return OrderStatus::where('status', 1)->orderBy('sort')->get();
+    /*-----------------------
+    ADMIN / SUBADMIN
+    -----------------------*/
+    
+    $order = Order::with(['user', 'address', 'orderItems.product', 'paymentTransactions'])
+        ->find($id);
+        
+    if(!$order){
+        return ['status' => 'error', 'message' => 'Order not found'];
     }
+
+    $ordersModule = [
+        'view_access' => 1,
+        'edit_access' => ($admin->role === 'admin') ? 1 : 0,
+        'full_access' => ($admin->role === 'admin') ? 1 : 0,
+    ];
+
+    return [
+        'status' => 'success',  
+        'order' => $order,
+        'ordersModule' => $ordersModule,
+    ];
+}
 
     /**
      * Update order status Admin Only
