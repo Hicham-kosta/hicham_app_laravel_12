@@ -73,9 +73,9 @@ class AdminController extends Controller
 
         $loginStatus = $this->adminService->login($data);
 
-        if($loginStatus = "success") {
+        if($loginStatus == "success") {
             return redirect()->route('dashboard.index');
-        }elseif($loginStatus = "inactive") {
+        }elseif($loginStatus == "inactive") {
             return redirect()->back()->with('error_message', 'Your account is inactive, Please 
             contact the Administrator!');
         }else {
@@ -234,7 +234,7 @@ class AdminController extends Controller
             ['admin_id' => $userId, 'table_name' => $tableName],
             [
                 'column_order' => json_encode($request->column_order),
-                'hidden_column' => json_encode($request->hidden_column)
+                'hidden_columns' => json_encode($request->hidden_column)
             ]
         );
         return response()->json(['status' => 'success']);
@@ -426,5 +426,95 @@ public function vendorCommissionHistory($id)
     
     return view('admin.commissions.vendor-history', compact('vendor', 'summary'));
 }
+
+public function processCommissionPayment(Request $request)
+{
+    $request->validate([
+        'vendor_id' => 'required|exists:admins,id',
+        'amount' => 'required|numeric|min:0',
+        'payment_method' => 'required|string',
+        'reference' => 'required|string',
+        'payment_date' => 'required|date',
+    ]);
+
+    try {
+        // OLD CODE - Updates only one record with wrong column names
+        /*
+        CommissionHistory::where('vendor_id', $request->vendor_id)
+            ->where('status', 'pending')
+            ->limit(1)
+            ->update([
+                'status' => 'paid',
+                'payment_method' => $request->payment_method,
+                'reference' => $request->reference, // Wrong column name
+                'payment_date' => $request->payment_date,
+                'notes' => $request->notes // Wrong column name
+            ]);
+        */
+        
+        // NEW CODE - Use the service method
+        $result = $this->commissionService->processVendorPayment(
+            $request->vendor_id,
+            $request->amount,
+            $request->payment_method,
+            $request->reference,
+            $request->notes
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Payment processed successfully',
+            'data' => $result
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+
+public function exportCommissions()
+{
+    $commissions = CommissionHistory::with('vendor')->get();
+
+    $filename = "commissions_export.csv";
+
+    $headers = [
+        "Content-type" => "text/csv",
+        "Content-Disposition" => "attachment; filename=$filename",
+    ];
+
+    $callback = function() use ($commissions) {
+        $file = fopen('php://output', 'w');
+
+        fputcsv($file, [
+            'Vendor',
+            'Order ID',
+            'Commission',
+            'Vendor Amount',
+            'Status',
+            'Date'
+        ]);
+
+        foreach ($commissions as $row) {
+            fputcsv($file, [
+                $row->vendor->name ?? '',
+                $row->order_id,
+                $row->commission_amount,
+                $row->vendor_amount,
+                $row->status,
+                $row->commission_date
+            ]);
+        }
+
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
 
 }

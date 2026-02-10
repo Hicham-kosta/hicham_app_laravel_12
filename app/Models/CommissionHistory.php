@@ -10,7 +10,7 @@ class CommissionHistory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'commission_history';
+    protected $table = 'commission_histories';
 
     protected $fillable = [
         'order_id',
@@ -21,7 +21,7 @@ class CommissionHistory extends Model
         'sku',
         'size',
         'item_price',
-        'quantity',
+        'qty',
         'subtotal',
         'commission_percent',
         'commission_amount',

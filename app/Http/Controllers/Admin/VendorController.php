@@ -105,7 +105,7 @@ public function commissions(Request $request)
             product_id,
             product_name,
             COUNT(*) as order_count,
-            SUM(quantity) as total_quantity,
+            SUM(qty) as total_qty,
             SUM(subtotal) as total_sales,
             SUM(commission_amount) as total_commission,
             SUM(vendor_amount) as total_earnings

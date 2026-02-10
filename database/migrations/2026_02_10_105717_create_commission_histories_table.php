@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('commission_history', function (Blueprint $table) {
+        Schema::create('commission_histories', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id')->index();
             $table->unsignedBigInteger('order_item_id')->nullable()->index();
@@ -23,7 +23,7 @@ return new class extends Migration
             
             // Amounts
             $table->decimal('item_price', 10, 2)->default(0);
-            $table->integer('quantity')->default(1);
+            $table->integer('qty')->default(1);
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('commission_percent', 5, 2)->default(0);
             $table->decimal('commission_amount', 10, 2)->default(0);

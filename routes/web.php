@@ -254,11 +254,14 @@ Route::prefix('admin')->group(function () {
       ->name('admin.vendors.bulk-update-commissions');
 
 
+      // Admin Commissions
+
       Route::get('/commissions/dashboard', [AdminController::class, 'commissionDashboard'])->name('admin.commissions.dashboard');
       Route::get('/commissions/report', [AdminController::class, 'commissionReport'])->name('admin.commissions.report');
       Route::get('/vendors/{id}/commission-history', [AdminController::class, 'vendorCommissionHistory'])->name('admin.vendors.commission-history');
       Route::post('/commissions/process-payment', [AdminController::class, 'processCommissionPayment'])->name('admin.commissions.process-payment');
       Route::get('/commissions/export', [AdminController::class, 'exportCommissions'])->name('admin.commissions.export');
+
 
       Route::post('/vendors/{vendor}/calculate-commissions', [VendorController::class, 'calculateCommissions'])
       ->name('admin.calculate.vendor.commissions');

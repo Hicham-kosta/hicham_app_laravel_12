@@ -168,6 +168,7 @@ $isVendor = $admin && $admin->role == 'vendor';
                 {{-- ==========================
                      ORDERS (Admin + Vendor)
                      ========================== --}}
+                     @if($isAdmin)
                      <li class="nav-item {{Session::get('page')=='orders' ? 'menu-open' : ''}}">
                         <a href="{{url('admin/orders')}}" class="nav-link 
                         {{Session::get('page') == 'orders' ? 'active' : ''}}">
@@ -175,6 +176,16 @@ $isVendor = $admin && $admin->role == 'vendor';
                             <p>Orders</p>
                         </a>
                     </li>
+                    @endif
+                    @if($isVendor)
+                    <li class="nav-item {{Session::get('page')=='orders' ? 'menu-open' : ''}}">
+                        <a href="{{url('vendor/orders')}}" class="nav-link 
+                        {{Session::get('page') == 'orders' ? 'active' : ''}}">
+                            <i class="nav-icon bi bi-receipt"></i>
+                            <p>Orders</p>
+                        </a>
+                    </li>
+                    @endif
 
                     {{-- ==========================
                      ADMIN ONLY MODULES

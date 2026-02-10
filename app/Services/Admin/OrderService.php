@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Mail\OrderStatusUpdated;
+use App\Services\Admin\VendorCommissionService;
 
 class OrderService
 {
@@ -78,13 +79,29 @@ class OrderService
             'ordersModule' => $ordersModule,
             'status' => 'success',
             'message' => $orders->count() === 0 ? 'No orders found.' : '',
-            'debug_info' => $debugInfo, // Add debug info
         ];
     }
+
+    /*-----------------------
+    ADMIN / SUBADMIN FLOW
+    -----------------------*/
+    $orders = Order::with('user', 'address', 'paymentTransactions')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    $ordersModule = [
+        'view_access' => 1,
+        'edit_access' => ($admin->role === 'admin') ? 1 : 0,
+        'full_access' => ($admin->role === 'admin') ? 1 : 0,
+    ];
+
+    return [
+        'orders' => $orders,
+        'ordersModule' => $ordersModule,
+        'status' => 'success',
+        'message' => '',
+    ];
 }
-
-    // ... rest of the code remains the same
-
     /**
      * Get single order detail with items and address
      */
@@ -174,34 +191,33 @@ class OrderService
 {
     $admin = Auth::guard('admin')->user();
 
-    //Extra safety: vendors should not update order status
-    if($admin->role !== 'admin'){
+    if ($admin->role !== 'admin') {
         return [
-            'status' => 'error', 
+            'status' => 'error',
             'message' => 'Unauthorized action'
         ];
     }
-    
+
     $order = Order::find($orderId);
-    if(!$order){
+    if (!$order) {
         return ['status' => 'error', 'message' => 'Order not found'];
     }
-    
+
     $status = OrderStatus::find($data['order_status_id']);
-    if(!$status){
-        return ['status' => 'error', 'message' => 'invalid order status'];
+    if (!$status) {
+        return ['status' => 'error', 'message' => 'Invalid order status'];
     }
-    
+
     $order->update([
         'status' => $status->name,
         'tracking_number' => $data['tracking_number'] ?? null,
         'tracking_link' => $data['tracking_link'] ?? null,
         'shipping_partner' => $data['shipping_partner'] ?? null,
     ]);
-    
+
     $log = OrderLog::create([
         'order_id' => $order->id,
-        'order_status_id' => $status->id, // Use the NEW status ID
+        'order_status_id' => $status->id,
         'tracking_number' => $data['tracking_number'] ?? null,
         'tracking_link' => $data['tracking_link'] ?? null,
         'shipping_partner' => $data['shipping_partner'] ?? null,
@@ -209,16 +225,36 @@ class OrderService
         'updated_by' => $admin->id,
     ]);
 
-    try{
-        if($order->user && !empty($order->user->email)){
-            Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, $log));
-        }
-        //\Log::info('OrderStatusUpdated email queued for order: ' . $order->id);
-        
-    }catch(\Throwable $e){
-        \Log::error('Failed to queue OrderStatusUpdated email for order ' . $order->id . ': ' . $e->getMessage());
+    /*
+    |--------------------------------------------------
+    | AUTO CALCULATE COMMISSION WHEN DELIVERED
+    |--------------------------------------------------
+    */
+    if (strtolower($status->name) === 'delivered' && !$order->total_commission) {
+        app(VendorCommissionService::class)
+            ->calculateAndSaveOrderCommission($order->id);
     }
-    
-    return ['status' => 'success', 'message' => 'Order status updated successfully', 'log' => $log];
+
+    try {
+        if ($order->user && !empty($order->user->email)) {
+            Mail::to($order->user->email)
+                ->queue(new OrderStatusUpdated($order, $log));
+        }
+    } catch (\Throwable $e) {
+        Log::error('Failed to queue OrderStatusUpdated email: ' . $e->getMessage());
+    }
+
+    return [
+        'status' => 'success',
+        'message' => 'Order status updated successfully',
+        'log' => $log
+    ];
 }
+
+
+public function getAllOrderStatuses()
+{
+    return OrderStatus::orderBy('id', 'asc')->get();
+}
+
 }

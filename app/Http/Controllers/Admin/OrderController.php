@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use App\Models\CommissionHistory;
-use App\Services\Admin;
+use App\Services\Admin\VendorCommissionService;
+
 
 
 class OrderController extends Controller
@@ -46,54 +47,51 @@ class OrderController extends Controller
     }
 
     public function show($id)
-    {
-        Session::put('page', 'orders');
-        $result = $this->orderService->getOrderDetail($id);
-        if($result['status'] === 'error')
-        {
-            return redirect('admin/orders')->with('error_message', $result['message']);
-        }
-        $statuses = $this->orderService->getAllOrderStatuses();
-        $logs = $result['order']->logs()->with('status', 'updatedByAdmin')
+{
+    Session::put('page', 'orders');
+
+    $result = $this->orderService->getOrderDetail($id);
+
+    if ($result['status'] === 'error') {
+        return redirect('admin/orders')
+            ->with('error_message', $result['message']);
+    }
+
+    $order = $result['order'];
+
+    // Order statuses
+    $statuses = $this->orderService->getAllOrderStatuses();
+
+    // Order logs
+    $logs = $order->logs()
+        ->with('status', 'updatedByAdmin')
         ->orderBy('created_at', 'desc')
         ->get();
-        return view('admin.orders.show', [
-            'order' => $result['order'],
-            'ordersModule' => $result['ordersModule'],
-            'statuses' => $statuses,
-            'logs' => $logs,
-        ]);
-        $order = Order::findOrFail($id);
-    
-    // Calculate commissions if not already calculated
-    if (!$order->total_commission) {
-        $commissionService = new VendorCommissionService();
-        $commissionService->calculateAndSaveOrderCommission($order->id);
-    }
-    
-    // Get commission data for display
-    $commissionData = $commissionService->calculateOrderCommissions($order->id);
-    
-    return view('admin.orders.show', compact('order', 'commissionData'));
 
-    // Calculate commissions for this order
-    $commissionData = $this->commissionService->calculateOrderCommissions($id);
-    
-    // Get commission history for this order
-    $commissionHistory = CommissionHistory::where('order_id', $id)
+    // Calculate commissions if missing
+    if (!$order->total_commission) {
+        $this->commissionService->calculateAndSaveOrderCommission($order->id);
+        $order->refresh();
+    }
+
+    // Commission data
+    $commissionData = $this->commissionService->calculateOrderCommissions($order->id);
+
+    // Commission history
+    $commissionHistory = CommissionHistory::where('order_id', $order->id)
         ->with('vendor')
         ->get();
-    
+
     return view('admin.orders.show', [
-        'order' => $result['order'],
+        'order' => $order,
         'ordersModule' => $result['ordersModule'],
         'statuses' => $statuses,
         'logs' => $logs,
         'commissionData' => $commissionData,
         'commissionHistory' => $commissionHistory
     ]);
-    
-    }
+}
+
 
     public function processCommissionPayment(Request $request)
 {

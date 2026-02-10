@@ -12,7 +12,8 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Sales</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ₹{{ number_format($dashboard['totals']->total_sales, 2) }}
+                                ${{ number_format($dashboard['totals']->total_sales ?? 0, 2) }}
+
                             </div>
                         </div>
                         <div class="col-auto">
@@ -31,7 +32,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Total Commission</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ₹{{ number_format($dashboard['totals']->total_commission, 2) }}
+                                ${{ number_format($dashboard['totals']->total_commission ?? 0, 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -50,7 +51,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Pending Payout</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ₹{{ number_format($pendingPayments->total_pending ?? 0, 2) }}
+                                ${{ number_format($pendingPayments->total_pending ?? 0, 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -132,16 +133,16 @@
                                 </button>
                             </td>
                             <td>₹{{ number_format($vendor->total_sales, 2) }}</td>
-                            <td class="text-success">₹{{ number_format($vendor->total_commission, 2) }}</td>
+                            <td class="text-success">${{ number_format($vendor->total_commission, 2) }}</td>
                             <td>₹{{ number_format($vendor->vendor_earnings, 2) }}</td>
                             <td>
                                 <span class="badge bg-warning">
-                                    ₹{{ number_format($vendor->vendor_earnings - ($vendor->paid_amount ?? 0), 2) }}
+                                    ${{ number_format($vendor->pending_amount ?? 0, 2) }}
                                 </span>
                             </td>
                             <td>
                                 <span class="badge bg-success">
-                                    ₹{{ number_format($vendor->paid_amount ?? 0, 2) }}
+                                    ${{ number_format($vendor->paid_amount ?? 0, 2) }}
                                 </span>
                             </td>
                             <td>
@@ -175,7 +176,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Commission Trend (Last 7 Days)</h6>
         </div>
         <div class="card-body">
-            <canvas id="commissionChart" height="100"></canvas>
+            <div id="commissionChart"></div>
         </div>
     </div>
 </div>
@@ -312,40 +313,63 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
 <script>
 $(document).ready(function() {
     // Commission Chart
-    const ctx = document.getElementById('commissionChart').getContext('2d');
-    const dates = Object.keys(@json($dashboard['trend']));
-    const amounts = Object.values(@json($dashboard['trend']));
-    
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Commission (₹)',
-                data: amounts,
-                borderColor: 'rgba(78, 115, 223, 1)',
-                backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
+    $(document).ready(function() {
+
+    const trendData = @json($dashboard['trend']);
+    const dates = Object.keys(trendData);
+    const amounts = Object.values(trendData);
+
+    var options = {
+        chart: {
+            type: 'area',
+            height: 350,
+            toolbar: { show: false }
         },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₹' + value;
-                        }
-                    }
+        series: [{
+            name: 'Commission',
+            data: amounts
+        }],
+        xaxis: {
+            categories: dates
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3
+        },
+        dataLabels: {
+            enabled: false
+        },
+        tooltip: {
+            y: {
+                formatter: function(val) {
+                    return "₹ " + val;
                 }
             }
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1
+            }
         }
-    });
+    };
+
+    var chart = new ApexCharts(
+        document.querySelector("#commissionChart"),
+        options
+    );
+
+    chart.render();
+
+});
+
 
     // Edit Commission
     $('.edit-commission').on('click', function() {

@@ -178,91 +178,65 @@ class VendorCommissionService
      * Calculate and save commission for an order - FIXED
      */
     public function calculateAndSaveOrderCommission($orderId)
-    {
-        $order = Order::with(['orderItems', 'orderItems.product.vendor'])->findOrFail($orderId);
-        
-        $totalCommission = 0;
-        $totalVendorPayable = 0;
-        $totalAdminEarnings = 0;
-
-        foreach ($order->orderItems as $item) {
-            if (!$item->product) {
-                continue;
-            }
-            
-            $vendor = $item->product->vendor;
-            if (!$vendor) {
-                continue;
-            }
-            
-            $vendorCommission = $this->getVendorCommission($vendor->id);
-            
-            $calculation = $this->calculateCommissionForItem(
-                $item->price,
-                $item->qty, // Use qty
-                $vendorCommission
-            );
-
-            // Update order item with commission details
-            $item->commission_percent = $calculation['commission_percent'];
-            $item->commission_amount = $calculation['commission_amount'];
-            $item->vendor_amount = $calculation['vendor_payable'];
-            $item->vendor_id = $vendor->id;
-            $item->save();
-
-            $totalCommission += $calculation['commission_amount'];
-            $totalVendorPayable += $calculation['vendor_payable'];
-            $totalAdminEarnings += $calculation['commission_amount'];
-        }
-
-        // Update order with totals
-        $order->total_commission = $totalCommission;
-        $order->vendor_payable = $totalVendorPayable;
-        $order->admin_earnings = $totalAdminEarnings;
-        $order->save();
-
-        // Record commission history
-        $this->recordCommissionHistory($order);
-
-        return [
-            'order_id' => $order->id,
-            'total_commission' => round($totalCommission, 2),
-            'total_vendor_payable' => round($totalVendorPayable, 2),
-            'total_admin_earnings' => round($totalAdminEarnings, 2)
-        ];
-    }
-
-    /**
-     * Record commission history for tracking
-     */
-    public function recordCommissionHistory($order)
 {
+    $order = Order::with(['orderItems', 'orderItems.product.vendor'])->findOrFail($orderId);
+    
+    $totalCommission = 0;
+    $totalVendorPayable = 0;
+    $totalAdminEarnings = 0;
+
     foreach ($order->orderItems as $item) {
-        if ($item->vendor_id && $item->commission_amount > 0) {
-            $subtotal = $item->price * $item->qty;
-            
-            CommissionHistory::create([
-                'order_id' => $order->id,
-                'order_item_id' => $item->id,
-                'vendor_id' => $item->vendor_id,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->product_name,
-                'sku' => $item->product->sku ?? null,
-                'size' => $item->size ?? null,
-                'item_price' => $item->price,
-                'qty' => $item->qty,
-                'subtotal' => $subtotal,
-                'commission_percent' => $item->commission_percent,
-                'commission_amount' => $item->commission_amount,
-                'vendor_amount' => $item->vendor_amount,
-                'status' => 'pending',
-                'commission_date' => now()->toDateString(),
-                'month' => now()->month,
-                'year' => now()->year,
-                'created_at' => now(),
-            ]);
+        if (!$item->product) {
+            continue;
         }
+        
+        $vendor = $item->product->vendor;
+        if (!$vendor) {
+            continue;
+        }
+        
+        $vendorCommission = $this->getVendorCommission($vendor->id);
+        
+        $calculation = $this->calculateCommissionForItem(
+            $item->price,
+            $item->qty,
+            $vendorCommission
+        );
+
+        // **UPDATE: Include GST fields when updating order item**
+        $item->commission_percent = $calculation['commission_percent'];
+        $item->commission_amount = $calculation['commission_amount'];
+        $item->vendor_amount = $calculation['vendor_payable'];
+        $item->vendor_id = $vendor->id;
+        
+        // **ADD: Calculate GST if not already set**
+        if (empty($item->product_gst) && !empty($item->product->product_gst)) {
+            $item->product_gst = $item->product->product_gst;
+            $item->product_gst_amount = ($item->price * $item->qty * $item->product->product_gst) / 100;
+        }
+        
+        $item->save();
+
+        $totalCommission += $calculation['commission_amount'];
+        $totalVendorPayable += $calculation['vendor_payable'];
+        $totalAdminEarnings += $calculation['commission_amount'];
     }
+
+    // Update order with totals
+    $order->total_commission = $totalCommission;
+    $order->vendor_payable = $totalVendorPayable;
+    $order->admin_earnings = $totalAdminEarnings;
+    $order->save();
+
+    // Record commission history
+    $this->recordCommissionHistory($order);
+
+    return [
+        'order_id' => $order->id,
+        'total_commission' => round($totalCommission, 2),
+        'total_vendor_payable' => round($totalVendorPayable, 2),
+        'total_admin_earnings' => round($totalAdminEarnings, 2)
+    ];
 }
 
     /**
@@ -276,7 +250,7 @@ class VendorCommissionService
             $query->whereBetween('commission_history.created_at', [$startDate, $endDate]);
         }
 
-        $history = $query->orderBy('commission_history.created_at', 'desc')->get();
+        $history = $query->orderBy('created_at', 'desc')->get();
 
         $summary = [
             'total_orders' => $history->count(),
@@ -296,152 +270,179 @@ class VendorCommissionService
     /**
      * Get admin commission dashboard data - FIXED: Use 'subtotal' instead of 'amount'
      */
-    public function getAdminCommissionDashboard($period = 'month')
-    {
-        $now = Carbon::now();
-        
-        switch ($period) {
-            case 'today':
-                $startDate = $now->copy()->startOfDay();
-                $endDate = $now->copy()->endOfDay();
-                break;
-            case 'week':
-                $startDate = $now->copy()->startOfWeek();
-                $endDate = $now->copy()->endOfWeek();
-                break;
-            case 'month':
-                $startDate = $now->copy()->startOfMonth();
-                $endDate = $now->copy()->endOfMonth();
-                break;
-            case 'year':
-                $startDate = $now->copy()->startOfYear();
-                $endDate = $now->copy()->endOfYear();
-                break;
-            default:
-                $startDate = $now->copy()->startOfMonth();
-                $endDate = $now->copy()->endOfMonth();
-        }
-
-        // Total commission statistics - FIXED: Use 'subtotal' instead of 'amount'
-        $totalCommissions = CommissionHistory::whereBetween('commission_history.created_at', [$startDate, $endDate])
-            ->selectRaw('
-                SUM(subtotal) as total_sales,
-                SUM(commission_amount) as total_commission,
-                SUM(vendor_amount) as total_vendor_payable,
-                COUNT(DISTINCT order_id) as total_orders,
-                COUNT(DISTINCT vendor_id) as total_vendors
-            ')
-            ->first();
-
-        // Vendor-wise commission breakdown - FIXED: Use 'subtotal' instead of 'amount'
-$vendorBreakdown = CommissionHistory::whereBetween('commission_history.created_at', [$startDate, $endDate])
-    ->join('admins', 'commission_history.vendor_id', '=', 'admins.id')
-    ->leftJoin('vendor_details', 'admins.id', '=', 'vendor_details.admin_id')
-    ->selectRaw('
-        admins.id,
-        admins.name,
-        vendor_details.shop_name,
-        vendor_details.commission_percent,
-        SUM(commission_history.subtotal) as total_sales,
-        SUM(commission_history.commission_amount) as total_commission,
-        SUM(commission_history.vendor_amount) as vendor_earnings,
-        SUM(CASE WHEN commission_history.status = "paid" THEN commission_history.vendor_amount ELSE 0 END) as paid_amount
-    ')
-    ->groupBy('admins.id', 'admins.name', 'vendor_details.shop_name', 'vendor_details.commission_percent') // Add all non-aggregated columns
-    ->orderBy('total_commission', 'desc')
-    ->get();
-
-// Total commissions query:
-$totalCommissions = CommissionHistory::whereBetween('commission_history.created_at', [$startDate, $endDate])
-    ->selectRaw('
-        SUM(subtotal) as total_sales,
-        SUM(commission_amount) as total_commission,
-        SUM(vendor_amount) as total_vendor_payable,
-        COUNT(DISTINCT order_id) as total_orders,
-        COUNT(DISTINCT vendor_id) as total_vendors
-    ')
-    ->first();
-
-        // Commission trend (last 7 days)
-        $trend = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = $now->copy()->subDays($i)->format('Y-m-d');
-            $dayCommission = CommissionHistory::whereDate('commission_history.created_at', $date)
-                ->sum('commission_amount');
-            $trend[$date] = $dayCommission ?? 0;
-        }
-
-        return [
-            'period' => $period,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'totals' => $totalCommissions ?? (object)[
-                'total_sales' => 0,
-                'total_commission' => 0,
-                'total_vendor_payable' => 0,
-                'total_orders' => 0,
-                'total_vendors' => 0,
-            ],
-            'vendor_breakdown' => $vendorBreakdown,
-            'trend' => $trend,
-        ];
+    // In VendorCommissionService - Fixed queries
+// In VendorCommissionService.php
+public function getAdminCommissionDashboard($period = 'month')
+{
+    $now = Carbon::now();
+    
+    switch ($period) {
+        case 'today':
+            $startDate = $now->copy()->startOfDay();
+            $endDate = $now->copy()->endOfDay();
+            break;
+        case 'week':
+            $startDate = $now->copy()->startOfWeek();
+            $endDate = $now->copy()->endOfWeek();
+            break;
+        case 'month':
+            $startDate = $now->copy()->startOfMonth();
+            $endDate = $now->copy()->endOfMonth();
+            break;
+        case 'year':
+            $startDate = $now->copy()->startOfYear();
+            $endDate = $now->copy()->endOfYear();
+            break;
+        default:
+            $startDate = $now->copy()->subDays(30);
+            $endDate = $now->copy();
     }
 
+    // **FIXED: Use CommissionHistory model (plural)**
+    $totalCommissions = CommissionHistory::query()
+        ->whereBetween('commission_date', [$startDate, $endDate])
+        ->selectRaw('
+            COALESCE(SUM(subtotal), 0) as total_sales,
+            COALESCE(SUM(commission_amount), 0) as total_commission,
+            COALESCE(SUM(vendor_amount), 0) as total_vendor_payable,
+            COUNT(DISTINCT order_id) as total_orders,
+            COUNT(DISTINCT vendor_id) as total_vendors
+        ')
+        ->first();
+
+    // **FIXED: Use CommissionHistory model with correct relationships**
+    $vendorBreakdown = CommissionHistory::query()
+        ->whereBetween('commission_date', [$startDate, $endDate])
+        ->with(['vendor', 'vendor.vendorDetails'])
+        ->selectRaw('
+            vendor_id,
+            COUNT(*) as item_count,
+            COALESCE(SUM(subtotal), 0) as total_sales,
+            COALESCE(SUM(commission_amount), 0) as total_commission,
+            COALESCE(SUM(vendor_amount), 0) as vendor_earnings,
+            COALESCE(SUM(CASE WHEN status = "paid" THEN vendor_amount ELSE 0 END), 0) as paid_amount,
+            COALESCE(SUM(CASE WHEN status = "pending" THEN vendor_amount ELSE 0 END), 0) as pending_amount
+        ')
+        ->groupBy('vendor_id')
+        ->orderBy('total_commission', 'desc')
+        ->get()
+        ->map(function ($item) {
+            return (object)[
+                'id' => $item->vendor_id,
+                'name' => $item->vendor->name ?? 'Unknown Vendor',
+                'shop_name' => $item->vendor->vendorDetails->shop_name ?? '',
+                'commission_percent' => $item->vendor->vendorDetails->commission_percent ?? 0,
+                'total_sales' => $item->total_sales,
+                'total_commission' => $item->total_commission,
+                'vendor_earnings' => $item->vendor_earnings,
+                'pending_amount' => $item->pending_amount,
+                'paid_amount' => $item->paid_amount,
+            ];
+        });
+
+    // **FIXED: Commission trend for last 7 days**
+    $trend = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = $now->copy()->subDays($i)->format('Y-m-d');
+        $dayCommission = CommissionHistory::whereDate('commission_date', $date)
+            ->sum('commission_amount');
+        $trend[$date] = $dayCommission ?? 0;
+    }
+
+    return [
+        'period' => $period,
+        'start_date' => $startDate->format('Y-m-d'),
+        'end_date' => $endDate->format('Y-m-d'),
+        'totals' => $totalCommissions,
+        'vendor_breakdown' => $vendorBreakdown,
+        'trend' => $trend,
+    ];
+}
+
+// Also update the recordCommissionHistory method
+// In VendorCommissionService.php - CORRECTED METHOD
+public function recordCommissionHistory($order)
+{
+    foreach ($order->orderItems as $item) {
+        if ($item->vendor_id && $item->commission_amount > 0) {
+            $subtotal = $item->price * $item->qty;
+            
+            // **CORRECTED: Use OrderItem model's actual GST field names**
+            $gstPercent = $item->product_gst ?? 0; // From OrderItem model
+            $gstAmount = $item->product_gst_amount ?? 0; // From OrderItem model
+            
+            // If GST amount is not set but GST percent is, calculate it
+            if ($gstPercent > 0 && $gstAmount == 0) {
+                $gstAmount = ($subtotal * $gstPercent) / 100;
+            }
+            
+            CommissionHistory::create([
+                'order_id' => $order->id,
+                'order_item_id' => $item->id,
+                'vendor_id' => $item->vendor_id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product_name ?? ($item->product->product_name ?? 'Unknown Product'),
+                'sku' => $item->sku ?? ($item->product->sku ?? null),
+                'size' => $item->size ?? null,
+                'item_price' => $item->price,
+                'qty' => $item->qty,
+                'subtotal' => $subtotal,
+                'commission_percent' => $item->commission_percent ?? 0,
+                'commission_amount' => $item->commission_amount ?? 0,
+                'vendor_amount' => $item->vendor_amount ?? 0,
+                'gst_percent' => $gstPercent,
+                'gst_amount' => $gstAmount,
+                'status' => 'pending',
+                'commission_date' => now()->toDateString(),
+                'month' => now()->month,
+                'year' => now()->year,
+            ]);
+        }
+    }
+}
     /**
      * Process commission payment to vendor
      */
-    public function processVendorPayment($vendorId, $amount, $paymentMethod, $reference)
-    {
-        $vendor = Admin::findOrFail($vendorId);
+    // When processing a payment, these fields get filled
+public function processVendorPayment($vendorId, $amount, $paymentMethod, $reference, $notes = null)
+{
+    $vendor = Admin::findOrFail($vendorId);
+    
+    // Mark commission records as paid
+    $unpaidCommissions = CommissionHistory::where('vendor_id', $vendorId)
+        ->where('status', 'pending')
+        ->where('vendor_amount', '>', 0)
+        ->orderBy('created_at')
+        ->get();
+
+    $totalPaid = 0;
+    $processedRecords = [];
+
+    foreach ($unpaidCommissions as $record) {
+        if ($totalPaid >= $amount) break;
+
+        $payable = min($record->vendor_amount, $amount - $totalPaid);
         
-        // Mark commission records as paid
-        $unpaidCommissions = CommissionHistory::where('vendor_id', $vendorId)
-            ->where('status', 'pending')
-            ->where('vendor_amount', '>', 0)
-            ->orderBy('created_at')
-            ->get();
-
-        $totalPaid = 0;
-        $processedRecords = [];
-
-        foreach ($unpaidCommissions as $record) {
-            if ($totalPaid >= $amount) break;
-
-            $payable = min($record->vendor_amount, $amount - $totalPaid);
-            
-            $record->update([
-                'status' => 'paid',
-                'payment_date' => now(),
-                'payment_method' => $paymentMethod,
-                'payment_reference' => $reference,
-                'paid_amount' => $payable,
-            ]);
-
-            $totalPaid += $payable;
-            $processedRecords[] = $record->id;
-        }
-
-        // Record payment transaction
-        // Note: You need to create VendorPayment model and table first
-        /*
-        VendorPayment::create([
-            'vendor_id' => $vendorId,
-            'amount' => $amount,
+        $record->update([
+            'status' => 'paid',
+            'payment_date' => now(),
             'payment_method' => $paymentMethod,
-            'reference' => $reference,
-            'commission_records' => json_encode($processedRecords),
-            'status' => 'completed',
-            'paid_at' => now(),
+            'payment_reference' => $reference,
+            'payment_notes' => $notes,
+            'processed_by' => auth('admin')->id(),
         ]);
-        */
 
-        return [
-            'vendor_id' => $vendorId,
-            'vendor_name' => $vendor->name,
-            'amount_paid' => $totalPaid,
-            'records_processed' => count($processedRecords),
-        ];
+        $totalPaid += $payable;
+        $processedRecords[] = $record->id;
     }
+
+    return [
+        'vendor_id' => $vendorId,
+        'vendor_name' => $vendor->name,
+        'amount_paid' => $totalPaid,
+        'records_processed' => count($processedRecords),
+    ];
+}
 
     // Add this method to your VendorCommissionService
 public function checkVendorProducts($vendorId)
