@@ -267,11 +267,119 @@ class VendorCommissionService
         ];
     }
 
+    // app/Services/Admin/VendorCommissionService.php
+
+public function getVendorDashboardData($vendorId, $period = 'month')
+{
+    $now = Carbon::now();
+    
+    switch ($period) {
+        case 'today':
+            $startDate = $now->copy()->startOfDay();
+            $endDate   = $now->copy()->endOfDay();
+            break;
+        case 'week':
+            $startDate = $now->copy()->startOfWeek();
+            $endDate   = $now->copy()->endOfWeek();
+            break;
+        case 'month':
+            $startDate = $now->copy()->startOfMonth();
+            $endDate   = $now->copy()->endOfMonth();
+            break;
+        case 'year':
+            $startDate = $now->copy()->startOfYear();
+            $endDate   = $now->copy()->endOfYear();
+            break;
+        default:
+            $startDate = null;
+            $endDate   = null;
+    }
+
+    // Totals for the selected period
+    $totalsQuery = CommissionHistory::where('vendor_id', $vendorId);
+    if ($startDate && $endDate) {
+        $totalsQuery->whereBetween('commission_date', [$startDate, $endDate]);
+    }
+    $totals = $totalsQuery->selectRaw('
+            COALESCE(SUM(subtotal), 0)         as total_sales,
+            COALESCE(SUM(commission_amount), 0) as total_commission,
+            COALESCE(SUM(vendor_amount), 0)     as total_earned,
+            COUNT(DISTINCT order_id)            as total_orders
+        ')->first();
+
+    // 7‑day trend
+    $trend = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = $now->copy()->subDays($i)->format('Y-m-d');
+        $day = CommissionHistory::where('vendor_id', $vendorId)
+            ->whereDate('commission_date', $date)
+            ->selectRaw('
+                COALESCE(SUM(subtotal), 0) as sales,
+                COALESCE(SUM(commission_amount), 0) as commission,
+                COALESCE(SUM(vendor_amount), 0) as earned
+            ')
+            ->first();
+        $trend[$date] = [
+            'sales'     => $day->sales ?? 0,
+            'commission'=> $day->commission ?? 0,
+            'earned'    => $day->earned ?? 0,
+        ];
+    }
+
+    // Recent 10 commissions
+    $recent = CommissionHistory::where('vendor_id', $vendorId)
+        ->orderBy('commission_date', 'desc')
+        ->limit(10)
+        ->get();
+
+    // Monthly breakdown (already in your controller)
+    $monthly = CommissionHistory::where('vendor_id', $vendorId)
+        ->selectRaw('
+            YEAR(commission_date) as year,
+            MONTH(commission_date) as month,
+            SUM(subtotal) as total_sales,
+            SUM(commission_amount) as total_commission,
+            SUM(vendor_amount) as total_earnings,
+            SUM(CASE WHEN status = "pending" THEN vendor_amount ELSE 0 END) as pending,
+            SUM(CASE WHEN status = "paid" THEN vendor_amount ELSE 0 END) as paid
+        ')
+        ->groupByRaw('YEAR(commission_date), MONTH(commission_date)')
+        ->orderByRaw('YEAR(commission_date) DESC, MONTH(commission_date) DESC')
+        ->get();
+
+    // Top products (already in your controller)
+    $topProducts = CommissionHistory::where('vendor_id', $vendorId)
+        ->selectRaw('
+            product_id,
+            product_name,
+            COUNT(*) as order_count,
+            SUM(qty) as total_qty,
+            SUM(subtotal) as total_sales,
+            SUM(commission_amount) as total_commission,
+            SUM(vendor_amount) as total_earnings
+        ')
+        ->groupBy('product_id', 'product_name')
+        ->orderBy('total_sales', 'desc')
+        ->limit(10)
+        ->get();
+
+    return [
+        'period'       => $period,
+        'start_date'   => $startDate ? $startDate->format('Y-m-d') : null,
+        'end_date'     => $endDate ? $endDate->format('Y-m-d') : null,
+        'totals'       => $totals,
+        'trend'        => $trend,
+        'recent'       => $recent,
+        'monthly'      => $monthly,
+        'topProducts'  => $topProducts,
+        'commission_percent' => $this->getVendorCommission($vendorId),
+    ];
+}
+
     /**
      * Get admin commission dashboard data - FIXED: Use 'subtotal' instead of 'amount'
      */
-    // In VendorCommissionService - Fixed queries
-// In VendorCommissionService.php
+    
 public function getAdminCommissionDashboard($period = 'month')
 {
     $now = Carbon::now();

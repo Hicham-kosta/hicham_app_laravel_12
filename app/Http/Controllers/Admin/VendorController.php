@@ -65,66 +65,27 @@ class VendorController extends Controller
     /**
      * Show vendor commission dashboard
      */
+// app/Http/Controllers/Admin/VendorController.php
+
 public function commissions(Request $request)
 {
     $vendor = Auth::guard('admin')->user();
     
-    // Get commission percentage
-    $commissionPercent = $this->commissionService->getVendorCommission($vendor->id);
+    // Get period from request, default 'month'
+    $period = $request->input('period', 'month');
     
-    // Get date filters
-    $startDate = $request->input('start_date');
-    $endDate = $request->input('end_date');
-    $period = $request->input('period', 'all');
+    // Fetch all dashboard data from service
+    $dashboard = $this->commissionService->getVendorDashboardData($vendor->id, $period);
     
-    // Get commission summary
-    $commissionData = $this->commissionService->getVendorCommissionSummary(
-        $vendor->id, 
-        $startDate, 
-        $endDate
-    );
+    // Also get pending & paid totals for quick stats (already in dashboard->totals? we can add)
+    $pending = CommissionHistory::where('vendor_id', $vendor->id)
+        ->where('status', 'pending')
+        ->sum('vendor_amount');
+    $paid = CommissionHistory::where('vendor_id', $vendor->id)
+        ->where('status', 'paid')
+        ->sum('vendor_amount');
     
-    // Monthly breakdown
-    $monthlyBreakdown = CommissionHistory::where('vendor_id', $vendor->id)
-    ->selectRaw('
-        YEAR(commission_date) as year,
-        MONTH(commission_date) as month,
-        SUM(subtotal) as total_sales,
-        SUM(commission_amount) as total_commission,
-        SUM(vendor_amount) as total_earnings,
-        SUM(CASE WHEN status = "pending" THEN vendor_amount ELSE 0 END) as pending,
-        SUM(CASE WHEN status = "paid" THEN vendor_amount ELSE 0 END) as paid
-    ')
-    ->groupByRaw('YEAR(commission_date), MONTH(commission_date)') // Changed from groupBy('year', 'month')
-    ->orderByRaw('YEAR(commission_date) DESC, MONTH(commission_date) DESC')
-    ->get();
-    
-    // Top selling products
-    $topProducts = CommissionHistory::where('vendor_id', $vendor->id)
-        ->selectRaw('
-            product_id,
-            product_name,
-            COUNT(*) as order_count,
-            SUM(qty) as total_qty,
-            SUM(subtotal) as total_sales,
-            SUM(commission_amount) as total_commission,
-            SUM(vendor_amount) as total_earnings
-        ')
-        ->groupBy('product_id', 'product_name')
-        ->orderBy('total_sales', 'desc')
-        ->limit(10)
-        ->get();
-    
-    return view('vendor.commissions', compact(
-        //'summary', 
-        //'history', 
-        'commissionPercent',
-        'monthlyBreakdown',
-        'topProducts',
-        'period',
-        'startDate',
-        'endDate'
-    ));
+    return view('vendor.commissions.dashboard', compact('dashboard', 'pending', 'paid'));
 }
     
     /**
@@ -168,7 +129,7 @@ public function commissions(Request $request)
         'paid' => $history->where('status', 'paid')->sum('vendor_amount'),
     ];
     
-    return view('vendor.commission-history', compact('history', 'summary'));
+    return view('vendor.commissions.history', compact('history', 'summary'));
 }
 
     // In your VendorController or DashboardController
@@ -236,6 +197,45 @@ public function calculateCommissions($vendorId)
     return back()->with('success', 
         "Commissions calculated for {$processed} orders for vendor {$vendor->name}"
     );
+}
+
+public function exportCommissions(Request $request)
+{
+    $vendor = Auth::guard('admin')->user();
+
+    $commissions = CommissionHistory::where('vendor_id', $vendor->id)
+        ->orderBy('commission_date', 'desc')
+        ->get();
+
+    $filename = "vendor_{$vendor->id}_commissions_" . date('Y-m-d') . ".csv";
+
+    $headers = [
+        "Content-type" => "text/csv",
+        "Content-Disposition" => "attachment; filename=$filename",
+    ];
+
+    $callback = function() use ($commissions) {
+        $file = fopen('php://output', 'w');
+        fputcsv($file, ['Date', 'Order ID', 'Product', 'Subtotal', 'Commission %', 'Commission', 'You Received', 'Status', 'Payment Date', 'Reference']);
+
+        foreach ($commissions as $row) {
+            fputcsv($file, [
+                $row->commission_date,
+                $row->order_id,
+                $row->product_name,
+                $row->subtotal,
+                $row->commission_percent . '%',
+                $row->commission_amount,
+                $row->vendor_amount,
+                ucfirst($row->status),
+                $row->payment_date,
+                $row->payment_reference,
+            ]);
+        }
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
 }
 }
 

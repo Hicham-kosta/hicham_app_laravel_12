@@ -156,8 +156,8 @@ $isVendor = $admin && $admin->role == 'vendor';
 @endif
 @if($isVendor)
                 <li class="nav-item">
-                    <a href="{{url('/vendor/commissions')}}" class="nav-link 
-                    {{Session::get('page') == 'vendor.commissions' ? 'active' : ''}}">
+                    <a href="{{url('/vendor/commissions/dashboard')}}" class="nav-link 
+                    {{Session::get('page') == 'vendor.commissions.dashboard' ? 'active' : ''}}">
                         <i class="nav-icon bi bi-shop"></i>
                         <p>commissions</p>
                     </a>

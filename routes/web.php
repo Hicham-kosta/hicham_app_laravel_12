@@ -315,7 +315,10 @@ Route::prefix('admin')->group(function () {
     Route::prefix('vendor')->name('vendor.')->middleware(['auth:admin', \App\Http\Middleware\VendorApproved::class])->group(function () {
     Route::get('/dashboard', [VendorController::class, 'dashboard'])->name('dashboard');
     
-    Route::get('/commissions', [VendorController::class, 'commissions'])->name('commissions');
+    //Route::get('/commissions', [VendorController::class, 'commissions'])->name('commissions');
+    Route::get('/commissions/dashboard', [VendorController::class, 'commissions'])->name('commissions.dashboard');
+    Route::get('/commissions/history', [VendorController::class, 'commissionHistory'])->name('commissions.history');
+    Route::get('/commissions/export', [VendorController::class, 'exportCommissions'])->name('commissions.export');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 });

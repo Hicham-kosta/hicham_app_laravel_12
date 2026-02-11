@@ -26,5 +26,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'vendor' => \App\Http\Middleware\VendorApproved::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'vendor' => \App\Http\Middleware\VendorMiddleware::class,
     ];
 }
