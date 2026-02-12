@@ -151,11 +151,11 @@
                                        class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <button class="btn btn-sm btn-primary pay-vendor" 
+                                    <!--<button class="btn btn-sm btn-primary pay-vendor" 
                                             data-vendor-id="{{ $vendor->id }}"
                                             data-vendor-name="{{ $vendor->name }}">
                                         <i class="fas fa-money-bill-wave"></i>
-                                    </button>
+                                    </button>-->
                                     <a href="{{ route('admin.vendors.show', $vendor->id) }}" 
                                        class="btn btn-sm btn-secondary">
                                         <i class="fas fa-user"></i>

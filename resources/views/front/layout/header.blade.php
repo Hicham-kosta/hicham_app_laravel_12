@@ -5,6 +5,372 @@ $categories = Category::getCategories('Front');
 /*echo '<pre>'; print_r($categories); die;*/
 $totalCartItems = totalCartItems();
 ?>
+<style>
+/* ===== HEADER & NAVIGATION STYLES ===== */
+
+/* Topbar General Styles */
+.bg-secondary {
+    background-color: #f8f9fa !important;
+}
+
+.bg-secondary .text-dark:hover {
+    color: #007bff !important;
+    text-decoration: none;
+}
+
+/* Currency Dropdown Styling */
+.currency-dropdown {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+#current-currency-btn {
+    border: 1px solid #dee2e6;
+    padding: 4px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+#current-currency-btn:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
+}
+
+#currency-list {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    margin-top: 4px;
+    padding: 8px 0;
+}
+
+.currency-dropdown:hover #currency-list {
+    display: block;
+}
+
+.currency-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.currency-item:hover {
+    background-color: #f8f9fa;
+}
+
+.currency-item img {
+    margin-right: 10px;
+    width: 20px;
+    height: 15px;
+    object-fit: cover;
+}
+
+/* Social Icons */
+.d-inline-flex a {
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.d-inline-flex a:hover {
+    background-color: #007bff;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* Logo Styling */
+.text-decoration-none h1 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: -0.5px;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.border {
+    border-color: #007bff !important;
+}
+
+/* Search Bar Enhancement */
+.search-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#search_input {
+    border: 2px solid #e9ecef;
+    border-right: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border-radius: 4px 0 0 4px;
+}
+
+#search_input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.input-group-append .input-group-text {
+    border: 2px solid #e9ecef;
+    border-left: none;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 0 4px 4px 0;
+    transition: all 0.3s ease;
+}
+
+#search_input:focus + .input-group-append .input-group-text {
+    border-color: #007bff;
+}
+
+.fa-search {
+    font-size: 18px;
+}
+
+/* Live Search Results */
+#search_result {
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.search-wrapper:focus-within #search_result {
+    display: block;
+}
+
+/* Cart & Wishlist Icons */
+.btn.border {
+    border: 2px solid #e9ecef !important;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    background: white;
+}
+
+.btn.border:hover {
+    border-color: #007bff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
+}
+
+.badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Categories Dropdown */
+.bg-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: none !important;
+}
+
+.bg-primary:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%) !important;
+}
+
+.navbar-vertical {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 0 0 8px 8px;
+}
+
+.nav-item.dropdown:hover > .dropdown-menu {
+    display: block;
+    margin-top: 0;
+    animation: fadeIn 0.3s ease;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 10px 0;
+}
+
+.dropdown-item {
+    padding: 10px 20px;
+    transition: all 0.2s;
+    color: #495057;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+    padding-left: 25px;
+}
+
+/* Main Navigation */
+.navbar-light .navbar-nav .nav-link {
+    color: #495057;
+    font-weight: 600;
+    padding: 12px 20px;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: #007bff;
+}
+
+.navbar-light .navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: #007bff;
+    transform: scaleX(0);
+    transition: transform 0.3s;
+}
+
+.navbar-light .navbar-nav .nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+/* Dropdown Submenu */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu > .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-left: 0;
+    margin-top: -10px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+/* User Dropdown */
+.nav-link.dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+
+.nav-link.dropdown-toggle span {
+    text-align: left;
+    line-height: 1.3;
+}
+
+.dropdown-menu-right {
+    right: 0;
+    left: auto;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .search-wrapper {
+        margin-top: 15px;
+    }
+    
+    .btn.border {
+        margin: 5px;
+    }
+    
+    .navbar-vertical {
+        position: static !important;
+        width: 100% !important;
+    }
+    
+    .dropdown-menu {
+        position: static !important;
+        float: none !important;
+        width: 100% !important;
+    }
+    
+    .dropdown-submenu > .dropdown-menu {
+        left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .d-none.d-lg-block {
+        text-align: center;
+    }
+    
+    .col-lg-6.text-center.text-lg-right {
+        text-align: center !important;
+        margin-top: 10px;
+    }
+    
+    #search_input {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+}
+
+/* Smooth Scroll Behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar for Search Results */
+#search_result::-webkit-scrollbar {
+    width: 6px;
+}
+
+#search_result::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#search_result::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+#search_result::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
 <!-- Topbar Start -->
     <div class="container-fluid">
         <div class="row bg-secondary py-2 px-xl-5">
@@ -61,7 +427,8 @@ $totalCartItems = totalCartItems();
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="" class="text-decoration-none">
-                    <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-1 mr-0">S</span>ite&nbsp;<span class="text-primary font-weight-bold border px-1 mr-0">M</span>akers</h1>
+                    <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-1 mr-0">
+                      S</span>ite&nbsp;<span class="text-primary font-weight-bold border px-1 mr-0">E</span>-Commerce</h1>
                 </a>
             </div>
             <div class="col-lg-6 col-6 text-left">
@@ -148,7 +515,7 @@ $totalCartItems = totalCartItems();
                     <a href="" class="text-decoration-none d-block d-lg-none">
                         <h1 class="m-0 display-5 font-weight-semi-bold">
                             <span class="text-primary font-weight-bold border px-1 mr-1">S</span>ite&nbsp;
-                            <span class="text-primary font-weight-bold border px-1 mr-1">M</span>akers
+                            <span class="text-primary font-weight-bold border px-1 mr-1">E</span>Commerce
                         </h1>
                     </a>
                     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
@@ -238,4 +605,84 @@ $totalCartItems = totalCartItems();
         </div>
     </div>
     <!-- Navbar End -->
+     <script>
+// Currency dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Currency selection
+    document.querySelectorAll('.currency-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const currencyCode = this.getAttribute('data-code');
+            
+            // Update button
+            const btn = document.getElementById('current-currency-btn');
+            const flag = this.querySelector('img').src;
+            const text = this.textContent.trim();
+            
+            btn.innerHTML = `<img src="${flag}" alt="${currencyCode}" style="height:16px;"> ${currencyCode}`;
+            
+            // Hide dropdown
+            document.getElementById('currency-list').style.display = 'none';
+            
+            // Send AJAX request to update currency
+            fetch('/change-currency', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({currency: currencyCode})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    location.reload();
+                }
+            });
+        });
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('search_input');
+    const searchResult = document.getElementById('search_result');
+    
+    if(searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value;
+            
+            if(query.length < 2) {
+                searchResult.innerHTML = '';
+                searchResult.style.display = 'none';
+                return;
+            }
+            
+            fetch(`/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.text())
+                .then(html => {
+                    searchResult.innerHTML = html;
+                    searchResult.style.display = 'block';
+                });
+        });
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if(!searchWrapper.contains(e.target)) {
+                searchResult.style.display = 'none';
+            }
+        });
+    }
+    
+    // Add hover effects for dropdowns on desktop
+    if(window.innerWidth > 992) {
+        document.querySelectorAll('.nav-item.dropdown').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.querySelector('.dropdown-menu').style.display = 'block';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.querySelector('.dropdown-menu').style.display = 'none';
+            });
+        });
+    }
+});
+</script>
      

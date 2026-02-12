@@ -243,29 +243,30 @@ class VendorCommissionService
      * Get vendor commission summary - FIXED: Use 'subtotal' instead of 'amount'
      */
     public function getVendorCommissionSummary($vendorId, $startDate = null, $endDate = null)
-    {
-        $query = CommissionHistory::where('vendor_id', $vendorId);
-        
-        if ($startDate && $endDate) {
-            $query->whereBetween('commission_history.created_at', [$startDate, $endDate]);
-        }
-
-        $history = $query->orderBy('created_at', 'desc')->get();
-
-        $summary = [
-            'total_orders' => $history->count(),
-            'total_amount' => $history->sum('subtotal'), // Changed from 'amount' to 'subtotal'
-            'total_commission' => $history->sum('commission_amount'),
-            'total_vendor_amount' => $history->sum('vendor_amount'),
-            'pending_amount' => $history->where('status', 'pending')->sum('vendor_amount'),
-            'paid_amount' => $history->where('status', 'paid')->sum('vendor_amount'),
-        ];
-
-        return [
-            'summary' => $summary,
-            'history' => $history,
-        ];
+{
+    $query = CommissionHistory::where('vendor_id', $vendorId);
+    
+    if ($startDate && $endDate) {
+        $query->whereBetween('commission_date', [$startDate, $endDate]);
     }
+
+    // ✅ Paginate instead of get()
+    $history = $query->orderBy('commission_date', 'desc')->paginate(20);
+    
+    $summary = [
+        'total_orders'       => $history->total(), // or count distinct orders
+        'total_amount'       => $history->sum('subtotal'),
+        'total_commission'   => $history->sum('commission_amount'),
+        'total_vendor_amount'=> $history->sum('vendor_amount'),
+        'pending_amount'     => $history->where('status', 'pending')->sum('vendor_amount'),
+        'paid_amount'        => $history->where('status', 'paid')->sum('vendor_amount'),
+    ];
+
+    return [
+        'summary' => $summary,
+        'history' => $history,  // now a LengthAwarePaginator instance
+    ];
+}
 
     // app/Services/Admin/VendorCommissionService.php
 
