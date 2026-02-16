@@ -261,6 +261,8 @@ Route::prefix('admin')->group(function () {
       Route::get('/vendors/{id}/commission-history', [AdminController::class, 'vendorCommissionHistory'])->name('admin.vendors.commission-history');
       Route::post('/commissions/process-payment', [AdminController::class, 'processCommissionPayment'])->name('admin.commissions.process-payment');
       Route::get('/commissions/export', [AdminController::class, 'exportCommissions'])->name('admin.commissions.export');
+      Route::get('/admin/vendors/{vendor}/pending-amount', [AdminController::class, 'getVendorPendingAmount'])
+    ->name('admin.vendors.pending-amount');
 
 
       Route::post('/vendors/{vendor}/calculate-commissions', [VendorController::class, 'calculateCommissions'])

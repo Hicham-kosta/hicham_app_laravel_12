@@ -17,6 +17,8 @@
             name="keywords"
             content="bootstrap 5, bootstrap, bootstrap 5 admin dashboard, bootstrap 5 dashboard, bootstrap 5 charts, bootstrap 5 calendar, bootstrap 5 datepicker, bootstrap 5 tables, bootstrap 5 datatable, vanilla js datatable, colorlibhq, colorlibhq dashboard, colorlibhq admin dashboard"
             />
+            <!-- Bootstrap 5 CSS -->
+           <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <!--end::Primary Meta Tags-->
         <!--begin::Fonts-->
         @include('admin.layout.styles')
@@ -24,6 +26,10 @@
     <!--end::Head-->
     <!--begin::Body-->
     <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+        <!-- Bootstrap 5 JS + Popper -->
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
         <!--begin::App Wrapper-->
         <div class="app-wrapper">
             <!--begin::Header-->
@@ -42,8 +48,13 @@
         <!--end::App Wrapper-->
         <!--begin::Script-->
         @include('admin.layout.scripts')
-        
+
+        @yield('scripts')
+
+        <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
         <!--end::Script-->
+
     </body>
     <!--end::Body-->
 </html>

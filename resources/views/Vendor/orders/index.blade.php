@@ -9,7 +9,7 @@
                 </div>
                 <div class="col-ms-6">
                     <ol class="breadcrumb float-sm-end">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active" aria-current="page">
                             Orders
                         </li>
@@ -51,7 +51,7 @@
                                 <td>{{ ucfirst($order->status) }}</td>
                                 <td>{{ $order->created_at->format('Y-m-d H:i:s') }}</td>
                                 <td>
-                                    <a href="{{ url('vendor/orders/' . $order->id) }}" class="btn btn-sm btn-primary">View</a>
+                                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-primary">View</a>
                                     @if(strtolower($order->status) == 'shipped')
                                     <a href="{{route('admin.orders.invoice', $order->id)}}" target="_blank" 
                                     class="btn btn-sm btn-outline-secondary ms-1">

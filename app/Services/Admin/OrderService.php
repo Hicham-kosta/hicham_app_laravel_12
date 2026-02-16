@@ -230,7 +230,7 @@ class OrderService
     | AUTO CALCULATE COMMISSION WHEN DELIVERED
     |--------------------------------------------------
     */
-    if (strtolower($status->name) === 'delivered' && !$order->total_commission) {
+    if (strtolower($status->name) === 'Delivered' && !$order->total_commission) {
         app(VendorCommissionService::class)
             ->calculateAndSaveOrderCommission($order->id);
     }

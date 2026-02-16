@@ -156,7 +156,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
             </div>
         </div>
     </div>
-</div>            <div class="card mb-4">
+</div>            <!--<div class="card mb-4">
                 <div class="card-body">
                     <h5><strong>Update Order Status</strong></h5>
                     @if(Session('success_message'))
@@ -202,7 +202,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
                             <textarea name="remarks" id="remarks" class="form-control"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">Update Status</button>
-                    </form>
+                    </form>-->
                     <hr>
                     <h6><strong>Order Logs</strong></h6>
                     <table class="table table-sm mt-3">

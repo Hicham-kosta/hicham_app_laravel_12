@@ -81,7 +81,7 @@
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <a href="{{ route('orders.index') }}" class="btn btn-info w-100">
+                            <a href="{{ route('vendor.orders.index') }}" class="btn btn-info w-100">
                                 <i class="fas fa-shopping-cart me-2"></i> View Orders
                             </a>
                         </div>

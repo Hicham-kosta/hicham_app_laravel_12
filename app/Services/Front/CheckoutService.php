@@ -16,14 +16,18 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderStatusUpdated;
 use App\Models\Product;
 use App\Models\ProductsAttribute;
+use App\Services\Admin\VendorCommissionService;
+
 
 class CheckoutService
 {
     protected CartService $cartService;
+    protected VendorCommissionService $commissionService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartService $cartService, VendorCommissionService $commissionService)
     {
         $this->cartService = $cartService;
+        $this->commissionService = $commissionService;
     }
 
     /**
@@ -321,20 +325,31 @@ class CheckoutService
             ?? ($ci['sku'] ?? null) 
             ?? $product?->sku ?? 'N/A';
 
-            // Create order item
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $productId,
-                'product_name' => $ci['product_name'] ?? ($ci['name'] ?? 'Unnamed Product'),
-                'qty' => $qty,
-                'price' => $unitPrice,
-                'subtotal' => $lineTotal,
-                'size' => $size,
-                'color' => $color,
-                'sku' => $sku,
-                'product_gst' => $ci['product_gst'] ?? ($product?->product_gst ?? 0),
-                'product_gst_amount' => $ci['product_gst_amount'] ?? round(($lineTotal * ($product?->product_gst ?? 0)) / 100, 2),
-            ]);
+            // Get vendor ID from product
+$vendor_id = $product ? $product->vendor_id : null;
+
+// Optional: Log if vendor_id is missing
+if (!$vendor_id) {
+    Log::warning('Product missing vendor_id', [
+        'product_id' => $productId,
+        'order_id' => $order->id
+    ]);
+}
+
+OrderItem::create([
+    'order_id' => $order->id,
+    'product_id' => $productId,
+    'product_name' => $ci['product_name'] ?? ($ci['name'] ?? 'Unnamed Product'),
+    'qty' => $qty,
+    'price' => $unitPrice,
+    'subtotal' => $lineTotal,
+    'size' => $size,
+    'color' => $color,
+    'sku' => $sku,
+    'product_gst' => $ci['product_gst'] ?? ($product?->product_gst ?? 0),
+    'product_gst_amount' => $ci['product_gst_amount'] ?? round(($lineTotal * ($product?->product_gst ?? 0)) / 100, 2),
+    'vendor_id' => $vendor_id,   // ✅ Critical addition
+]);
             
             Log::info('Order item created', [
                 'order_id' => $order->id,
@@ -345,6 +360,14 @@ class CheckoutService
         }
 
         DB::commit();
+        // ✅ Calculate and save commissions
+        try {
+            $this->commissionService->calculateAndSaveOrderCommission($order->id);
+            Log::info('Commission calculated successfully', ['order_id' => $order->id]);
+        } catch (\Throwable $e) {
+            Log::error('Commission calculation failed: ' . $e->getMessage());
+        }
+
         
         Log::info('Order creation completed successfully', [
             'order_id' => $order->id,

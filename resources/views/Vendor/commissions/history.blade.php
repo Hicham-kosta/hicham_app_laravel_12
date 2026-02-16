@@ -90,7 +90,7 @@
                             <td>{{ Str::limit($item->product_name, 30) }}</td>
                             <td>${{ number_format($item->subtotal, 2) }}</td>
                             <td>{{ $item->commission_percent }}%</td>
-                            <td class="text-danger">-${{ number_format($item->commission_amount, 2) }}</td>
+                            <td class="text-danger">$-{{ number_format($item->commission_amount, 2) }}</td>
                             <td class="text-success">${{ number_format($item->vendor_amount, 2) }}</td>
                             <td>
                                 @if($item->status == 'paid')

@@ -146,22 +146,25 @@
                                 </span>
                             </td>
                             <td>
-                                <div class="btn-group">
-                                    <a href="{{ route('admin.vendors.commission-history', $vendor->id) }}" 
-                                       class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <!--<button class="btn btn-sm btn-primary pay-vendor" 
-                                            data-vendor-id="{{ $vendor->id }}"
-                                            data-vendor-name="{{ $vendor->name }}">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                    </button>-->
-                                    <a href="{{ route('admin.vendors.show', $vendor->id) }}" 
-                                       class="btn btn-sm btn-secondary">
-                                        <i class="fas fa-user"></i>
-                                    </a>
-                                </div>
-                            </td>
+    <div class="btn-group">
+        <a href="{{ route('admin.vendors.commission-history', $vendor->id) }}" 
+           class="btn btn-sm btn-info" title="View History">
+            <i class="fas fa-eye"></i>
+        </a>
+        {{-- ✅ PAY BUTTON --}}
+        <button class="btn btn-sm btn-primary pay-vendor" 
+                data-vendor-id="{{ $vendor->id }}"
+                data-vendor-name="{{ $vendor->name }}"
+                data-pending="{{ $vendor->pending_amount }}">
+            <i class="fas fa-money-bill-wave"></i> Pay
+        </button>
+        <a href="{{ route('admin.vendors.show', $vendor->id) }}" 
+           class="btn btn-sm btn-secondary" title="Vendor Details">
+            <i class="fas fa-user"></i>
+        </a>
+    </div>
+</td>
+                            
                         </tr>
                         @endforeach
                     </tbody>
@@ -257,32 +260,31 @@
     </div>
 </div>
 
-<!-- Payment Modal -->
+<!-- Payment Modal (keep this one) -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Process Payment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="paymentForm">
+        <form id="paymentForm">
+            @csrf
+            <input type="hidden" name="vendor_id" id="pay_vendor_id">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Process Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
-                    <input type="hidden" id="pay_vendor_id" name="vendor_id">
                     <div class="mb-3">
-                        <label class="form-label">Vendor</label>
+                        <label class="form-label fw-bold">Vendor</label>
                         <input type="text" id="pay_vendor_name" class="form-control" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Amount (₹)</label>
-                        <input type="number" name="amount" class="form-control" required step="0.01">
-                        <div class="form-text">
-                            Pending amount: <span id="pendingAmount">₹0.00</span>
-                        </div>
+                        <label class="form-label fw-bold">Amount ($)</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" required>
+                        <small class="text-muted">Pending: $<span id="pendingAmount"></span></small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Payment Method</label>
+                        <label class="form-label fw-bold">Payment Method</label>
                         <select name="payment_method" class="form-control" required>
-                            <option value="">Select Method</option>
+                            <option value="">Select</option>
                             <option value="bank_transfer">Bank Transfer</option>
                             <option value="upi">UPI</option>
                             <option value="paypal">PayPal</option>
@@ -290,201 +292,282 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Reference Number</label>
+                        <label class="form-label fw-bold">Reference / Transaction ID</label>
                         <input type="text" name="reference" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Payment Date</label>
+                        <label class="form-label fw-bold">Payment Date</label>
                         <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                        <label class="form-label fw-bold">Notes (optional)</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Process Payment</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check-circle"></i> Process Payment
+                    </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-</div>
-@endsection
+</div>@endsection
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
-$(document).ready(function() {
-    // Commission Chart
-    $(document).ready(function() {
+    console.log("Dashboard script loaded");
 
+$(function () {
+
+    /* =========================================
+       CSRF SETUP (IMPORTANT FOR AJAX)
+    ========================================== */
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
+
+    /* =========================================
+       COMMISSION TREND CHART
+    ========================================== */
     const trendData = @json($dashboard['trend']);
     const dates = Object.keys(trendData);
     const amounts = Object.values(trendData);
 
-    var options = {
-        chart: {
-            type: 'area',
-            height: 350,
-            toolbar: { show: false }
-        },
-        series: [{
-            name: 'Commission',
-            data: amounts
-        }],
-        xaxis: {
-            categories: dates
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 3
-        },
-        dataLabels: {
-            enabled: false
-        },
-        tooltip: {
-            y: {
-                formatter: function(val) {
-                    return "₹ " + val;
+    if (document.querySelector("#commissionChart")) {
+
+        const options = {
+            chart: {
+                type: 'area',
+                height: 350,
+                toolbar: { show: false }
+            },
+            series: [{
+                name: 'Commission',
+                data: amounts
+            }],
+            xaxis: {
+                categories: dates
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            dataLabels: {
+                enabled: false
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return "₹ " + parseFloat(val).toFixed(2);
+                    }
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.4,
+                    opacityTo: 0.1
                 }
             }
-        },
-        fill: {
-            type: 'gradient',
-            gradient: {
-                shadeIntensity: 1,
-                opacityFrom: 0.4,
-                opacityTo: 0.1
-            }
-        }
-    };
+        };
 
-    var chart = new ApexCharts(
-        document.querySelector("#commissionChart"),
-        options
-    );
+        const chart = new ApexCharts(
+            document.querySelector("#commissionChart"),
+            options
+        );
 
-    chart.render();
-
-});
+        chart.render();
+    }
 
 
-    // Edit Commission
-    $('.edit-commission').on('click', function() {
-        const vendorId = $(this).data('vendor-id');
-        const vendorName = $(this).data('vendor-name');
-        const commission = $(this).data('commission');
-        
-        $('#vendor_id').val(vendorId);
-        $('#vendorName').text(vendorName);
-        $('#commission_percent').val(commission);
-        $('#editCommissionModal').modal('show');
+    /* =========================================
+       EDIT COMMISSION (Bootstrap 5 FIXED)
+    ========================================== */
+    $(document).on('click', '.edit-commission', function () {
+
+        $('#vendor_id').val($(this).data('vendor-id'));
+        $('#vendorName').text($(this).data('vendor-name'));
+        $('#commission_percent').val($(this).data('commission'));
+
+        const modal = new bootstrap.Modal(document.getElementById('editCommissionModal'));
+        modal.show();
     });
 
-    // Update Single Commission
-    $('#updateCommissionForm').on('submit', function(e) {
+
+    $('#updateCommissionForm').on('submit', function (e) {
         e.preventDefault();
-        
+
         const vendorId = $('#vendor_id').val();
         const commissionPercent = $('#commission_percent').val();
-        
-        $.ajax({
-            url: `/admin/vendors/${vendorId}/update-commission`,
-            method: 'POST',
-            data: {
-                commission_percent: commissionPercent,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.status) {
-                    $('#commissionDisplay_' + vendorId).text(commissionPercent + '%');
-                    $('#editCommissionModal').modal('hide');
-                    showToast('success', response.message);
-                } else {
-                    showToast('error', response.message);
-                }
+
+        $.post(`/admin/vendors/${vendorId}/update-commission`, {
+            commission_percent: commissionPercent
+        })
+        .done(function (response) {
+
+            if (response.status) {
+
+                $('#commissionDisplay_' + vendorId)
+                    .text(commissionPercent + '%');
+
+                bootstrap.Modal
+                    .getInstance(document.getElementById('editCommissionModal'))
+                    .hide();
+
+                showToast('success', response.message);
+            } else {
+                showToast('danger', response.message);
             }
+        })
+        .fail(function () {
+            showToast('danger', 'Something went wrong.');
         });
     });
 
-    // Bulk Update Commissions
-    $('#bulkCommissionForm').on('submit', function(e) {
+
+    /* =========================================
+       BULK UPDATE COMMISSIONS
+    ========================================== */
+    $('#bulkCommissionForm').on('submit', function (e) {
         e.preventDefault();
-        
-        $.ajax({
-            url: '{{ route("admin.vendors.bulk-update-commissions") }}',
-            method: 'POST',
-            data: $(this).serialize() + '&_token=' + $('meta[name="csrf-token"]').attr('content'),
-            success: function(response) {
-                if (response.status) {
-                    $('#bulkCommissionModal').modal('hide');
-                    showToast('success', response.message);
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    showToast('error', response.message);
-                }
+
+        $.post(
+            '{{ route("admin.vendors.bulk-update-commissions") }}',
+            $(this).serialize()
+        )
+        .done(function (response) {
+
+            if (response.status) {
+
+                bootstrap.Modal
+                    .getInstance(document.getElementById('bulkCommissionModal'))
+                    .hide();
+
+                showToast('success', response.message);
+
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast('danger', response.message);
             }
+        })
+        .fail(function () {
+            showToast('danger', 'Bulk update failed.');
         });
     });
 
-    // Payment Modal
-    $('.pay-vendor').on('click', function() {
+
+    /* =========================================
+       PAY VENDOR (FIXED)
+    ========================================== */
+    $(document).on('click', '.pay-vendor', function () {
+
         const vendorId = $(this).data('vendor-id');
         const vendorName = $(this).data('vendor-name');
-        
+
         $('#pay_vendor_id').val(vendorId);
         $('#pay_vendor_name').val(vendorName);
-        
-        // Get pending amount
-        $.ajax({
-            url: `/admin/vendors/${vendorId}/pending-amount`,
-            method: 'GET',
-            success: function(response) {
-                $('#pendingAmount').text('₹' + response.amount.toFixed(2));
-            }
+
+        // Reset amount field
+        $('input[name="amount"]').val('');
+
+        // Fetch pending amount
+        $.get(`/admin/vendors/${vendorId}/pending-amount`)
+        .done(function (response) {
+
+            const amount = parseFloat(response.amount || 0).toFixed(2);
+            $('#pendingAmount').text(amount);
+
+        })
+        .fail(function () {
+            $('#pendingAmount').text('0.00');
         });
-        
-        $('#paymentModal').modal('show');
+
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        modal.show();
     });
 
-    // Process Payment
-    $('#paymentForm').on('submit', function(e) {
+
+    /* =========================================
+       PROCESS PAYMENT
+    ========================================== */
+    $('#paymentForm').on('submit', function (e) {
         e.preventDefault();
-        
-        $.ajax({
-            url: '{{ route("admin.commissions.process-payment") }}',
-            method: 'POST',
-            data: $(this).serialize() + '&_token=' + $('meta[name="csrf-token"]').attr('content'),
-            success: function(response) {
-                if (response.success) {
-                    $('#paymentModal').modal('hide');
-                    showToast('success', response.message);
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    showToast('error', response.message);
-                }
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('Processing...');
+
+        $.post(
+            '{{ route("admin.commissions.process-payment") }}',
+            $(this).serialize()
+        )
+        .done(function (response) {
+
+            if (response.status) {
+
+                bootstrap.Modal
+                    .getInstance(document.getElementById('paymentModal'))
+                    .hide();
+
+                showToast('success', response.message);
+
+                setTimeout(() => location.reload(), 1500);
+
+            } else {
+                showToast('danger', response.message);
             }
+        })
+        .fail(function () {
+            showToast('danger', 'Payment failed.');
+        })
+        .always(function () {
+            submitBtn.prop('disabled', false)
+                     .html('<i class="fas fa-check-circle"></i> Process Payment');
         });
     });
 
-    // Period Filter
-    $('#periodFilter').on('change', function() {
-        const period = $(this).val();
-        window.location.href = `{{ route('admin.commissions.dashboard') }}?period=${period}`;
+
+    /* =========================================
+       PERIOD FILTER
+    ========================================== */
+    $('#periodFilter').on('change', function () {
+        window.location.href =
+            `{{ route('admin.commissions.dashboard') }}?period=${$(this).val()}`;
     });
 
+
+    /* =========================================
+       CLEAN TOAST SYSTEM (Bootstrap 5)
+    ========================================== */
     function showToast(type, message) {
-        const toast = `<div class="toast align-items-center text-white bg-${type} border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type} border-0 mb-2"
+                 role="alert" data-bs-delay="3000">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button"
+                            class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast"></button>
+                </div>
             </div>
-        </div>`;
-        $('.toast-container').append(toast);
-        $('.toast').toast('show');
+        `;
+
+        $('.toast-container').append(toastHtml);
+
+        const toastEl = $('.toast').last()[0];
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
     }
+
 });
 </script>
+
 @endsection

@@ -475,6 +475,15 @@ public function processCommissionPayment(Request $request)
     }
 }
 
+public function getVendorPendingAmount($vendorId)
+{
+    $vendor = Admin::where('role', 'vendor')->findOrFail($vendorId);
+    $pending = CommissionHistory::where('vendor_id', $vendorId)
+                ->where('status', 'pending')
+                ->sum('vendor_amount');
+    return response()->json(['amount' => $pending]);
+}
+
 
 public function exportCommissions()
 {

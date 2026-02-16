@@ -18,14 +18,14 @@
                         
                         <!--end::Navbar Search-->
                         <!--begin::Messages Dropdown Menu-->
-                        <?php /*<li class="nav-item dropdown">
+                        <!--<li class="nav-item dropdown">
                             <a class="nav-link" data-bs-toggle="dropdown" href="#">
                             <i class="bi bi-chat-text"></i>
                             <span class="navbar-badge badge text-bg-danger">3</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                                 <a href="#" class="dropdown-item">
-                                    <!--begin::Message-->
+                                    
                                     <div class="d-flex">
                                         <div class="flex-shrink-0">
                                             <img
@@ -47,11 +47,11 @@
                                             </p>
                                         </div>
                                     </div>
-                                    <!--end::Message-->
+                                    
                                 </a>
                                 <div class="dropdown-divider"></div>
                                 <a href="#" class="dropdown-item">
-                                    <!--begin::Message-->
+                                    
                                     <div class="d-flex">
                                         <div class="flex-shrink-0">
                                             <img
@@ -73,11 +73,11 @@
                                             </p>
                                         </div>
                                     </div>
-                                    <!--end::Message-->
+                                    
                                 </a>
                                 <div class="dropdown-divider"></div>
                                 <a href="#" class="dropdown-item">
-                                    <!--begin::Message-->
+                                    
                                     <div class="d-flex">
                                         <div class="flex-shrink-0">
                                             <img
@@ -99,15 +99,15 @@
                                             </p>
                                         </div>
                                     </div>
-                                    <!--end::Message-->
+                                    
                                 </a>
                                 <div class="dropdown-divider"></div>
                                 <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
                             </div>
-                        </li> ?>*/ ?>
-                        <!--end::Messages Dropdown Menu-->
-                        <!--begin::Notifications Dropdown Menu-->
-                        <!--<li class="nav-item dropdown">
+                        </li> */?>
+                        
+                        
+                        <li class="nav-item dropdown">
                             <a class="nav-link" data-bs-toggle="dropdown" href="#">
                             <i class="bi bi-bell-fill"></i>
                             <span class="navbar-badge badge text-bg-warning">15</span>

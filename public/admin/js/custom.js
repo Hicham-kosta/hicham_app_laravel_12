@@ -597,19 +597,19 @@ $(document).ready(function () {
 
 document.addEventListener('DOMContentLoaded', function () {
     const statusSelect = document.getElementById('order_status_id');
+    if (!statusSelect) return; // Exit if element not found on this page
+
     const shippedFields = document.querySelectorAll('.shipped-field');
 
     function toggleShippedFields() {
         const selectedText = statusSelect.options[statusSelect.selectedIndex].text.toLowerCase();
         const show = (selectedText === 'shipped' || selectedText.includes('ship'));
 
-        // Show fields if status is "shipped"
         shippedFields.forEach(el => {
             el.style.display = show ? '' : 'none';
         });
     }
 
-    // Initial toggle (if current status is "shipped")
     toggleShippedFields();
     statusSelect.addEventListener('change', toggleShippedFields);
 });
