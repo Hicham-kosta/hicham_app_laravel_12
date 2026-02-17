@@ -1,6 +1,359 @@
 @extends('front.layout.layout')
 @section('title', 'Checkout')
 @section('content')
+<style>
+/* ===== CHECKOUT PAGE STYLES (ISOLATED) ===== */
+
+/* ----- Page Header ----- */
+.checkout-page .bg-secondary {
+  background-color: #f8f9fa !important;
+  border-radius: 8px;
+  margin-bottom: 2rem !important;
+}
+.checkout-page .bg-secondary h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  letter-spacing: -0.5px;
+}
+.checkout-page .bg-secondary .d-inline-flex p {
+  color: #6c757d;
+  font-size: 1rem;
+}
+.checkout-page .bg-secondary .d-inline-flex a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+.checkout-page .bg-secondary .d-inline-flex a:hover {
+  text-decoration: underline;
+}
+
+/* ----- Saved Addresses Section ----- */
+.checkout-page .mb-4 > .d-flex {
+  margin-bottom: 1.5rem;
+}
+.checkout-page .mb-4 > .d-flex h4 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+.checkout-page .btn-sm.btn-primary {
+  background: #007bff;
+  border: none;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+.checkout-page .btn-sm.btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* Address Cards */
+.checkout-page .border.p-3 {
+  border: 1px solid #e9ecef !important;
+  border-radius: 10px;
+  background: white;
+  transition: all 0.2s;
+  position: relative;
+}
+.checkout-page .border.p-3:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  border-color: #c1d9f0 !important;
+}
+.checkout-page .custom-radio {
+  margin-bottom: 0.5rem;
+}
+.checkout-page .custom-radio .custom-control-label {
+  font-weight: 500;
+  color: #495057;
+  line-height: 1.5;
+  padding-left: 0.5rem;
+}
+.checkout-page .custom-radio .custom-control-label strong {
+  color: #2c3e50;
+  font-size: 1rem;
+}
+.checkout-page .custom-radio .custom-control-input:checked ~ .custom-control-label::before {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+/* Edit/Remove buttons */
+.checkout-page .d-flex .btn-outline-primary,
+.checkout-page .d-flex .btn-outline-danger {
+  font-size: 0.8rem;
+  padding: 0.2rem 1rem;
+  border-radius: 20px;
+  border-width: 1px;
+  transition: all 0.2s;
+}
+.checkout-page .d-flex .btn-outline-primary:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+.checkout-page .d-flex .btn-outline-danger:hover {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+/* Empty addresses message */
+.checkout-page .mb-4 p {
+  color: #6c757d;
+  font-style: italic;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* ----- Add Address Collapse Form ----- */
+.checkout-page .collapse {
+  transition: all 0.3s ease;
+}
+.checkout-page .collapse.show {
+  display: block;
+}
+.checkout-page #add-address-form {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  margin-top: 1rem;
+  border: 1px solid #e9ecef;
+}
+.checkout-page #add-address-form h4 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #007bff;
+  display: inline-block;
+}
+.checkout-page .form-group label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+.checkout-page .form-control,
+.checkout-page .custom-select {
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  transition: all 0.2s;
+}
+.checkout-page .form-control:focus,
+.checkout-page .custom-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+.checkout-page .form-control.is-invalid {
+  border-color: #dc3545;
+}
+.checkout-page .text-danger.small {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+/* Save/Cancel buttons */
+.checkout-page .btn-primary.font-weight-bold {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  border: none;
+  padding: 0.6rem 2rem;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.checkout-page .btn-primary.font-weight-bold:hover {
+  background: linear-gradient(135deg, #0056b3, #003d80);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+.checkout-page .btn-outline-secondary {
+  border: 1px solid #ced4da;
+  color: #6c757d;
+  padding: 0.6rem 2rem;
+  border-radius: 30px;
+}
+.checkout-page .btn-outline-secondary:hover {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+/* ----- Alert Messages ----- */
+.checkout-page .alert {
+  border-radius: 8px;
+  border: none;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.checkout-page .alert-danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+.checkout-page .alert ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+/* ----- Order Summary Card ----- */
+.checkout-page .card.border-secondary {
+  border: 1px solid #e9ecef !important;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+.checkout-page .card-header {
+  background: #f8f9fa;
+  border-bottom: 2px solid #007bff;
+  padding: 1rem 1.5rem;
+}
+.checkout-page .card-header h4 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+.checkout-page .card-body {
+  padding: 1.5rem;
+}
+.checkout-page .card-body h5 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #495057;
+  margin-bottom: 1rem;
+}
+.checkout-page .d-flex.justify-content-between {
+  margin-bottom: 0.8rem;
+  align-items: center;
+}
+.checkout-page .d-flex p {
+  margin: 0;
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.checkout-page .d-flex p small {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+.checkout-page .d-flex p:last-child {
+  font-weight: 600;
+  color: #007bff;
+}
+.checkout-page hr {
+  border-top: 1px dashed #dee2e6;
+  margin: 1rem 0;
+}
+.checkout-page .card-footer {
+  background: transparent;
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 1.5rem;
+}
+.checkout-page .card-footer .d-flex h5 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+.checkout-page .card-footer .d-flex h5:last-child {
+  color: #28a745;
+}
+
+/* ----- Payment Methods Card ----- */
+.checkout-page .custom-radio .custom-control-label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+.checkout-page .custom-radio + small {
+  margin-left: 1.8rem;
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-top: -0.2rem;
+  margin-bottom: 0.8rem;
+}
+/* PayPal conversion box */
+.checkout-page .paypal-conversion-box {
+  background: #f1f3f5 !important;
+  border-left: 3px solid #007bff;
+  margin-top: 0.5rem;
+  margin-left: 1.8rem;
+  font-size: 0.9rem;
+}
+.checkout-page .paypal-conversion-box .fa-paypal {
+  color: #003087;
+}
+.checkout-page .paypal-conversion-box .converted-amount {
+  font-weight: 700;
+  color: #007bff;
+}
+
+/* ----- Place Order Button ----- */
+.checkout-page .btn-block.btn-primary {
+  background: linear-gradient(135deg, #28a745, #218838);
+  border: none;
+  border-radius: 40px;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+  transition: all 0.2s;
+}
+.checkout-page .btn-block.btn-primary:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+}
+.checkout-page .btn-block.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ----- Responsive Layout ----- */
+@media (min-width: 992px) {
+  .checkout-page .col-lg-8 {
+    padding-right: 2rem;
+  }
+  .checkout-page .col-lg-4 {
+    padding-left: 0;
+  }
+}
+@media (max-width: 991px) {
+  .checkout-page .col-lg-4 {
+    margin-top: 2rem;
+  }
+}
+@media (max-width: 767px) {
+  .checkout-page .bg-secondary {
+    min-height: 120px !important;
+  }
+  .checkout-page .bg-secondary h1 {
+    font-size: 1.8rem;
+  }
+  .checkout-page .mb-4 > .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .checkout-page .mb-4 > .d-flex button {
+    margin-top: 0.5rem;
+  }
+  .checkout-page .border.p-3 .d-flex {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .checkout-page .card-body .d-flex {
+    flex-wrap: wrap;
+  }
+}
+</style>
 <!-- Page Header Start -->
 <div class="container-fluid bg-secondary mb-5">
    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px;">
@@ -14,7 +367,7 @@
 </div>
 <!-- Page Header End -->
 <!-- Checkout Start -->
-<div class="container-fluid pt-2">
+<div class="container-fluid pt-2 checkout-page">
    <div class="row px-xl-5">
       <div class="col-lg-8">
          <div class="mb-4">

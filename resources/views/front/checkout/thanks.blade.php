@@ -10,7 +10,7 @@
             <div class="d-inline-flex">
                 <p class="m-0"><a href="{{ url('/') }}" class="text-white">Home</a></p>
                 <p class="m-0 px-2 text-white">-</p>
-                <p class="m-0"><a href="{{ route('orders.index') }}" class="text-white">My Orders</a></p>
+                <p class="m-0"><a href="{{ route('user.orders.index') }}" class="text-white">My Orders</a></p>
                 <p class="m-0 px-2 text-white">-</p>
                 <p class="m-0 text-white">Order Confirmation</p>
             </div>

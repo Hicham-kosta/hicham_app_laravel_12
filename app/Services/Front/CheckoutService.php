@@ -377,13 +377,13 @@ OrderItem::create([
         ]);
 
         // Send email for COD orders
-        if(strtolower($order->payment_method ?? '') === 'cod' && $order->user){
-            try {
+        try {
+            if ($order->user) {
                 Mail::to($order->user->email)->queue(new OrderPlaced($order));
-            } catch(\Throwable $e) {
-                Log::error("Failed to send order placed email for order {$order->id}: " . $e->getMessage());
-            }   
-        }
+            }
+           } catch (\Throwable $e) {
+           Log::error("Failed to send order placed email for order {$order->id}: " . $e->getMessage());
+           }
         
         return ['success' => true, 'order' => $order];
         

@@ -165,6 +165,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
                     @if(Session('error_message'))
                     <div class="alert alert-danger">{{session('error_message')}}</div>
                     @endif
+                    @if($ordersModule['edit_access'] ?? false)
                     <form action="{{route('orders.updateStatus', $order->id)}}" method="post">
                         @csrf
                         <div class="row mb-4">
@@ -203,6 +204,7 @@ $commissionData = $commissionService->calculateOrderCommissions($order->id);
                         </div>
                         <button type="submit" class="btn btn-primary">Update Status</button>
                     </form>
+                    @endif
                     <hr>
                     <h6><strong>Order Logs</strong></h6>
                     <table class="table table-sm mt-3">

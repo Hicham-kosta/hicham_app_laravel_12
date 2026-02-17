@@ -51,7 +51,7 @@
                                 <td>{{ ucfirst($order->status) }}</td>
                                 <td>{{ $order->created_at->format('Y-m-d H:i:s') }}</td>
                                 <td>
-                                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-primary">View</a>
+                                    <a href="{{ route('vendor.orders.show', $order->id) }}" class="btn btn-sm btn-primary">View</a>
                                     @if(strtolower($order->status) == 'shipped')
                                     <a href="{{route('admin.orders.invoice', $order->id)}}" target="_blank" 
                                     class="btn btn-sm btn-outline-secondary ms-1">

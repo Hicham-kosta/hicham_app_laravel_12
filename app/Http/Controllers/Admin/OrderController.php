@@ -49,6 +49,7 @@ class OrderController extends Controller
     public function show($id)
 {
     Session::put('page', 'orders');
+    $admin = Auth::guard('admin')->user();
 
     $result = $this->orderService->getOrderDetail($id);
 
@@ -76,6 +77,15 @@ class OrderController extends Controller
 
     // Commission data
     $commissionData = $this->commissionService->calculateOrderCommissions($order->id);
+
+    // After $commissionData = $this->commissionService->calculateOrderCommissions($order->id);
+if ($admin->role === 'vendor') {
+    $commissionData['commission_data'] = array_filter(
+        $commissionData['commission_data'],
+        fn($item) => $item['vendor_id'] == $admin->id
+    );
+    // Recalculate summary totals if needed (optional)
+}
 
     // Commission history
     $commissionHistory = CommissionHistory::where('order_id', $order->id)
@@ -178,6 +188,15 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('error_message', $result['message']);
         }
         $order = $result['order'];
+        $admin = Auth::guard('admin')->user();
+
+        if ($admin->role === 'vendor') {
+    // Keep only the vendor's order items
+           $order->setRelation(
+        'orderItems',
+        $order->orderItems->where('vendor_id', $admin->id)
+         );
+       }
 
         // Allow invoice for only shipped orders
         if(strtolower($order->status !== 'shipped')){
@@ -208,6 +227,15 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('error_message', $result['message']);
         }
         $order = $result['order'];
+        $admin = Auth::guard('admin')->user();
+
+        if ($admin->role === 'vendor') {
+           // Keep only the vendor's order items
+          $order->setRelation(
+            'orderItems',
+        $order->orderItems->where('vendor_id', $admin->id)
+          );
+        }
 
         // Allow invoice for only shipped orders
         if(strtolower($order->status !== 'shipped')){
