@@ -262,7 +262,7 @@ class PayPalRedirectController extends Controller
 
         if(!$paypalOrderId){
             Log::error('No PayPal order ID found in return handler');
-            return redirect()->route('user.checkout.index')->with('error', 'No PayPal order ID found. Please contact support.');
+            return redirect()->route('checkout.index')->with('error', 'No PayPal order ID found. Please contact support.');
         }
 
         try {
@@ -277,7 +277,7 @@ class PayPalRedirectController extends Controller
             // Check if capture was successful
             if (isset($response['error']) || isset($response['message'])) {
                 Log::error('PayPal capture failed:', $response);
-                return redirect()->route('user.checkout.index')
+                return redirect()->route('checkout.index')
                     ->with('error', 'Payment capture failed: ' . ($response['message'] ?? 'Unknown error'));
             }
 
@@ -376,7 +376,7 @@ class PayPalRedirectController extends Controller
                     'paypal_order_id' => $paypalOrderId
                 ]);
                 
-                return redirect()->route('user.checkout.index')
+                return redirect()->route('checkout.index')
                     ->with('error', 'Payment not completed. Status: ' . $captureStatus);
             }
 
@@ -399,7 +399,7 @@ class PayPalRedirectController extends Controller
                 
                 if(!$addressId){
                     Log::error('No address ID found in session');
-                    return redirect()->route('user.checkout.index')
+                    return redirect()->route('checkout.index')
                         ->with('error', 'Address information lost. Please contact support.');
                 }
                 
@@ -409,7 +409,7 @@ class PayPalRedirectController extends Controller
                         'session_user_id' => $sessionUserId,
                         'current_user_id' => $currentUserId
                     ]);
-                    return redirect()->route('user.checkout.index')
+                    return redirect()->route('checkout.index')
                         ->with('error', 'Session expired. Please try again.');
                 }
 
@@ -445,7 +445,7 @@ class PayPalRedirectController extends Controller
                         )
                     ]);
                     
-                    return redirect()->route('user.checkout.index')
+                    return redirect()->route('checkout.index')
                         ->with('error', 'Order creation failed: ' . ($result['message'] ?? 'Unknown error'));
                 }
                 

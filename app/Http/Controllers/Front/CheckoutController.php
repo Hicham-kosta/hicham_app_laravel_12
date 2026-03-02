@@ -13,6 +13,8 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Services\Front\CheckoutService;
 use Illuminate\Support\Facades\Log;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 
 class CheckoutController extends Controller
@@ -110,6 +112,68 @@ public function placeOrder(CheckoutRequest $request)
     }
 
     $order = $result['order'];
+
+    /*Log::info('Stripe block executed for order', [
+    'order_id' => $order->id
+]);
+
+    Log::info('Reached after order creation', [
+    'payment_method' => $payload['payment_method']
+]);*/
+
+    // ✅ Stripe flow
+if (strtolower($payload['payment_method']) === 'stripe') {
+
+    Log::info('Stripe block executed for order', [
+    'order_id' => $order->id
+]);
+
+try {
+
+    Stripe::setApiKey(config('services.stripe.secret'));
+
+    Log::info('Stripe secret loaded', [
+        'secret_exists' => !empty(config('services.stripe.secret'))
+    ]);
+
+    $amount = (int) round($order->total * 100);
+
+    Log::info('Creating PaymentIntent', [
+        'amount' => $amount,
+        'currency' => 'usd'
+    ]);
+
+    $paymentIntent = PaymentIntent::create([
+    'amount' => $amount,
+    'currency' => 'usd',
+    'metadata' => [
+        'order_id' => $order->id,
+    ],
+]);
+
+$order->payment_intent_id = $paymentIntent->id;
+$order->payment_status = 'pending'; // ✅ correct
+$order->save();
+
+    return response()->json([
+        'success' => true,
+        'order_id' => $order->id,
+        'stripe_data' => [
+            'client_secret' => $paymentIntent->client_secret,
+        ],
+    ]);
+
+} catch (\Exception $e) {
+
+    Log::error('Stripe Exception: ' . $e->getMessage());
+
+    return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+
+}
 
     // ✅ PayPal flow
     if (strtolower($payload['payment_method']) === 'paypal') {

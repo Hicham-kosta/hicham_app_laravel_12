@@ -35,7 +35,7 @@ class ProductRequest extends FormRequest
             'product_price' => 'required|numeric|gt:0',
             'product_color' => 'required|max:200',
             'family_color' => 'required|max:200',
-            'vendor_id' => $admin->role == 'admin' ? 'required|exists:admins,id,role,vendor' : 'nullable',
+            //'vendor_id' => $admin->role == 'admin' ? 'exists:admins,id,role,vendor' : 'nullable',
         ];
 
         $productId = $this->route('product');
@@ -67,8 +67,8 @@ class ProductRequest extends FormRequest
             'family_color.required' => 'Family color is required',
             'product_url.required' => 'Product URL is required when updating',
             'product_url.unique' => 'Product URL must be unique',
-            'vendor_id.required' => 'Please select a vendor',
-            'vendor_id.exists' => 'Selected vendor does not exist or is not approved',
+            //'vendor_id.required' => 'Please select a vendor',
+            //'vendor_id.exists' => 'Selected vendor does not exist or is not approved',
         ];
     }
 }

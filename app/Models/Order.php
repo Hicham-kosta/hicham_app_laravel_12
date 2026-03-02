@@ -32,6 +32,7 @@ class Order extends Model
         'total_commission',
         'vendor_payable',
         'admin_earnings',
+        'payment_intent_id'
     ];
 
     /**

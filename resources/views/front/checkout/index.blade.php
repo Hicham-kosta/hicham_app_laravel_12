@@ -615,6 +615,25 @@
                         @endif
                      </div>
                   </div>
+                  {{-- Credit Card (Stripe) --}}
+<div class="form-group">
+    <div class="custom-control custom-radio">
+        <input type="radio"
+               class="custom-control-input"
+               name="payment_method"
+               id="stripe"
+               value="stripe">
+        <label class="custom-control-label" for="stripe">
+            Credit / Debit Card
+        </label>
+    </div>
+</div>
+
+{{-- Stripe Card Form --}}
+<div id="stripe-card-section" style="display:none;" class="mt-3">
+    <div id="card-element" class="form-control"></div>
+    <div id="card-errors" class="text-danger mt-2"></div>
+</div>
                   {{-- Direct Check --}}
                   <div class="form-group">
                      <div class="custom-control custom-radio">
@@ -666,3 +685,62 @@
 </div>
 <!-- Checkout End -->
 @endsection
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const stripeRadio = document.getElementById('stripe');
+    const stripeSection = document.getElementById('stripe-card-section');
+    const placeOrderForm = document.getElementById('placeOrderForm');
+
+    const stripe = Stripe("{{ config('services.stripe.key') }}");
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
+
+    stripeRadio.addEventListener('change', function () {
+        stripeSection.style.display = this.checked ? 'block' : 'none';
+    });
+
+    placeOrderForm.addEventListener('submit', async function (e) {
+
+        if (stripeRadio.checked) {
+            e.preventDefault();
+
+            let formData = new FormData(placeOrderForm);
+
+            let response = await fetch("{{ route('checkout.placeOrder') }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "Accept": "application/json"
+                },
+                body: formData
+            });
+
+            let result = await response.json();
+
+            if (!result.success) {
+                alert(result.message);
+                return;
+            }
+
+            const { client_secret } = result.stripe_data;
+
+            const { error, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+                payment_method: {
+                    card: card,
+                }
+            });
+
+            if (error) {
+                document.getElementById('card-errors').textContent = error.message;
+            } else {
+                if (paymentIntent.status === "succeeded") {
+                     window.location.href = "/order/thanks/" + result.order_id;
+                   }
+            }
+        }
+    });
+});
+</script>

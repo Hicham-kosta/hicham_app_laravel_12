@@ -58,11 +58,14 @@
                   route('products.update', $product->id) : route('products.store')}}" 
                   method="post" enctype="multipart/form-data">@csrf
                   @if(isset($product)) @method('PUT') @endif
-                  {{-- For Admin Only --}}
+                  
+                    <!--begin::Body-->
+                    <div class="card-body">
+                      {{-- For Admin Only --}}
 @if(auth('admin')->user()->role == 'admin')
-<div class="form-group mb-3">
-    <label for="vendor_id" class="form-label">Vendor *</label>
-    <select name="vendor_id" id="vendor_id" class="form-control" required>
+<div class="mb-3">
+    <label for="vendor_id" class="form-label">Vendor</label>
+    <select name="vendor_id" id="vendor_id" class="form-control">
         <option value="">-- Select Vendor --</option>
         @foreach($vendors as $vendor)
             <option value="{{ $vendor->id }}" 
@@ -82,8 +85,6 @@
 {{-- For Vendor - Auto set their ID --}}
 <input type="hidden" name="vendor_id" value="{{ auth('admin')->user()->id }}">
 @endif
-                    <!--begin::Body-->
-                    <div class="card-body">
                       <div class="mb-3">
                         <label for="category_id">Category Level(Select Category)*</label>
                          <select name="category_id" class="form-control">
