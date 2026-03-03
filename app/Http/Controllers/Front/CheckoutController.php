@@ -146,6 +146,7 @@ try {
     $paymentIntent = PaymentIntent::create([
     'amount' => $amount,
     'currency' => 'usd',
+    'automatic_payment_methods' => ['enabled' => true],
     'metadata' => [
         'order_id' => $order->id,
     ],
